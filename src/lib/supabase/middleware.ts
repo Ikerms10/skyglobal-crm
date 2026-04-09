@@ -21,9 +21,9 @@ export async function updateSession(request: NextRequest) {
   )
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
-  // Middleware receives full paths including /admin basePath prefix
   const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname.startsWith('/login/')
-  if (!user && !isAuthRoute) {
+  const isWebhook = pathname.startsWith('/api/webhooks/')
+  if (!user && !isAuthRoute && !isWebhook) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

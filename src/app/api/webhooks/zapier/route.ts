@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+export function GET() {
+  return NextResponse.json({ status: 'ok' }, { headers: CORS_HEADERS })
+}
+
+export function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
+}
+
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>
   try {
@@ -78,9 +92,9 @@ export async function POST(request: NextRequest) {
 
     if (leadError) throw leadError
 
-    return NextResponse.json({ success: true, customerId, leadId: lead.id })
+    return NextResponse.json({ success: true, customerId, leadId: lead.id }, { headers: CORS_HEADERS })
   } catch (error) {
     console.error('Zapier webhook error:', error)
-    return NextResponse.json({ success: false, error: 'Failed to create lead' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to create lead' }, { status: 500, headers: CORS_HEADERS })
   }
 }
