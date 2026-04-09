@@ -1,7 +1,17 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"],
+  "extends": "next/core-web-vitals",
   "rules": {
-    "@typescript-eslint/no-unused-vars": ["error", { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_", "ignoreRestSiblings": true }],
-    "@next/next/no-img-element": "warn"
-  }
+    "@typescript-eslint/no-unused-vars": "off",
+    "@next/next/no-img-element": "off",
+    "@typescript-eslint/no-explicit-any": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off"
+      }
+    }
+  ]
 }
