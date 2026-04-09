@@ -22,15 +22,15 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
   // Middleware receives full paths including /admin basePath prefix
-  const isAuthRoute = pathname === '/admin/login' || pathname.startsWith('/admin/login/')
+  const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname.startsWith('/login/')
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/admin/login'
+    url.pathname = '/login'
     return NextResponse.redirect(url)
   }
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/admin/dashboard'
+    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
   return supabaseResponse
