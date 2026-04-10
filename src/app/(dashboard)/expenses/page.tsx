@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { Expense } from '@/types'
@@ -14,7 +14,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { toast } from 'sonner'
-import { Plus, Download, Trash2, DollarSign } from 'lucide-react'
+import { Plus, Download, Trash2, DollarSign, Pencil } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -35,6 +35,7 @@ type FormData = z.infer<typeof schema>
 export default function ExpensesPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [editExpense, setEditExpense] = useState<Expense | null>(null)
   const [filterCategory, setFilterCategory] = useState('')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
@@ -43,6 +44,11 @@ export default function ExpensesPage() {
   const defaultValues = { category: 'Advertising', description: '', amount: '', date: new Date().toISOString().split('T')[0], recurring: false }
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues,
+  })
+
+  const { register: editReg, handleSubmit: editSubmit, reset: editReset, formState: { errors: editErrors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues,
   })
@@ -99,6 +105,39 @@ export default function ExpensesPage() {
     },
     onError: () => toast.error('Failed to add expense'),
   })
+
+  const editMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      if (!editExpense) throw new Error('No expense selected')
+      const supabase = createClient()
+      const { error } = await supabase.from('expenses').update({
+        category: data.category,
+        description: data.description || null,
+        amount: Number(data.amount),
+        date: data.date,
+        recurring: data.recurring ?? false,
+      }).eq('id', editExpense.id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+      toast.success('Expense updated')
+      setEditExpense(null)
+    },
+    onError: () => toast.error('Failed to update expense'),
+  })
+
+  useEffect(() => {
+    if (editExpense) {
+      editReset({
+        category: editExpense.category,
+        description: editExpense.description ?? '',
+        amount: String(editExpense.amount),
+        date: editExpense.date,
+        recurring: editExpense.recurring,
+      })
+    }
+  }, [editExpense, editReset])
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -211,9 +250,14 @@ export default function ExpensesPage() {
                       <td className="px-4 py-3 text-sm font-medium text-[#ef4444]">{formatCurrency(e.amount)}</td>
                       <td className="px-4 py-3">{e.recurring ? <span className="text-xs text-[#e6ab35]">Recurring</span> : <span className="text-xs text-[#9a9585]">One-time</span>}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => setDeleteId(e.id)} className="opacity-0 group-hover:opacity-100 p-1 text-[#9a9585] hover:text-[#ef4444] transition-all">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                          <button onClick={() => setEditExpense(e)} className="p-1 text-[#9a9585] hover:text-[#3583b3] transition-colors">
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => setDeleteId(e.id)} className="p-1 text-[#9a9585] hover:text-[#ef4444] transition-colors">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -299,6 +343,25 @@ export default function ExpensesPage() {
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setAddOpen(false)} className="flex-1">Cancel</Button>
             <Button type="submit" loading={addMutation.isPending} className="flex-1">Add Expense</Button>
+          </div>
+        </form>
+      </Drawer>
+
+      {/* Edit expense drawer */}
+      <Drawer open={!!editExpense} onClose={() => setEditExpense(null)} title="Edit Expense">
+        <form onSubmit={editSubmit(d => editMutation.mutate(d))} className="space-y-4">
+          <Select label="Category" {...editReg('category')} error={editErrors.category?.message}
+            options={CATEGORIES.map(c => ({ value: c, label: c }))} />
+          <Textarea label="Description" rows={2} {...editReg('description')} placeholder="What was this expense for?" />
+          <Input label="Amount ($)" type="number" step="0.01" {...editReg('amount')} error={editErrors.amount?.message} required />
+          <Input label="Date" type="date" {...editReg('date')} error={editErrors.date?.message} required />
+          <label className="flex items-center gap-2 text-sm text-[#efeae2]">
+            <input type="checkbox" {...editReg('recurring')} className="rounded" />
+            Recurring monthly expense
+          </label>
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setEditExpense(null)} className="flex-1">Cancel</Button>
+            <Button type="submit" loading={editMutation.isPending} className="flex-1">Save Changes</Button>
           </div>
         </form>
       </Drawer>

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { toast } from 'sonner'
 import { useLocalStorageDraft } from '@/lib/hooks/useLocalStorageDraft'
 import { formatDate } from '@/lib/utils'
@@ -39,6 +40,7 @@ interface LeadDrawerProps {
 
 export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
   const queryClient = useQueryClient()
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const getDefaults = (l: Lead | null): FormData => ({
     title: l?.title ?? '',
@@ -94,6 +96,20 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
       onClose()
     },
     onError: (err: Error) => toast.error(err.message || 'Failed to update lead'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const supabase = createClient()
+      const { error } = await supabase.from('leads').update({ deleted_at: new Date().toISOString() }).eq('id', lead!.id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+      toast.success('Lead deleted')
+      onClose()
+    },
+    onError: () => toast.error('Failed to delete lead'),
   })
 
   const customer = lead?.customer as { id?: string; name?: string; phone?: string | null; email?: string | null } | null
@@ -174,8 +190,23 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
             <Button type="submit" loading={mutation.isPending} className="flex-1">Save Changes</Button>
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
           </div>
+
+          <div className="pt-2 border-t border-[#2e2d26]">
+            <Button type="button" variant="danger" className="w-full" onClick={() => setConfirmDelete(true)}>
+              Delete Lead
+            </Button>
+          </div>
         </form>
       </div>
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => deleteMutation.mutate()}
+        loading={deleteMutation.isPending}
+        title="Delete Lead"
+        description={`Delete "${lead?.title}"? This cannot be undone.`}
+      />
     </Drawer>
   )
 }

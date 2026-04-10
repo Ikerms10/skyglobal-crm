@@ -156,22 +156,22 @@ export default function DashboardPage() {
 
   const kpiRows = [
     [
-      { label: 'Total Revenue', value: formatCurrency(data?.revenue), icon: DollarSign, color: 'text-[#e6ab35]' },
-      { label: 'Total Expenses', value: formatCurrency(data?.totalExpenses), icon: TrendingUp, color: 'text-[#ef4444]' },
-      { label: 'Gross Profit', value: formatCurrency(data?.profit), icon: DollarSign, color: 'text-[#3583b3]' },
-      { label: 'Profit Margin', value: `${data?.margin ?? 0}%`, icon: TrendingUp, color: 'text-[#e6ab35]' },
+      { label: 'Total Revenue', value: formatCurrency(data?.revenue), icon: DollarSign, color: 'text-[#e6ab35]', href: '/reports' },
+      { label: 'Total Expenses', value: formatCurrency(data?.totalExpenses), icon: TrendingUp, color: 'text-[#ef4444]', href: '/expenses' },
+      { label: 'Gross Profit', value: formatCurrency(data?.profit), icon: DollarSign, color: 'text-[#3583b3]', href: '/reports' },
+      { label: 'Profit Margin', value: `${data?.margin ?? 0}%`, icon: TrendingUp, color: 'text-[#e6ab35]', href: '/reports' },
     ],
     [
-      { label: 'Total Leads', value: String(data?.totalLeads ?? 0), icon: Target, color: 'text-[#3583b3]' },
-      { label: 'Leads Won', value: String(data?.wonLeads ?? 0), icon: Target, color: 'text-[#e6ab35]' },
-      { label: 'Conversion Rate', value: `${data?.conversionRate ?? 0}%`, icon: TrendingUp, color: 'text-[#e6ab35]' },
-      { label: 'Active Projects', value: String(data?.activeProjects ?? 0), icon: Briefcase, color: 'text-[#3583b3]' },
+      { label: 'Total Leads', value: String(data?.totalLeads ?? 0), icon: Target, color: 'text-[#3583b3]', href: '/leads' },
+      { label: 'Leads Won', value: String(data?.wonLeads ?? 0), icon: Target, color: 'text-[#e6ab35]', href: '/leads' },
+      { label: 'Conversion Rate', value: `${data?.conversionRate ?? 0}%`, icon: TrendingUp, color: 'text-[#e6ab35]', href: '/leads' },
+      { label: 'Active Projects', value: String(data?.activeProjects ?? 0), icon: Briefcase, color: 'text-[#3583b3]', href: '/projects' },
     ],
     [
-      { label: 'Ad Spend', value: formatCurrency(data?.adSpend), icon: DollarSign, color: 'text-[#ef4444]' },
-      { label: 'Avg Lead Cost', value: formatCurrency(data?.avgLeadCost), icon: Target, color: 'text-[#ef4444]' },
-      { label: 'Revenue Per Lead', value: formatCurrency(data?.revenuePerLead), icon: TrendingUp, color: 'text-[#3583b3]' },
-      { label: 'Revenue Per Won Lead', value: formatCurrency(data?.revenuePerWon), icon: TrendingUp, color: 'text-[#e6ab35]' },
+      { label: 'Ad Spend', value: formatCurrency(data?.adSpend), icon: DollarSign, color: 'text-[#ef4444]', href: '/expenses' },
+      { label: 'Avg Lead Cost', value: formatCurrency(data?.avgLeadCost), icon: Target, color: 'text-[#ef4444]', href: '/reports' },
+      { label: 'Revenue Per Lead', value: formatCurrency(data?.revenuePerLead), icon: TrendingUp, color: 'text-[#3583b3]', href: '/reports' },
+      { label: 'Revenue Per Won Lead', value: formatCurrency(data?.revenuePerWon), icon: TrendingUp, color: 'text-[#e6ab35]', href: '/reports' },
     ],
   ]
 
@@ -204,14 +204,14 @@ export default function DashboardPage() {
       ) : (
         kpiRows.map((row, ri) => (
           <div key={ri} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {row.map(({ label, value, icon: Icon, color }) => (
-              <div key={label} className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-5">
+            {row.map(({ label, value, icon: Icon, color, href }) => (
+              <Link key={label} href={href} className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-5 cursor-pointer hover:border-[#e6ab35] transition-colors block">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-[#9a9585] font-medium">{label}</span>
                   <Icon className={`h-4 w-4 ${color}`} />
                 </div>
                 <p className="text-xl font-bold text-[#e6ab35]">{value}</p>
-              </div>
+              </Link>
             ))}
           </div>
         ))
@@ -300,14 +300,14 @@ export default function DashboardPage() {
             data?.activities && data.activities.length > 0 ? (
               <div className="space-y-3">
                 {data.activities.map((a: { id: string; type: string; content: string | null; created_at: string; customer_id: string; project_id: string | null }) => (
-                  <div key={a.id} className="flex items-start gap-3">
+                  <Link key={a.id} href={a.customer_id ? `/customers/${a.customer_id}` : '#'} className="flex items-start gap-3 hover:bg-[#2e2d26] p-2 rounded-lg transition-colors cursor-pointer">
                     <div className="w-2 h-2 rounded-full bg-[#e6ab35] mt-1.5 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-white font-medium">{a.type}</p>
                       {a.content && <p className="text-xs text-[#9a9585] truncate">{a.content}</p>}
                       <p className="text-xs text-[#9a9585]">{formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (

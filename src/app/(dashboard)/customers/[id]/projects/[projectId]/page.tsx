@@ -14,13 +14,33 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { TableSkeleton, Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AddActivityModal } from '@/components/customers/AddActivityModal'
+import { EditProjectModal } from '@/components/projects/EditProjectModal'
 import { toast } from 'sonner'
-import { ArrowLeft, DollarSign, Calendar, MapPin, Plus, Trash2, Upload, Image } from 'lucide-react'
+import { ArrowLeft, DollarSign, Calendar, MapPin, Plus, Trash2, Upload, Image, Edit2, X, Check } from 'lucide-react'
 import Link from 'next/link'
 import { use } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+
+const managementSchema = z.object({
+  paint_brand: z.string().optional(),
+  paint_colors: z.string().optional(),
+  num_coats: z.string().optional(),
+  primer_used: z.boolean().optional(),
+  special_finishes: z.string().optional(),
+  crew_notes: z.string().optional(),
+  site_conditions: z.string().optional(),
+  client_communication: z.string().optional(),
+})
+type ManagementForm = z.infer<typeof managementSchema>
+
+const taskSchema = z.object({
+  description: z.string().min(1, 'Required'),
+  due_date: z.string().optional(),
+})
+type TaskForm = z.infer<typeof taskSchema>
 
 const lineItemSchema = z.object({
   description: z.string().min(1, 'Required'),
@@ -48,12 +68,15 @@ const ACTIVITY_ICONS: Record<string, string> = {
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string; projectId: string }> }) {
   const { id: customerId, projectId } = use(params)
   const queryClient = useQueryClient()
+  const router = useRouter()
   const [deleteLineItem, setDeleteLineItem] = useState<string | null>(null)
   const [deleteExpense, setDeleteExpense] = useState<string | null>(null)
   const [addActivityOpen, setAddActivityOpen] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [photoLabel, setPhotoLabel] = useState<'Before' | 'During' | 'After'>('Before')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const { data: project, isLoading: loadingProject } = useQuery({
     queryKey: ['project', projectId],
@@ -137,6 +160,33 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       toast.success('Project marked as paid')
     },
     onError: () => toast.error('Failed to update payment'),
+  })
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: async () => {
+      const supabase = createClient()
+      const { error } = await supabase.from('projects').update({ deleted_at: new Date().toISOString() }).eq('id', projectId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-projects', customerId] })
+      toast.success('Project deleted')
+      router.push(`/customers/${customerId}`)
+    },
+    onError: () => toast.error('Failed to delete project'),
+  })
+
+  const deleteActivityMutation = useMutation({
+    mutationFn: async (activityId: string) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('activities').delete().eq('id', activityId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-activities', projectId] })
+      toast.success('Activity deleted')
+    },
   })
 
   // Line items form
@@ -262,6 +312,92 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     onError: () => { toast.error('Failed to upload photo'); setUploadingPhoto(false) },
   })
 
+  // Management form
+  const { register: mgmtReg, handleSubmit: mgmtSubmit } = useForm<ManagementForm>({
+    resolver: zodResolver(managementSchema),
+    defaultValues: {
+      paint_brand: '', paint_colors: '', num_coats: '', primer_used: false,
+      special_finishes: '', crew_notes: '', site_conditions: '', client_communication: '',
+    },
+  })
+
+  const saveManagementMutation = useMutation({
+    mutationFn: async (data: ManagementForm) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('projects').update({
+        paint_brand: data.paint_brand || null,
+        paint_colors: data.paint_colors || null,
+        num_coats: data.num_coats ? Number(data.num_coats) : null,
+        primer_used: data.primer_used ?? false,
+        special_finishes: data.special_finishes || null,
+        crew_notes: data.crew_notes || null,
+        site_conditions: data.site_conditions || null,
+        client_communication: data.client_communication || null,
+        updated_at: new Date().toISOString(),
+      } as Record<string, unknown>).eq('id', projectId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      toast.success('Saved')
+    },
+    onError: () => toast.error('Failed to save'),
+  })
+
+  // Project tasks
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['project-tasks', projectId],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data } = await supabase.from('project_tasks').select('*').eq('project_id', projectId).order('created_at')
+      return (data ?? []) as Array<{ id: string; description: string; completed: boolean; due_date: string | null; created_at: string }>
+    },
+  })
+
+  const { register: taskReg, handleSubmit: taskSubmit, reset: taskReset, formState: { errors: taskErrors } } = useForm<TaskForm>({
+    resolver: zodResolver(taskSchema),
+  })
+
+  const addTaskMutation = useMutation({
+    mutationFn: async (data: TaskForm) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('project_tasks').insert({
+        project_id: projectId,
+        description: data.description,
+        due_date: data.due_date || null,
+        completed: false,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] })
+      taskReset()
+      toast.success('Task added')
+    },
+    onError: () => toast.error('Failed to add task'),
+  })
+
+  const toggleTaskMutation = useMutation({
+    mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('project_tasks').update({ completed }).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] }),
+  })
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('project_tasks').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] })
+      toast.success('Task deleted')
+    },
+  })
+
   const lineItemsTotal = lineItems.reduce((sum, item) => sum + (item.total ?? 0), 0)
   const expensesTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
   const profit = calculateProfit(project?.contract_value ?? null, expensesTotal)
@@ -345,6 +481,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <Button size="sm" variant="ghost" onClick={() => setAddActivityOpen(true)}>
             <Plus className="h-4 w-4" /> Log Activity
           </Button>
+          <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+            <Edit2 className="h-4 w-4" /> Edit Project
+          </Button>
+          <Button size="sm" variant="danger" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="h-4 w-4" /> Delete
+          </Button>
         </div>
 
         {/* Progress bar */}
@@ -373,6 +515,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
           <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="management">Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -601,7 +744,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           ) : (
             <div className="space-y-1">
               {activities.map((a, i) => (
-                <div key={a.id} className="flex gap-4">
+                <div key={a.id} className="flex gap-4 group">
                   <div className="flex flex-col items-center">
                     <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
                       {ACTIVITY_ICONS[a.type] ?? '📋'}
@@ -611,7 +754,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <div className="pb-4 flex-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-white">{a.type}</p>
-                      <span className="text-xs text-[#9a9585]">{formatRelativeTime(a.created_at)}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-[#9a9585]">{formatRelativeTime(a.created_at)}</span>
+                        <button onClick={() => deleteActivityMutation.mutate(a.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all ml-2 flex-shrink-0">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                     {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
                   </div>
@@ -620,9 +768,149 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             </div>
           )}
         </TabsContent>
+
+        <TabsContent value="management" className="mt-6 space-y-6">
+          {/* Schedule */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Schedule</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-[#9a9585] mb-1">Start Date</p>
+                <p className="text-sm text-[#efeae2]">{project.start_date ? new Date(project.start_date).toLocaleDateString() : '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[#9a9585] mb-1">End Date</p>
+                <p className="text-sm text-[#efeae2]">{project.end_date ? new Date(project.end_date).toLocaleDateString() : '—'}</p>
+              </div>
+              {project.start_date && (
+                <div>
+                  <p className="text-xs text-[#9a9585] mb-1">Days Elapsed</p>
+                  <p className="text-sm text-[#efeae2]">{Math.max(0, Math.floor((Date.now() - new Date(project.start_date).getTime()) / 86400000))} days</p>
+                </div>
+              )}
+              {project.end_date && (
+                <div>
+                  <p className="text-xs text-[#9a9585] mb-1">Days Remaining</p>
+                  <p className={`text-sm font-medium ${new Date(project.end_date) < new Date() ? 'text-[#ef4444]' : 'text-[#efeae2]'}`}>
+                    {Math.ceil((new Date(project.end_date).getTime() - Date.now()) / 86400000)} days
+                  </p>
+                </div>
+              )}
+            </div>
+            {project.start_date && project.end_date && (
+              <div>
+                <div className="flex justify-between text-xs text-[#9a9585] mb-1">
+                  <span>Progress</span>
+                  <span>{Math.min(100, Math.max(0, Math.round(((Date.now() - new Date(project.start_date).getTime()) / (new Date(project.end_date).getTime() - new Date(project.start_date).getTime())) * 100)))}%</span>
+                </div>
+                <div className="h-2 bg-[#2e2d26] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#e6ab35] rounded-full"
+                    style={{ width: `${Math.min(100, Math.max(0, Math.round(((Date.now() - new Date(project.start_date).getTime()) / (new Date(project.end_date).getTime() - new Date(project.start_date).getTime())) * 100)))}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Paint Details */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Paint Details</h3>
+            <form onSubmit={mgmtSubmit(d => saveManagementMutation.mutate(d))} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="Paint Brand" {...mgmtReg('paint_brand')} placeholder="e.g. Sherwin Williams" />
+                <Input label="Number of Coats" type="number" {...mgmtReg('num_coats')} placeholder="2" />
+                <div className="col-span-2">
+                  <Input label="Paint Colors" {...mgmtReg('paint_colors')} placeholder="e.g. Agreeable Gray SW7029" />
+                </div>
+                <div className="col-span-2">
+                  <Textarea label="Special Finishes" rows={2} {...mgmtReg('special_finishes')} placeholder="Any special techniques or finishes..." />
+                </div>
+                <div className="col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-[#efeae2]">
+                    <input type="checkbox" {...mgmtReg('primer_used')} className="rounded border-[#2e2d26]" />
+                    Primer used
+                  </label>
+                </div>
+              </div>
+              <Button type="submit" loading={saveManagementMutation.isPending} size="sm">Save Paint Details</Button>
+            </form>
+          </div>
+
+          {/* Notes */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Notes</h3>
+            <form onSubmit={mgmtSubmit(d => saveManagementMutation.mutate(d))} className="space-y-4">
+              <Textarea label="Crew & Team Notes" rows={3} {...mgmtReg('crew_notes')} placeholder="Notes for the crew..." />
+              <Textarea label="Site Conditions" rows={3} {...mgmtReg('site_conditions')} placeholder="Site condition notes..." />
+              <Textarea label="Client Communication Notes" rows={3} {...mgmtReg('client_communication')} placeholder="Notes from client communications..." />
+              <Button type="submit" loading={saveManagementMutation.isPending} size="sm">Save Notes</Button>
+            </form>
+          </div>
+
+          {/* Project Tasks */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Project Tasks</h3>
+            {tasks.length === 0 ? (
+              <p className="text-sm text-[#9a9585]">No tasks yet. Add one below.</p>
+            ) : (
+              <div className="space-y-2">
+                {tasks.map(task => (
+                  <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group">
+                    <button
+                      type="button"
+                      onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: !task.completed })}
+                      className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.completed ? 'bg-[#e6ab35] border-[#e6ab35]' : 'border-[#2e2d26] hover:border-[#e6ab35]'}`}
+                    >
+                      {task.completed && <Check className="h-3 w-3 text-[#1d1c17]" />}
+                    </button>
+                    <span className={`flex-1 text-sm ${task.completed ? 'line-through text-[#9a9585]' : 'text-[#efeae2]'}`}>{task.description}</span>
+                    {task.due_date && (
+                      <span className={`text-xs ${new Date(task.due_date) < new Date() && !task.completed ? 'text-[#ef4444]' : 'text-[#9a9585]'}`}>
+                        {new Date(task.due_date).toLocaleDateString()}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => deleteTaskMutation.mutate(task.id)}
+                      className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all flex-shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add task form */}
+            <form onSubmit={taskSubmit(d => addTaskMutation.mutate(d))} className="flex gap-3 items-end">
+              <div className="flex-1">
+                <Input placeholder="Task description..." {...taskReg('description')} error={taskErrors.description?.message} />
+              </div>
+              <div>
+                <Input type="date" {...taskReg('due_date')} />
+              </div>
+              <Button type="submit" loading={addTaskMutation.isPending} size="sm">Add Task</Button>
+            </form>
+          </div>
+        </TabsContent>
       </Tabs>
 
       <AddActivityModal open={addActivityOpen} onClose={() => setAddActivityOpen(false)} customerId={customerId} projectId={projectId} />
+      <EditProjectModal
+        project={project}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['project', projectId] })}
+      />
+      <ConfirmModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={() => deleteProjectMutation.mutate()}
+        loading={deleteProjectMutation.isPending}
+        title="Delete Project"
+        description={`Delete "${project.title}"? This cannot be undone.`}
+      />
     </div>
   )
 }

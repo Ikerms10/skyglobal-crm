@@ -13,10 +13,12 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AddLeadDrawer } from '@/components/leads/AddLeadDrawer'
 import { toast } from 'sonner'
-import { Phone, Mail, MapPin, Tag, Plus, Edit2, Check, X, Building2, Briefcase, Target, Activity as ActivityIcon, Image } from 'lucide-react'
+import { Phone, Mail, MapPin, Tag, Plus, Edit2, Check, X, Building2, Briefcase, Target, Activity as ActivityIcon, Image, Pencil } from 'lucide-react'
 import Link from 'next/link'
 import { use } from 'react'
 import { AddActivityModal } from '@/components/customers/AddActivityModal'
+import { EditCustomerModal } from '@/components/customers/EditCustomerModal'
+import { NewProjectModal } from '@/components/projects/NewProjectModal'
 
 const ACTIVITY_ICONS: Record<string, string> = {
   'Call': '📞', 'Text': '💬', 'Email': '📧', 'Visit': '🏠',
@@ -31,6 +33,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const [tagInput, setTagInput] = useState('')
   const [addLeadOpen, setAddLeadOpen] = useState(false)
   const [addActivityOpen, setAddActivityOpen] = useState(false)
+  const [editCustomerOpen, setEditCustomerOpen] = useState(false)
+  const [newProjectOpen, setNewProjectOpen] = useState(false)
 
   const { data: customer, isLoading: loadingCustomer } = useQuery({
     queryKey: ['customer', id],
@@ -86,6 +90,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       return (data ?? []) as ProjectPhoto[]
     },
     enabled: projects.length > 0,
+  })
+
+  const deleteActivityMutation = useMutation({
+    mutationFn: async (activityId: string) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('activities').delete().eq('id', activityId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-activities', id] })
+      toast.success('Activity deleted')
+    },
   })
 
   const updateTagsMutation = useMutation({
@@ -227,9 +243,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <Button size="sm" variant="secondary" onClick={() => setAddLeadOpen(true)}>
             <Target className="h-4 w-4" /> New Lead
           </Button>
-          <Link href={`/customers/${id}/projects/new`}>
-            <Button size="sm"><Briefcase className="h-4 w-4" /> New Project</Button>
-          </Link>
+          <Button size="sm" onClick={() => setNewProjectOpen(true)}>
+            <Briefcase className="h-4 w-4" /> New Project
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => setEditCustomerOpen(true)}>
+            <Pencil className="h-4 w-4" /> Edit Customer
+          </Button>
         </div>
       </div>
 
@@ -334,7 +353,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           ) : (
             <div className="space-y-1">
               {activities.map((a, i) => (
-                <div key={a.id} className="flex gap-4">
+                <div key={a.id} className="flex gap-4 group">
                   <div className="flex flex-col items-center">
                     <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
                       {ACTIVITY_ICONS[a.type] ?? '📋'}
@@ -344,7 +363,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   <div className="pb-4 flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-medium text-white">{a.type}</p>
-                      <span className="text-xs text-[#9a9585] whitespace-nowrap">{formatRelativeTime(a.created_at)}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-[#9a9585] whitespace-nowrap">{formatRelativeTime(a.created_at)}</span>
+                        <button onClick={() => deleteActivityMutation.mutate(a.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all ml-2 flex-shrink-0">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                     {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
                   </div>
@@ -382,6 +406,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         onClose={() => setAddActivityOpen(false)}
         customerId={id}
       />
+      <EditCustomerModal customer={editCustomerOpen ? customer ?? null : null} onClose={() => setEditCustomerOpen(false)} />
+      <NewProjectModal open={newProjectOpen} onClose={() => setNewProjectOpen(false)} preselectedCustomerId={id} />
     </div>
   )
 }

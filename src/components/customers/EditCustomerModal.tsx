@@ -1,17 +1,17 @@
 'use client'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { Drawer } from '@/components/ui/Drawer'
+import { Customer } from '@/types'
+import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { toast } from 'sonner'
-import { useLocalStorageDraft } from '@/lib/hooks/useLocalStorageDraft'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -28,32 +28,49 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-export function AddCustomerDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const queryClient = useQueryClient()
-  const router = useRouter()
-  const defaultValues = {
-    name: '', email: '', phone: '', type: 'Residential', company_name: '',
-    address: '', city: '', state: 'FL', zip: '', referred_by: '', notes: '',
-  }
+interface EditCustomerModalProps {
+  customer: Customer | null
+  onClose: () => void
+}
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
+export function EditCustomerModal({ customer, onClose }: EditCustomerModalProps) {
+  const queryClient = useQueryClient()
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: {
+      name: '', email: '', phone: '', type: 'Residential', company_name: '',
+      address: '', city: '', state: 'FL', zip: '', referred_by: '', notes: '',
+    },
   })
 
-  const { clearDraft } = useLocalStorageDraft({ key: 'add-customer', watch, reset, defaultValues })
+  useEffect(() => {
+    if (customer) {
+      reset({
+        name: customer.name,
+        email: customer.email ?? '',
+        phone: customer.phone ?? '',
+        type: customer.type,
+        company_name: customer.company_name ?? '',
+        address: customer.address ?? '',
+        city: customer.city ?? '',
+        state: customer.state ?? '',
+        zip: customer.zip ?? '',
+        referred_by: customer.referred_by ?? '',
+        notes: customer.notes ?? '',
+      })
+    }
+  }, [customer, reset])
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
+      if (!customer) throw new Error('No customer selected')
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-      const { data: newCustomer, error } = await supabase.from('customers').insert({
-        user_id: user.id,
+      const { error } = await supabase.from('customers').update({
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
-        type: data.type,
+        type: data.type as Customer['type'],
         company_name: data.company_name || null,
         address: data.address || null,
         city: data.city || null,
@@ -61,24 +78,21 @@ export function AddCustomerDrawer({ open, onClose }: { open: boolean; onClose: (
         zip: data.zip || null,
         referred_by: data.referred_by || null,
         notes: data.notes || null,
-        tags: [],
-      }).select('id').single()
+        updated_at: new Date().toISOString(),
+      }).eq('id', customer.id)
       if (error) throw error
-      return newCustomer.id
     },
-    onSuccess: (customerId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
-      toast.success('Customer added!')
-      clearDraft()
-      reset(defaultValues)
+      if (customer) queryClient.invalidateQueries({ queryKey: ['customer', customer.id] })
+      toast.success('Customer updated')
       onClose()
-      router.push(`/customers/${customerId}`)
     },
-    onError: () => toast.error('Failed to add customer'),
+    onError: () => toast.error('Failed to update customer'),
   })
 
   return (
-    <Drawer open={open} onClose={onClose} title="Add Customer">
+    <Modal open={!!customer} onClose={onClose} title="Edit Customer" size="lg">
       <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-4">
         <Input label="Full Name" {...register('name')} error={errors.name?.message} required />
         <Select label="Type" {...register('type')} options={[{ value: 'Residential', label: 'Residential' }, { value: 'Commercial', label: 'Commercial' }]} />
@@ -97,9 +111,9 @@ export function AddCustomerDrawer({ open, onClose }: { open: boolean; onClose: (
         <Textarea label="Notes" rows={3} {...register('notes')} />
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button type="submit" loading={mutation.isPending} className="flex-1">Add Customer</Button>
+          <Button type="submit" loading={mutation.isPending} className="flex-1">Save Changes</Button>
         </div>
       </form>
-    </Drawer>
+    </Modal>
   )
 }

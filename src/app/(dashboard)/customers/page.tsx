@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { AddCustomerDrawer } from '@/components/customers/AddCustomerDrawer'
-import { Plus, Users, Phone, Mail, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import { EditCustomerModal } from '@/components/customers/EditCustomerModal'
+import { Plus, Users, Phone, Mail, Trash2, Pencil, ChevronUp, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useDebounce } from '@/lib/hooks/useDebounce'
@@ -23,6 +24,7 @@ export default function CustomersPage() {
   const [filterType, setFilterType] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const debouncedSearch = useDebounce(search, 300)
@@ -185,12 +187,20 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(customer.created_at)}</td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => setDeleteId(customer.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-[#9a9585] hover:text-[#ef4444] transition-all rounded"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={() => setEditCustomer(customer)}
+                          className="p-1.5 text-[#9a9585] hover:text-[#3583b3] transition-colors rounded"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteId(customer.id)}
+                          className="p-1.5 text-[#9a9585] hover:text-[#ef4444] transition-colors rounded"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -201,6 +211,7 @@ export default function CustomersPage() {
       )}
 
       <AddCustomerDrawer open={addOpen} onClose={() => setAddOpen(false)} />
+      <EditCustomerModal customer={editCustomer} onClose={() => setEditCustomer(null)} />
       <ConfirmModal
         open={!!deleteId}
         onClose={() => setDeleteId(null)}

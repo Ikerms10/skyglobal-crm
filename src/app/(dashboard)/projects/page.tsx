@@ -6,8 +6,10 @@ import { Project } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { TableSkeleton } from '@/components/ui/Skeleton'
 import { StatusBadge, PaymentBadge, Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Briefcase } from 'lucide-react'
+import { NewProjectModal } from '@/components/projects/NewProjectModal'
+import { Briefcase, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { cn } from '@/lib/utils'
@@ -22,6 +24,7 @@ export default function ProjectsPage() {
   const [filterPayment, setFilterPayment] = useState('')
   const [sortField, setSortField] = useState<SortField>('start_date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [newProjectOpen, setNewProjectOpen] = useState(false)
   const debouncedSearch = useDebounce(search, 300)
 
   const { data: projects = [], isLoading } = useQuery({
@@ -76,9 +79,12 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Projects</h1>
-        <p className="text-[#9a9585] text-sm">{projects.length} total projects</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Projects</h1>
+          <p className="text-[#9a9585] text-sm">{projects.length} total projects</p>
+        </div>
+        <Button onClick={() => setNewProjectOpen(true)}><Plus className="h-4 w-4" /> New Project</Button>
       </div>
 
       {/* Summary bar */}
@@ -173,6 +179,8 @@ export default function ProjectsPage() {
           </div>
         </div>
       )}
+
+      <NewProjectModal open={newProjectOpen} onClose={() => setNewProjectOpen(false)} />
     </div>
   )
 }
