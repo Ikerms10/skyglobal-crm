@@ -23,6 +23,7 @@ const schema = z.object({
   end_date: z.string().optional(),
   contract_value: z.string().optional(),
   amount_paid: z.string().optional(),
+  lead_cost: z.string().optional(),
   payment_status: z.string().min(1),
   notes: z.string().optional(),
 })
@@ -51,6 +52,7 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
       contract_value: '',
       amount_paid: '',
       payment_status: 'Unpaid',
+      lead_cost: '',
       notes: '',
     },
   })
@@ -67,6 +69,7 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
         end_date: project.end_date ?? '',
         contract_value: project.contract_value != null ? String(project.contract_value) : '',
         amount_paid: String(project.amount_paid ?? 0),
+        lead_cost: project.lead_cost != null ? String(project.lead_cost) : '',
         payment_status: project.payment_status,
         notes: project.notes ?? '',
       })
@@ -87,6 +90,7 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
         end_date: data.end_date || null,
         contract_value: data.contract_value ? Number(data.contract_value) : null,
         amount_paid: data.amount_paid ? Number(data.amount_paid) : 0,
+        lead_cost: data.lead_cost ? Number(data.lead_cost) : null,
         payment_status: data.payment_status as 'Unpaid' | 'Partial' | 'Paid' | 'Overdue',
         notes: data.notes || null,
         updated_at: new Date().toISOString(),
@@ -115,6 +119,7 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
           <Input label="End Date" type="date" {...register('end_date')} />
           <Input label="Contract Value ($)" type="number" step="0.01" {...register('contract_value')} />
           <Input label="Amount Paid ($)" type="number" step="0.01" {...register('amount_paid')} />
+          <Input label="Lead Cost ($)" type="number" step="0.01" {...register('lead_cost')} />
           <Select label="Payment Status" {...register('payment_status')} options={['Unpaid', 'Partial', 'Paid', 'Overdue'].map(s => ({ value: s, label: s }))} />
           <div className="col-span-2">
             <Input label="Address" {...register('address')} />

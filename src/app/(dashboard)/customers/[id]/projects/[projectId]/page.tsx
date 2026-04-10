@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { Project, ProjectLineItem, ProjectExpense, ProjectPhoto, Activity } from '@/types'
-import { formatCurrency, formatDate, formatRelativeTime, calculateProfit } from '@/lib/utils'
+import { formatCurrency, formatDate, formatRelativeTime, calculateProfit, calculateMargin } from '@/lib/utils'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { StatusBadge, PaymentBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -77,6 +77,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [editingLeadCost, setEditingLeadCost] = useState(false)
+  const [leadCostInput, setLeadCostInput] = useState('')
 
   const { data: project, isLoading: loadingProject } = useQuery({
     queryKey: ['project', projectId],
@@ -187,6 +189,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       queryClient.invalidateQueries({ queryKey: ['project-activities', projectId] })
       toast.success('Activity deleted')
     },
+  })
+
+  const saveLeadCostMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('projects').update({ lead_cost: value, updated_at: new Date().toISOString() }).eq('id', projectId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      setEditingLeadCost(false)
+      toast.success('Lead cost updated')
+    },
+    onError: () => toast.error('Failed to update lead cost'),
   })
 
   // Line items form
@@ -419,7 +435,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const lineItemsTotal = lineItems.reduce((sum, item) => sum + (item.total ?? 0), 0)
   const expensesTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
-  const profit = calculateProfit(project?.contract_value ?? null, expensesTotal)
+  const leadCost = project?.lead_cost ?? 0
+  const totalCosts = expensesTotal + leadCost
+  const contractValue = project?.contract_value ?? 0
+  const profit = calculateProfit(contractValue, totalCosts)
+  const margin = calculateMargin(contractValue, totalCosts)
+  const balanceDue = Math.max(0, contractValue - (project?.amount_paid ?? 0))
 
   const progressSteps = ['Scheduled', 'In Progress', 'Completed']
   const currentStep = progressSteps.indexOf(project?.status ?? 'Scheduled')
@@ -526,12 +547,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
+      {/* Financial Summary Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[#e6ab35]' },
+          { label: 'Lead Cost', value: formatCurrency(leadCost), color: 'text-[#9a9585]' },
+          { label: 'Project Costs', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
+          { label: 'Gross Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
+          { label: 'Profit Margin', value: `${margin}%`, color: margin >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
+          { label: 'Balance Due', value: formatCurrency(balanceDue), color: balanceDue > 0 ? 'text-[#ef4444]' : 'text-[#9a9585]' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+            <p className="text-xs text-[#9a9585] mb-1">{label}</p>
+            <p className={`text-lg font-bold ${color}`}>{value}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Tabs */}
       <Tabs defaultValue="overview">
         <TabsList className="overflow-x-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="scope">Scope of Work</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="costs">Costs &amp; Profit</TabsTrigger>
           <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="management">Management</TabsTrigger>
@@ -540,9 +578,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'Contract Value', value: formatCurrency(project.contract_value), color: 'text-[#e6ab35]' },
-              { label: 'Total Expenses', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
-              { label: 'Gross Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
+              { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[#e6ab35]' },
+              { label: 'Total Costs', value: formatCurrency(totalCosts), color: 'text-[#ef4444]' },
+              { label: 'Net Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
                 <p className="text-xs text-[#9a9585] mb-1">{label}</p>
@@ -626,14 +664,53 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <ConfirmModal open={!!deleteLineItem} onClose={() => setDeleteLineItem(null)} onConfirm={() => deleteLineItem && deleteLineItemMutation.mutate(deleteLineItem)} loading={deleteLineItemMutation.isPending} title="Remove Line Item" description="Remove this line item from the scope of work?" confirmLabel="Remove" />
         </TabsContent>
 
-        <TabsContent value="expenses" className="mt-6 space-y-4">
+        <TabsContent value="costs" className="mt-6 space-y-4">
+          {/* Lead Cost */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">Lead Acquisition Cost</p>
+                {editingLeadCost ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#9a9585]">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      autoFocus
+                      value={leadCostInput}
+                      onChange={e => setLeadCostInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') saveLeadCostMutation.mutate(Number(leadCostInput) || 0)
+                        if (e.key === 'Escape') setEditingLeadCost(false)
+                      }}
+                      className="w-32 bg-[#1d1c17] border border-[#3583b3] rounded-lg px-3 py-1 text-sm text-[#efeae2] focus:outline-none"
+                    />
+                    <button onClick={() => saveLeadCostMutation.mutate(Number(leadCostInput) || 0)} className="text-xs text-[#3583b3] hover:text-[#efeae2]">Save</button>
+                    <button onClick={() => setEditingLeadCost(false)} className="text-xs text-[#9a9585] hover:text-[#efeae2]">Cancel</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setLeadCostInput(String(leadCost)); setEditingLeadCost(true) }}
+                    className="text-lg font-bold text-[#9a9585] hover:text-[#efeae2] transition-colors flex items-center gap-2"
+                  >
+                    {formatCurrency(leadCost)}
+                    <Edit2 className="h-3 w-3 opacity-50" />
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-[#9a9585] max-w-xs text-right">Cost to acquire this lead (ads, referral fees, platform fees)</p>
+            </div>
+          </div>
+
           {loadingExpenses ? <TableSkeleton /> : (
             <>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Contract Value', value: formatCurrency(project.contract_value), color: 'text-[#e6ab35]' },
-                  { label: 'Total Costs', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
-                  { label: 'Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
+                  { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[#e6ab35]' },
+                  { label: 'Lead Cost', value: formatCurrency(leadCost), color: 'text-[#9a9585]' },
+                  { label: 'Project Costs', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
+                  { label: 'Net Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
                     <p className="text-xs text-[#9a9585] mb-1">{label}</p>

@@ -60,6 +60,7 @@ export interface Project {
   payment_status: PaymentStatus
   address: string | null
   description: string | null
+  lead_cost: number | null
   notes: string | null
   deleted_at: string | null
   created_at: string
