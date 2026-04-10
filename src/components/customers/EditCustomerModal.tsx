@@ -80,7 +80,7 @@ export function EditCustomerModal({ customer, onClose }: EditCustomerModalProps)
         notes: data.notes || null,
         updated_at: new Date().toISOString(),
       }).eq('id', customer.id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })

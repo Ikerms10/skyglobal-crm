@@ -96,7 +96,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
     mutationFn: async (activityId: string) => {
       const supabase = createClient()
       const { error } = await supabase.from('activities').delete().eq('id', activityId)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer-activities', id] })
@@ -108,7 +108,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
     mutationFn: async (tags: string[]) => {
       const supabase = createClient()
       const { error } = await supabase.from('customers').update({ tags }).eq('id', id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer', id] })

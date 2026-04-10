@@ -42,7 +42,7 @@ export function AddActivityModal({ open, onClose, customerId, projectId, leadId 
         type: data.type,
         content: data.content || null,
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer-activities', customerId] })

@@ -129,7 +129,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     mutationFn: async (status: string) => {
       const supabase = createClient()
       const { error } = await supabase.from('projects').update({ status, updated_at: new Date().toISOString() }).eq('id', projectId)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
@@ -147,7 +147,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         amount_paid: project?.contract_value ?? 0,
         updated_at: new Date().toISOString(),
       }).eq('id', projectId)
-      if (error) throw error
+      if (error) throw new Error(error.message)
       await supabase.from('activities').insert({
         user_id: user.id,
         customer_id: customerId,
@@ -168,7 +168,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     mutationFn: async () => {
       const supabase = createClient()
       const { error } = await supabase.from('projects').update({ deleted_at: new Date().toISOString() }).eq('id', projectId)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
@@ -183,7 +183,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     mutationFn: async (activityId: string) => {
       const supabase = createClient()
       const { error } = await supabase.from('activities').delete().eq('id', activityId)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-activities', projectId] })
@@ -195,7 +195,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     mutationFn: async (value: number) => {
       const supabase = createClient()
       const { error } = await supabase.from('projects').update({ lead_cost: value, updated_at: new Date().toISOString() }).eq('id', projectId)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
@@ -228,7 +228,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         unit_price: data.unit_price ? Number(data.unit_price) : null,
         total: data.total ? Number(data.total) : null,
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['line-items', projectId] })
@@ -242,7 +242,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     mutationFn: async (id: string) => {
       const supabase = createClient()
       const { error } = await supabase.from('project_line_items').delete().eq('id', id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['line-items', projectId] })
@@ -270,7 +270,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         amount: Number(data.amount),
         date: data.date,
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-expenses', projectId] })
@@ -284,7 +284,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     mutationFn: async (id: string) => {
       const supabase = createClient()
       const { error } = await supabase.from('project_expenses').delete().eq('id', id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-expenses', projectId] })
@@ -310,7 +310,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         url: publicUrl,
         label: photoLabel,
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
       await supabase.from('activities').insert({
         user_id: user.id,
         customer_id: customerId,
@@ -367,7 +367,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         client_communication: data.client_communication || null,
         updated_at: new Date().toISOString(),
       } as Record<string, unknown>).eq('id', projectId)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
@@ -402,7 +402,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         due_date: data.due_date || null,
         completed: false,
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] })
@@ -416,7 +416,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => {
       const supabase = createClient()
       const { error } = await supabase.from('project_tasks').update({ completed }).eq('id', id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] }),
   })
@@ -425,7 +425,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     mutationFn: async (id: string) => {
       const supabase = createClient()
       const { error } = await supabase.from('project_tasks').delete().eq('id', id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] })

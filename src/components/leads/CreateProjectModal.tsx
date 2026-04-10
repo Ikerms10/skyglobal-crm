@@ -73,7 +73,7 @@ export function CreateProjectModal({ lead, open, onClose, onCreated }: CreatePro
         .select()
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
 
       await supabase.from('activities').insert({
         user_id: user.id,

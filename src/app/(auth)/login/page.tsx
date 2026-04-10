@@ -45,7 +45,7 @@ export default function LoginPage() {
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
-      if (error) throw error
+      if (error) throw new Error(error.message)
       localStorage.removeItem('draft:login')
       toast.success('Welcome back!')
       router.push('/dashboard')

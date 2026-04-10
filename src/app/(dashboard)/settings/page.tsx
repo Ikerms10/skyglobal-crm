@@ -54,7 +54,7 @@ export default function SettingsPage() {
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.updateUser({ email: data.email })
-      if (error) throw error
+      if (error) throw new Error(error.message)
       toast.success('Profile updated')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update profile')
@@ -68,7 +68,7 @@ export default function SettingsPage() {
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.updateUser({ password: data.password })
-      if (error) throw error
+      if (error) throw new Error(error.message)
       toast.success('Password updated')
       passReset()
     } catch (err) {

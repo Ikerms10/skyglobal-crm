@@ -140,7 +140,7 @@ export default function LeadsPage() {
         .from('leads')
         .update({ stage, lost_reason: lostReason ?? null, updated_at: new Date().toISOString() })
         .eq('id', leadId)
-      if (error) throw error
+      if (error) throw new Error(error.message)
       await supabase.from('activities').insert({
         user_id: user.id,
         lead_id: leadId,

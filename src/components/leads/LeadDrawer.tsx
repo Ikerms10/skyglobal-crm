@@ -87,7 +87,7 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', lead!.id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
@@ -102,7 +102,7 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
     mutationFn: async () => {
       const supabase = createClient()
       const { error } = await supabase.from('leads').update({ deleted_at: new Date().toISOString() }).eq('id', lead!.id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })

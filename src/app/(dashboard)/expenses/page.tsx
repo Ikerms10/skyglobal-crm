@@ -94,7 +94,7 @@ export default function ExpensesPage() {
         date: data.date,
         recurring: data.recurring ?? false,
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
@@ -117,7 +117,7 @@ export default function ExpensesPage() {
         date: data.date,
         recurring: data.recurring ?? false,
       }).eq('id', editExpense.id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
@@ -144,7 +144,7 @@ export default function ExpensesPage() {
       const supabase = createClient()
       const { error } = await supabase.from('expenses')
         .update({ deleted_at: new Date().toISOString() }).eq('id', id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })

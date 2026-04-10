@@ -63,7 +63,7 @@ export function AddCustomerDrawer({ open, onClose }: { open: boolean; onClose: (
         notes: data.notes || null,
         tags: [],
       }).select('id').single()
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return newCustomer.id
     },
     onSuccess: (customerId) => {

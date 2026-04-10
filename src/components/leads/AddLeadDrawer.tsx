@@ -106,7 +106,7 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
           })
           .select('id')
           .single()
-        if (error) throw error
+        if (error) throw new Error(error.message)
         customerId = newCustomer.id
       }
 
@@ -120,7 +120,7 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
         notes: data.notes || null,
         follow_up_date: data.follow_up_date || null,
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
 
       if (customerId) {
         await supabase.from('activities').insert({

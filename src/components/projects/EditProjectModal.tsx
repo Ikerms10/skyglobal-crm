@@ -95,7 +95,7 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
         notes: data.notes || null,
         updated_at: new Date().toISOString(),
       }).eq('id', project.id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       if (project) queryClient.invalidateQueries({ queryKey: ['project', project.id] })

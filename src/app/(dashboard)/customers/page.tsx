@@ -51,7 +51,7 @@ export default function CustomersPage() {
       const { error } = await supabase.from('customers')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })

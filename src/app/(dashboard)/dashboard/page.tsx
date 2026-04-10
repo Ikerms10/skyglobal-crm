@@ -65,7 +65,9 @@ export default function DashboardPage() {
       const projectExpenses = projectExpensesRes.data ?? []
       const activities = activitiesRes.data ?? []
 
-      const revenue = projects.reduce((sum, p) => sum + (p.contract_value ?? 0), 0)
+      const revenue = projects
+        .filter(p => p.status === 'In Progress' || p.status === 'Completed')
+        .reduce((sum, p) => sum + (p.contract_value ?? 0), 0)
       const totalExpenses = [
         ...expenses.map(e => e.amount),
         ...projectExpenses.map(e => e.amount),

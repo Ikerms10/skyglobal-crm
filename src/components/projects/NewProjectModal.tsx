@@ -144,7 +144,7 @@ export function NewProjectModal({ open, onClose, preselectedCustomerId }: NewPro
         payment_status: data.payment_status as 'Unpaid' | 'Partial' | 'Paid' | 'Overdue',
         notes: data.notes || null,
       }).select('id').single()
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return { projectId: newProject.id, customerId: data.customer_id }
     },
     onSuccess: ({ projectId, customerId }) => {
