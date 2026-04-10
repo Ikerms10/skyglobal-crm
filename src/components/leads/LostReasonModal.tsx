@@ -36,7 +36,7 @@ export function LostReasonModal({ open, onClose, onConfirm, loading = false }: L
   return (
     <Modal open={open} onClose={handleClose} title="Mark Lead as Lost" size="sm">
       <div className="space-y-4">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-[#9a9585]">
           Optionally add a reason why this lead was lost to improve future tracking.
         </p>
 
@@ -48,8 +48,8 @@ export function LostReasonModal({ open, onClose, onConfirm, loading = false }: L
               onClick={() => setReason(r)}
               className={`px-3 py-1 rounded-full text-xs border transition-colors ${
                 reason === r
-                  ? 'bg-sky-500/20 border-sky-500 text-sky-400'
-                  : 'border-[#2a2d3a] text-slate-400 hover:border-[#3a3d4a] hover:text-white'
+                  ? 'bg-[#ef4444]/20 border-[#ef4444] text-[#ef4444]'
+                  : 'border-[#2e2d26] text-[#9a9585] hover:border-[#9a9585] hover:text-[#efeae2]'
               }`}
             >
               {r}

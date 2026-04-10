@@ -32,18 +32,18 @@ export function Drawer({ open, onClose, title, children, width = 'md' }: DrawerP
   return (
     <>
       <div
-        className={cn('fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity', open ? 'opacity-100' : 'opacity-0 pointer-events-none')}
+        className={cn('fixed inset-0 bg-[#1d1c17]/80 backdrop-blur-sm z-40 transition-opacity', open ? 'opacity-100' : 'opacity-0 pointer-events-none')}
         onClick={onClose}
       />
       <div className={cn(
-        'fixed right-0 top-0 h-full bg-[#1a1d27] border-l border-[#2a2d3a] shadow-2xl z-50 flex flex-col transition-transform duration-300 w-full',
+        'fixed right-0 top-0 h-full bg-[#252419] border-l border-[#2e2d26] shadow-2xl z-50 flex flex-col transition-transform duration-300 w-full',
         widths[width],
         open ? 'translate-x-0' : 'translate-x-full'
       )}>
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2d3a] flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#2e2d26] flex-shrink-0">
             <h2 className="text-lg font-semibold text-white">{title}</h2>
-            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors p-1 rounded">
+            <button onClick={onClose} className="text-[#9a9585] hover:text-[#efeae2] transition-colors p-1 rounded">
               <X className="h-5 w-5" />
             </button>
           </div>

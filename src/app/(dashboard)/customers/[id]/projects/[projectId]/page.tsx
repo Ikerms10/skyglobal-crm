@@ -273,17 +273,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return <div className="p-4 md:p-6 space-y-6"><Skeleton className="h-32" /><Skeleton className="h-64" /></div>
   }
 
-  if (!project) return <div className="p-6 text-slate-400">Project not found.</div>
+  if (!project) return <div className="p-6 text-[#9a9585]">Project not found.</div>
 
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Back */}
-      <Link href={`/customers/${customerId}`} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
+      <Link href={`/customers/${customerId}`} className="flex items-center gap-2 text-[#9a9585] hover:text-[#efeae2] transition-colors text-sm">
         <ArrowLeft className="h-4 w-4" /> Back to {project.customers?.name}
       </Link>
 
       {/* Project Header */}
-      <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -291,15 +291,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <StatusBadge status={project.status} />
               <Badge variant={project.type === 'Commercial' ? 'purple' : 'info'}>{project.type}</Badge>
             </div>
-            <Link href={`/customers/${customerId}`} className="text-sky-400 hover:underline text-sm">
+            <Link href={`/customers/${customerId}`} className="text-[#3583b3] hover:underline text-sm">
               {project.customers?.name}
             </Link>
             {project.address && (
-              <div className="flex items-center gap-1 mt-1 text-slate-400 text-sm">
+              <div className="flex items-center gap-1 mt-1 text-[#9a9585] text-sm">
                 <MapPin className="h-4 w-4" />{project.address}
               </div>
             )}
-            <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-400">
+            <div className="flex flex-wrap gap-4 mt-3 text-sm text-[#9a9585]">
               {project.start_date && <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />Start: {formatDate(project.start_date)}</span>}
               {project.end_date && <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />End: {formatDate(project.end_date)}</span>}
             </div>
@@ -307,17 +307,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
           <div className="flex flex-col gap-2 md:text-right">
             <div>
-              <p className="text-2xl font-bold text-green-400">{formatCurrency(project.contract_value)}</p>
-              <p className="text-xs text-slate-400">Contract value</p>
+              <p className="text-2xl font-bold text-[#e6ab35]">{formatCurrency(project.contract_value)}</p>
+              <p className="text-xs text-[#9a9585]">Contract value</p>
             </div>
             <div>
-              <p className="text-lg font-semibold text-white">{formatCurrency(project.amount_paid)}</p>
-              <p className="text-xs text-slate-400">Paid</p>
+              <p className="text-lg font-semibold text-[#efeae2]">{formatCurrency(project.amount_paid)}</p>
+              <p className="text-xs text-[#9a9585]">Paid</p>
             </div>
             <div className="flex items-center md:justify-end gap-2">
               <PaymentBadge status={project.payment_status} />
               {project.payment_status !== 'Paid' && (
-                <span className="text-sm text-red-400 font-medium">
+                <span className="text-sm text-[#ef4444] font-medium">
                   {formatCurrency((project.contract_value ?? 0) - project.amount_paid)} due
                 </span>
               )}
@@ -326,7 +326,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#2a2d3a]">
+        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#2e2d26]">
           {project.payment_status !== 'Paid' && (
             <Button size="sm" variant="secondary" onClick={() => markPaidMutation.mutate()} loading={markPaidMutation.isPending}>
               <DollarSign className="h-4 w-4" /> Mark Paid
@@ -348,18 +348,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Progress bar */}
-        <div className="mt-4 pt-4 border-t border-[#2a2d3a]">
+        <div className="mt-4 pt-4 border-t border-[#2e2d26]">
           <div className="flex items-center gap-0">
             {progressSteps.map((step, i) => (
               <div key={step} className="flex items-center flex-1">
-                <div className={`h-2 flex-1 rounded-full ${i <= currentStep ? 'bg-sky-500' : 'bg-[#2a2d3a]'}`} />
-                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${i <= currentStep ? 'bg-sky-500' : 'bg-[#2a2d3a]'}`} />
+                <div className={`h-2 flex-1 rounded-full ${i <= currentStep ? 'bg-[#e6ab35]' : 'bg-[#2e2d26]'}`} />
+                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${i <= currentStep ? 'bg-[#e6ab35]' : 'bg-[#2e2d26]'}`} />
               </div>
             ))}
           </div>
           <div className="flex justify-between mt-1">
             {progressSteps.map(s => (
-              <span key={s} className="text-xs text-slate-500">{s}</span>
+              <span key={s} className="text-xs text-[#9a9585]">{s}</span>
             ))}
           </div>
         </div>
@@ -378,26 +378,26 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'Contract Value', value: formatCurrency(project.contract_value), color: 'text-green-400' },
-              { label: 'Total Expenses', value: formatCurrency(expensesTotal), color: 'text-red-400' },
-              { label: 'Gross Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-sky-400' : 'text-red-400' },
+              { label: 'Contract Value', value: formatCurrency(project.contract_value), color: 'text-[#e6ab35]' },
+              { label: 'Total Expenses', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
+              { label: 'Gross Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-                <p className="text-xs text-slate-400 mb-1">{label}</p>
+              <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+                <p className="text-xs text-[#9a9585] mb-1">{label}</p>
                 <p className={`text-xl font-bold ${color}`}>{value}</p>
               </div>
             ))}
           </div>
           {project.description && (
-            <div className="mt-4 bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Description</p>
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{project.description}</p>
+            <div className="mt-4 bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+              <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Description</p>
+              <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{project.description}</p>
             </div>
           )}
           {project.notes && (
-            <div className="mt-4 bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Notes</p>
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{project.notes}</p>
+            <div className="mt-4 bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+              <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Notes</p>
+              <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{project.notes}</p>
             </div>
           )}
         </TabsContent>
@@ -405,36 +405,36 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         <TabsContent value="scope" className="mt-6 space-y-4">
           {loadingLineItems ? <TableSkeleton /> : (
             <>
-              <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl overflow-hidden">
+              <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
                 {lineItems.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500 text-sm">No line items yet. Add scope of work below.</div>
+                  <div className="p-8 text-center text-[#9a9585] text-sm">No line items yet. Add scope of work below.</div>
                 ) : (
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#2a2d3a]">
+                      <tr className="border-b-2 border-b-[#e6ab35]">
                         {['Description', 'Qty', 'Unit', 'Unit Price', 'Total', ''].map(h => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">{h}</th>
+                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {lineItems.map(item => (
-                        <tr key={item.id} className="border-b border-[#2a2d3a] hover:bg-[#0f1117] group">
-                          <td className="px-4 py-3 text-sm text-white">{item.description}</td>
-                          <td className="px-4 py-3 text-sm text-slate-300">{item.quantity ?? '—'}</td>
-                          <td className="px-4 py-3 text-sm text-slate-300">{item.unit ?? '—'}</td>
-                          <td className="px-4 py-3 text-sm text-slate-300">{item.unit_price ? formatCurrency(item.unit_price) : '—'}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-green-400">{item.total ? formatCurrency(item.total) : '—'}</td>
+                      {lineItems.map((item, i) => (
+                        <tr key={item.id} className={`border-b border-[#2e2d26] group ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
+                          <td className="px-4 py-3 text-sm text-[#efeae2]">{item.description}</td>
+                          <td className="px-4 py-3 text-sm text-[#9a9585]">{item.quantity ?? '—'}</td>
+                          <td className="px-4 py-3 text-sm text-[#9a9585]">{item.unit ?? '—'}</td>
+                          <td className="px-4 py-3 text-sm text-[#9a9585]">{item.unit_price ? formatCurrency(item.unit_price) : '—'}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{item.total ? formatCurrency(item.total) : '—'}</td>
                           <td className="px-4 py-3">
-                            <button onClick={() => setDeleteLineItem(item.id)} className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all p-1">
+                            <button onClick={() => setDeleteLineItem(item.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all p-1">
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </td>
                         </tr>
                       ))}
-                      <tr className="bg-[#0f1117]">
-                        <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-white text-right">Subtotal</td>
-                        <td className="px-4 py-3 text-lg font-bold text-green-400">{formatCurrency(lineItemsTotal)}</td>
+                      <tr className="bg-[#1d1c17]">
+                        <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-[#efeae2] text-right">Subtotal</td>
+                        <td className="px-4 py-3 text-lg font-bold text-[#e6ab35]">{formatCurrency(lineItemsTotal)}</td>
                         <td />
                       </tr>
                     </tbody>
@@ -443,7 +443,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* Add line item form */}
-              <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
+              <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
                 <h3 className="text-sm font-semibold text-white mb-3">Add Line Item</h3>
                 <form onSubmit={liSubmit(d => addLineItemMutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div className="col-span-2 md:col-span-2">
@@ -469,38 +469,38 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <>
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: 'Contract Value', value: formatCurrency(project.contract_value), color: 'text-green-400' },
-                  { label: 'Total Costs', value: formatCurrency(expensesTotal), color: 'text-red-400' },
-                  { label: 'Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-sky-400' : 'text-red-400' },
+                  { label: 'Contract Value', value: formatCurrency(project.contract_value), color: 'text-[#e6ab35]' },
+                  { label: 'Total Costs', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
+                  { label: 'Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
                 ].map(({ label, value, color }) => (
-                  <div key={label} className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-                    <p className="text-xs text-slate-400 mb-1">{label}</p>
+                  <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+                    <p className="text-xs text-[#9a9585] mb-1">{label}</p>
                     <p className={`text-lg font-bold ${color}`}>{value}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl overflow-hidden">
+              <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
                 {expenses.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500 text-sm">No expenses logged for this project.</div>
+                  <div className="p-8 text-center text-[#9a9585] text-sm">No expenses logged for this project.</div>
                 ) : (
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#2a2d3a]">
+                      <tr className="border-b-2 border-b-[#e6ab35]">
                         {['Date', 'Category', 'Description', 'Amount', ''].map(h => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase">{h}</th>
+                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {expenses.map(exp => (
-                        <tr key={exp.id} className="border-b border-[#2a2d3a] hover:bg-[#0f1117] group">
-                          <td className="px-4 py-3 text-sm text-slate-400">{formatDate(exp.date)}</td>
-                          <td className="px-4 py-3 text-sm text-slate-300">{exp.category}</td>
-                          <td className="px-4 py-3 text-sm text-slate-300">{exp.description ?? '—'}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-red-400">{formatCurrency(exp.amount)}</td>
+                      {expenses.map((exp, i) => (
+                        <tr key={exp.id} className={`border-b border-[#2e2d26] group ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
+                          <td className="px-4 py-3 text-sm text-[#9a9585]">{formatDate(exp.date)}</td>
+                          <td className="px-4 py-3 text-sm text-[#efeae2]">{exp.category}</td>
+                          <td className="px-4 py-3 text-sm text-[#efeae2]">{exp.description ?? '—'}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-[#ef4444]">{formatCurrency(exp.amount)}</td>
                           <td className="px-4 py-3">
-                            <button onClick={() => setDeleteExpense(exp.id)} className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all p-1">
+                            <button onClick={() => setDeleteExpense(exp.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all p-1">
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </td>
@@ -512,7 +512,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* Add expense */}
-              <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
+              <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
                 <h3 className="text-sm font-semibold text-white mb-3">Add Expense</h3>
                 <form onSubmit={expSubmit(d => addExpenseMutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <Select {...expReg('category')} options={['Labor','Materials','Subcontractors','Fuel','Tools','Other'].map(c => ({ value: c, label: c }))} />
@@ -530,11 +530,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
         <TabsContent value="photos" className="mt-6 space-y-4">
           {/* Upload section */}
-          <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
             <h3 className="text-sm font-semibold text-white mb-3">Upload Photo</h3>
             <div className="flex flex-wrap items-center gap-3">
               <select value={photoLabel} onChange={e => setPhotoLabel(e.target.value as 'Before' | 'During' | 'After')}
-                className="bg-[#0f1117] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]">
                 <option value="Before">Before</option>
                 <option value="During">During</option>
                 <option value="After">After</option>
@@ -572,13 +572,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 if (!labelPhotos.length) return null
                 return (
                   <div key={label}>
-                    <h3 className="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider">{label}</h3>
+                    <h3 className="text-sm font-semibold text-[#9a9585] mb-2 uppercase tracking-wider">{label}</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {labelPhotos.map(photo => (
                         <div key={photo.id} className="relative group">
                           <img src={photo.url} alt={`${label} photo`} className="w-full h-40 object-cover rounded-lg" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                            <a href={photo.url} target="_blank" rel="noopener noreferrer" className="text-white text-xs bg-[#0f1117] px-2 py-1 rounded">View</a>
+                            <a href={photo.url} target="_blank" rel="noopener noreferrer" className="text-white text-xs bg-[#1d1c17] px-2 py-1 rounded">View</a>
                           </div>
                         </div>
                       ))}
@@ -603,17 +603,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {activities.map((a, i) => (
                 <div key={a.id} className="flex gap-4">
                   <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-[#2a2d3a] flex items-center justify-center text-sm flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
                       {ACTIVITY_ICONS[a.type] ?? '📋'}
                     </div>
-                    {i < activities.length - 1 && <div className="w-0.5 bg-[#2a2d3a] flex-1 my-1" />}
+                    {i < activities.length - 1 && <div className="w-0.5 bg-[#2e2d26] flex-1 my-1" />}
                   </div>
                   <div className="pb-4 flex-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-white">{a.type}</p>
-                      <span className="text-xs text-slate-500">{formatRelativeTime(a.created_at)}</span>
+                      <span className="text-xs text-[#9a9585]">{formatRelativeTime(a.created_at)}</span>
                     </div>
-                    {a.content && <p className="text-sm text-slate-400 mt-0.5">{a.content}</p>}
+                    {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
                   </div>
                 </div>
               ))}

@@ -82,8 +82,8 @@ export default function CustomersPage() {
 
   const SortIcon = ({ field }: { field: SortField }) => (
     <span className="ml-1 inline-flex flex-col">
-      <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-sky-400' : 'text-slate-600')} />
-      <ChevronDown className={cn('h-3 w-3 -mt-1', sortField === field && sortDir === 'desc' ? 'text-sky-400' : 'text-slate-600')} />
+      <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
+      <ChevronDown className={cn('h-3 w-3 -mt-1', sortField === field && sortDir === 'desc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
     </span>
   )
 
@@ -92,7 +92,7 @@ export default function CustomersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Customers</h1>
-          <p className="text-slate-400 text-sm">{customers.length} total customers</p>
+          <p className="text-[#9a9585] text-sm">{customers.length} total customers</p>
         </div>
         <Button onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4" /> Add Customer
@@ -104,12 +104,12 @@ export default function CustomersPage() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search customers..."
-          className="bg-[#1a1d27] border border-[#2a2d3a] text-white placeholder-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-64"
+          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] w-64"
         />
         <select
           value={filterType}
           onChange={e => setFilterType(e.target.value)}
-          className="bg-[#1a1d27] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
         >
           <option value="">All Types</option>
           <option value="Residential">Residential</option>
@@ -125,11 +125,11 @@ export default function CustomersPage() {
           action={{ label: 'Add Customer', onClick: () => setAddOpen(true) }}
         />
       ) : (
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl overflow-hidden">
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#2a2d3a]">
+                <tr className="border-b-2 border-b-[#e6ab35]">
                   {[
                     { label: 'Name', field: 'name' as SortField },
                     { label: 'Type', field: 'type' as SortField },
@@ -142,7 +142,7 @@ export default function CustomersPage() {
                   ].map(({ label, field }) => (
                     <th key={label}
                       onClick={field ? () => handleSort(field) : undefined}
-                      className={cn('text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-white select-none')}
+                      className={cn('text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[#e6ab35] select-none')}
                     >
                       {label}{field && <SortIcon field={field} />}
                     </th>
@@ -150,44 +150,44 @@ export default function CustomersPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(customer => (
-                  <tr key={customer.id} className="border-b border-[#2a2d3a] hover:bg-[#0f1117] transition-colors group">
+                {filtered.map((customer, i) => (
+                  <tr key={customer.id} className={cn('border-b border-[#2e2d26] transition-colors group', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}>
                     <td className="px-4 py-3">
-                      <Link href={`/customers/${customer.id}`} className="text-sm font-medium text-white hover:text-sky-400 transition-colors">
+                      <Link href={`/customers/${customer.id}`} className="text-sm font-medium text-[#efeae2] hover:text-[#3583b3] transition-colors">
                         {customer.name}
                       </Link>
-                      {customer.company_name && <p className="text-xs text-slate-400">{customer.company_name}</p>}
+                      {customer.company_name && <p className="text-xs text-[#9a9585]">{customer.company_name}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
                     </td>
                     <td className="px-4 py-3">
                       {customer.phone ? (
-                        <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-sm text-slate-300 hover:text-sky-400 transition-colors">
+                        <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-sm text-[#efeae2] hover:text-[#3583b3] transition-colors">
                           <Phone className="h-3 w-3" />{customer.phone}
                         </a>
-                      ) : <span className="text-slate-600">—</span>}
+                      ) : <span className="text-[#9a9585]">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       {customer.email ? (
-                        <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-sm text-slate-300 hover:text-sky-400 transition-colors">
+                        <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-sm text-[#efeae2] hover:text-[#3583b3] transition-colors">
                           <Mail className="h-3 w-3" /><span className="truncate max-w-[180px]">{customer.email}</span>
                         </a>
-                      ) : <span className="text-slate-600">—</span>}
+                      ) : <span className="text-[#9a9585]">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{customer.city ?? '—'}</td>
+                    <td className="px-4 py-3 text-sm text-[#9a9585]">{customer.city ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {customer.tags?.slice(0, 3).map(tag => (
-                          <span key={tag} className="text-xs px-1.5 py-0.5 bg-[#2a2d3a] text-slate-300 rounded">{tag}</span>
+                          <span key={tag} className="text-xs px-1.5 py-0.5 bg-[#2e2d26] text-[#efeae2] rounded">{tag}</span>
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{formatDate(customer.created_at)}</td>
+                    <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(customer.created_at)}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setDeleteId(customer.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-400 transition-all rounded"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-[#9a9585] hover:text-[#ef4444] transition-all rounded"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

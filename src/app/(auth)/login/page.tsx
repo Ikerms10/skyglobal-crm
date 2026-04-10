@@ -62,38 +62,38 @@ export default function LoginPage() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div>
         <h2 className="text-xl font-semibold text-white mb-1">Sign in</h2>
-        <p className="text-slate-400 text-sm">Access your CRM dashboard</p>
+        <p className="text-[#9a9585] text-sm">Access your CRM dashboard</p>
       </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-300">Email</label>
+        <label className="block text-sm font-medium text-[#efeae2]">Email</label>
         <input
           {...register('email')}
           type="email"
           placeholder="you@example.com"
-          className="w-full bg-[#0f1117] border border-[#2a2d3a] text-white placeholder-slate-500 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+          className="w-full bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
         />
-        {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+        {errors.email && <p className="text-xs text-[#ef4444]">{errors.email.message}</p>}
       </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-300">Password</label>
+        <label className="block text-sm font-medium text-[#efeae2]">Password</label>
         <input
           {...register('password')}
           type="password"
           placeholder="••••••••"
-          className="w-full bg-[#0f1117] border border-[#2a2d3a] text-white placeholder-slate-500 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+          className="w-full bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
         />
-        {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+        {errors.password && <p className="text-xs text-[#ef4444]">{errors.password.message}</p>}
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+        className="w-full bg-[#e6ab35] hover:bg-[#d4982e] disabled:opacity-50 text-[#1d1c17] font-semibold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
       >
         {loading ? (
           <><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Signing in...</>
         ) : 'Sign in'}
       </button>
-      <p className="text-center text-xs text-slate-600">
+      <p className="text-center text-xs text-[#9a9585]">
         SkyGlobal Renovations — Internal Access Only
       </p>
     </form>

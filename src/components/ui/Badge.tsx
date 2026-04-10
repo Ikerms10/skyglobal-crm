@@ -9,12 +9,12 @@ interface BadgeProps {
 
 export function Badge({ children, className, variant = 'default' }: BadgeProps) {
   const variants = {
-    default: 'bg-slate-700 text-slate-200',
-    success: 'bg-green-900/50 text-green-400',
-    warning: 'bg-yellow-900/50 text-yellow-400',
-    danger: 'bg-red-900/50 text-red-400',
-    info: 'bg-sky-900/50 text-sky-400',
-    purple: 'bg-purple-900/50 text-purple-400',
+    default: 'bg-[#2e2d26] text-[#efeae2]',
+    success: 'bg-[#e6ab35] text-[#1d1c17]',
+    warning: 'bg-[#e6ab35]/20 text-[#e6ab35]',
+    danger: 'bg-[#ef4444]/20 text-[#ef4444]',
+    info: 'bg-[#3583b3] text-white',
+    purple: 'bg-[#3583b3]/20 text-[#3583b3]',
   }
   return (
     <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-medium', variants[variant], className)}>
@@ -26,7 +26,7 @@ export function Badge({ children, className, variant = 'default' }: BadgeProps) 
 export function StageBadge({ stage }: { stage: LeadStage }) {
   const config: Record<LeadStage, { label: string; variant: BadgeProps['variant'] }> = {
     'New Lead': { label: 'New Lead', variant: 'info' },
-    'Estimate Sent': { label: 'Estimate Sent', variant: 'purple' },
+    'Estimate Sent': { label: 'Estimate Sent', variant: 'warning' },
     'Follow-up': { label: 'Follow-up', variant: 'warning' },
     'Negotiating': { label: 'Negotiating', variant: 'warning' },
     'Won': { label: 'Won', variant: 'success' },
@@ -39,14 +39,14 @@ export function StageBadge({ stage }: { stage: LeadStage }) {
 
 export function SourceBadge({ source }: { source: LeadSource }) {
   const colors: Record<LeadSource, string> = {
-    Thumbtack: 'bg-orange-900/50 text-orange-400',
-    Referral: 'bg-green-900/50 text-green-400',
-    Google: 'bg-blue-900/50 text-blue-400',
-    Instagram: 'bg-pink-900/50 text-pink-400',
-    'Door Knock': 'bg-slate-700 text-slate-300',
-    Facebook: 'bg-indigo-900/50 text-indigo-400',
-    Yelp: 'bg-red-900/50 text-red-400',
-    Other: 'bg-slate-700 text-slate-300',
+    Thumbtack: 'bg-orange-900/30 text-orange-400',
+    Referral: 'bg-[#e6ab35]/20 text-[#e6ab35]',
+    Google: 'bg-[#3583b3]/20 text-[#3583b3]',
+    Instagram: 'bg-pink-900/30 text-pink-400',
+    'Door Knock': 'bg-[#2e2d26] text-[#efeae2]',
+    Facebook: 'bg-[#3583b3]/20 text-[#3583b3]',
+    Yelp: 'bg-[#ef4444]/20 text-[#ef4444]',
+    Other: 'bg-[#2e2d26] text-[#efeae2]',
   }
   return (
     <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-medium', colors[source])}>

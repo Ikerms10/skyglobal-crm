@@ -20,7 +20,7 @@ export function ConfirmModal({
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
       <div className="space-y-4">
-        <p className="text-slate-400 text-sm">{description}</p>
+        <p className="text-[#9a9585] text-sm">{description}</p>
         <div className="flex gap-3 justify-end">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button variant="danger" onClick={onConfirm} loading={loading}>{confirmLabel}</Button>

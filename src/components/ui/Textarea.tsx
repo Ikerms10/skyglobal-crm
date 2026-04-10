@@ -11,18 +11,18 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
     return (
       <div className="space-y-1">
-        {label && <label htmlFor={inputId} className="block text-sm font-medium text-slate-300">{label}</label>}
+        {label && <label htmlFor={inputId} className="block text-sm font-medium text-[#efeae2]">{label}</label>}
         <textarea
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full bg-[#1a1d27] border border-[#2a2d3a] text-white placeholder-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors resize-none',
-            error && 'border-red-500',
+            'w-full bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] transition-colors resize-none',
+            error && 'border-[#ef4444]',
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-[#ef4444]">{error}</p>}
       </div>
     )
   }

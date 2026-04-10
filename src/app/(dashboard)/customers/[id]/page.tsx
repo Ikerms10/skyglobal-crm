@@ -127,12 +127,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
     )
   }
 
-  if (!customer) return <div className="p-6 text-slate-400">Customer not found.</div>
+  if (!customer) return <div className="p-6 text-[#9a9585]">Customer not found.</div>
 
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <Avatar name={customer.name} size="lg" />
           <div className="flex-1 min-w-0">
@@ -141,18 +141,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
             </div>
             {customer.company_name && (
-              <div className="flex items-center gap-1 text-slate-400 text-sm mb-2">
+              <div className="flex items-center gap-1 text-[#9a9585] text-sm mb-2">
                 <Building2 className="h-4 w-4" />{customer.company_name}
               </div>
             )}
-            <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-3">
+            <div className="flex flex-wrap gap-4 text-sm text-[#9a9585] mb-3">
               {customer.phone && (
-                <a href={`tel:${customer.phone}`} className="flex items-center gap-1 hover:text-sky-400 transition-colors">
+                <a href={`tel:${customer.phone}`} className="flex items-center gap-1 hover:text-[#3583b3] transition-colors">
                   <Phone className="h-4 w-4" />{customer.phone}
                 </a>
               )}
               {customer.email && (
-                <a href={`mailto:${customer.email}`} className="flex items-center gap-1 hover:text-sky-400 transition-colors">
+                <a href={`mailto:${customer.email}`} className="flex items-center gap-1 hover:text-[#3583b3] transition-colors">
                   <Mail className="h-4 w-4" />{customer.email}
                 </a>
               )}
@@ -166,11 +166,11 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
             {/* Tags */}
             <div className="flex flex-wrap items-center gap-2">
-              <Tag className="h-4 w-4 text-slate-500" />
+              <Tag className="h-4 w-4 text-[#9a9585]" />
               {customer.tags?.map(tag => (
-                <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-[#2a2d3a] text-slate-300 rounded-full">
+                <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-[#2e2d26] text-[#efeae2] rounded-full">
                   {tag}
-                  <button onClick={() => removeTag(tag)} className="hover:text-red-400 transition-colors">
+                  <button onClick={() => removeTag(tag)} className="hover:text-[#ef4444] transition-colors">
                     <X className="h-3 w-3" />
                   </button>
                 </span>
@@ -182,14 +182,14 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     onChange={e => setTagInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
                     placeholder="Add tag..."
-                    className="text-xs bg-[#0f1117] border border-[#2a2d3a] text-white rounded px-2 py-0.5 w-24 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="text-xs bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded px-2 py-0.5 w-24 focus:outline-none focus:ring-1 focus:ring-[#3583b3]"
                     autoFocus
                   />
-                  <button onClick={addTag} className="text-green-400"><Check className="h-4 w-4" /></button>
-                  <button onClick={() => setEditingTags(false)} className="text-slate-400"><X className="h-4 w-4" /></button>
+                  <button onClick={addTag} className="text-[#e6ab35]"><Check className="h-4 w-4" /></button>
+                  <button onClick={() => setEditingTags(false)} className="text-[#9a9585]"><X className="h-4 w-4" /></button>
                 </div>
               ) : (
-                <button onClick={() => setEditingTags(true)} className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1">
+                <button onClick={() => setEditingTags(true)} className="text-xs text-[#3583b3] hover:text-[#efeae2] flex items-center gap-1">
                   <Plus className="h-3 w-3" /> Add tag
                 </button>
               )}
@@ -199,18 +199,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {/* Stats */}
           <div className="flex md:flex-col gap-4 md:text-right">
             <div>
-              <p className="text-2xl font-bold text-green-400">{formatCurrency(totalRevenue)}</p>
-              <p className="text-xs text-slate-400">Lifetime revenue</p>
+              <p className="text-2xl font-bold text-[#e6ab35]">{formatCurrency(totalRevenue)}</p>
+              <p className="text-xs text-[#9a9585]">Lifetime revenue</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{completedProjects}</p>
-              <p className="text-xs text-slate-400">Completed jobs</p>
+              <p className="text-xs text-[#9a9585]">Completed jobs</p>
             </div>
           </div>
         </div>
 
         {/* Quick actions */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#2a2d3a]">
+        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#2e2d26]">
           {customer.phone && (
             <a href={`tel:${customer.phone}`}>
               <Button size="sm" variant="secondary"><Phone className="h-4 w-4" /> Call</Button>
@@ -246,27 +246,27 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         <TabsContent value="overview" className="mt-6 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Total Revenue', value: formatCurrency(totalRevenue), color: 'text-green-400' },
-              { label: 'Active Projects', value: String(projects.filter(p => ['Scheduled','In Progress'].includes(p.status)).length), color: 'text-sky-400' },
-              { label: 'Total Leads', value: String(leads.length), color: 'text-purple-400' },
-              { label: 'Won Leads', value: String(leads.filter(l => l.stage === 'Won').length), color: 'text-green-400' },
+              { label: 'Total Revenue', value: formatCurrency(totalRevenue), color: 'text-[#e6ab35]' },
+              { label: 'Active Projects', value: String(projects.filter(p => ['Scheduled','In Progress'].includes(p.status)).length), color: 'text-[#3583b3]' },
+              { label: 'Total Leads', value: String(leads.length), color: 'text-[#3583b3]' },
+              { label: 'Won Leads', value: String(leads.filter(l => l.stage === 'Won').length), color: 'text-[#e6ab35]' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-                <p className="text-xs text-slate-400 mb-1">{label}</p>
+              <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+                <p className="text-xs text-[#9a9585] mb-1">{label}</p>
                 <p className={`text-xl font-bold ${color}`}>{value}</p>
               </div>
             ))}
           </div>
           {customer.notes && (
-            <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Notes</p>
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{customer.notes}</p>
+            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+              <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Notes</p>
+              <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{customer.notes}</p>
             </div>
           )}
           {customer.referred_by && (
-            <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Referred by</p>
-              <p className="text-sm text-slate-300">{customer.referred_by}</p>
+            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+              <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">Referred by</p>
+              <p className="text-sm text-[#efeae2]">{customer.referred_by}</p>
             </div>
           )}
         </TabsContent>
@@ -275,28 +275,28 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {loadingProjects ? <TableSkeleton /> : projects.length === 0 ? (
             <EmptyState icon={Briefcase} title="No projects yet" description="Projects appear here when a lead is won." />
           ) : (
-            <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl overflow-hidden">
+            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#2a2d3a]">
+                  <tr className="border-b-2 border-b-[#e6ab35]">
                     {['Title', 'Status', 'Type', 'Contract', 'Payment', 'Dates'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {projects.map(p => (
-                    <tr key={p.id} className="border-b border-[#2a2d3a] hover:bg-[#0f1117] transition-colors">
+                  {projects.map((p, i) => (
+                    <tr key={p.id} className={`border-b border-[#2e2d26] transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
                       <td className="px-4 py-3">
-                        <Link href={`/customers/${id}/projects/${p.id}`} className="text-sm font-medium text-white hover:text-sky-400 transition-colors">
+                        <Link href={`/customers/${id}/projects/${p.id}`} className="text-sm font-medium text-[#efeae2] hover:text-[#3583b3] transition-colors">
                           {p.title}
                         </Link>
                       </td>
                       <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
                       <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
-                      <td className="px-4 py-3 text-sm text-white font-medium">{formatCurrency(p.contract_value)}</td>
+                      <td className="px-4 py-3 text-sm text-[#e6ab35] font-medium">{formatCurrency(p.contract_value)}</td>
                       <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
-                      <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">
+                      <td className="px-4 py-3 text-xs text-[#9a9585] whitespace-nowrap">
                         {formatDate(p.start_date)} → {formatDate(p.end_date)}
                       </td>
                     </tr>
@@ -313,13 +313,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           ) : (
             <div className="space-y-2">
               {leads.map(l => (
-                <div key={l.id} className="bg-[#1a1d27] border border-[#2a2d3a] rounded-lg p-4 flex items-center justify-between">
+                <div key={l.id} className="bg-[#252419] border border-[#2e2d26] rounded-lg p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">{l.title}</p>
-                    <p className="text-xs text-slate-400">{l.source} · {formatDate(l.created_at)}</p>
+                    <p className="text-sm font-medium text-[#efeae2]">{l.title}</p>
+                    <p className="text-xs text-[#9a9585]">{l.source} · {formatDate(l.created_at)}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    {l.estimated_value && <span className="text-sm text-green-400 font-medium">{formatCurrency(l.estimated_value)}</span>}
+                    {l.estimated_value && <span className="text-sm text-[#e6ab35] font-medium">{formatCurrency(l.estimated_value)}</span>}
                     <StageBadge stage={l.stage} />
                   </div>
                 </div>
@@ -336,17 +336,17 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               {activities.map((a, i) => (
                 <div key={a.id} className="flex gap-4">
                   <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-[#2a2d3a] flex items-center justify-center text-sm flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
                       {ACTIVITY_ICONS[a.type] ?? '📋'}
                     </div>
-                    {i < activities.length - 1 && <div className="w-0.5 bg-[#2a2d3a] flex-1 my-1" />}
+                    {i < activities.length - 1 && <div className="w-0.5 bg-[#2e2d26] flex-1 my-1" />}
                   </div>
                   <div className="pb-4 flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-medium text-white">{a.type}</p>
-                      <span className="text-xs text-slate-500 whitespace-nowrap">{formatRelativeTime(a.created_at)}</span>
+                      <span className="text-xs text-[#9a9585] whitespace-nowrap">{formatRelativeTime(a.created_at)}</span>
                     </div>
-                    {a.content && <p className="text-sm text-slate-400 mt-0.5">{a.content}</p>}
+                    {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
                   </div>
                 </div>
               ))}
@@ -364,9 +364,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   <img src={photo.url} alt={photo.label ?? 'Project photo'} className="w-full h-40 object-cover rounded-lg" />
                   {photo.label && (
                     <span className={`absolute top-2 left-2 text-xs px-2 py-0.5 rounded font-medium ${
-                      photo.label === 'Before' ? 'bg-yellow-500 text-black' :
-                      photo.label === 'During' ? 'bg-blue-500 text-white' :
-                      'bg-green-500 text-white'
+                      photo.label === 'Before' ? 'bg-[#e6ab35] text-[#1d1c17]' :
+                      photo.label === 'During' ? 'bg-[#3583b3] text-white' :
+                      'bg-emerald-500 text-white'
                     }`}>{photo.label}</span>
                   )}
                 </div>

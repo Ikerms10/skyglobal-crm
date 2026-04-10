@@ -22,9 +22,9 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-[#e2e8f0]">
+          <label htmlFor={inputId} className="text-sm font-medium text-[#efeae2]">
             {label}
-            {required && <span className="text-red-400 ml-1">*</span>}
+            {required && <span className="text-[#ef4444] ml-1">*</span>}
           </label>
         )}
         <input
@@ -36,16 +36,16 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
           min={min}
           max={max}
           className={cn(
-            'w-full rounded-lg border border-[#2a2d3a] bg-[#0f1117] px-3 py-2 text-sm text-[#e2e8f0]',
-            'focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent',
+            'w-full rounded-lg border border-[#2e2d26] bg-[#252419] px-3 py-2 text-sm text-[#efeae2]',
+            'focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             '[color-scheme:dark]',
-            error && 'border-red-500 focus:ring-red-500',
+            error && 'border-[#ef4444] focus:ring-[#ef4444]',
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-[#ef4444]">{error}</p>}
       </div>
     )
   }

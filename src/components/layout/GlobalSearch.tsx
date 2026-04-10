@@ -50,32 +50,32 @@ export function GlobalSearch() {
   return (
     <div ref={ref} className="relative max-w-md w-full">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9a9585] pointer-events-none" />
         <input
           value={query}
           onChange={e => { setQuery(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           placeholder="Search customers, leads, projects..."
-          className="w-full bg-[#1a1d27] border border-[#2a2d3a] text-white placeholder-slate-500 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+          className="w-full bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
         />
       </div>
 
       {open && debouncedQuery.length >= 2 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1d27] border border-[#2a2d3a] rounded-xl shadow-2xl overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-[#252419] border border-[#2e2d26] rounded-xl shadow-2xl overflow-hidden z-50">
           {!hasResults ? (
-            <p className="text-slate-400 text-sm px-4 py-3">No results for &quot;{debouncedQuery}&quot;</p>
+            <p className="text-[#9a9585] text-sm px-4 py-3">No results for &quot;{debouncedQuery}&quot;</p>
           ) : (
             <div className="max-h-80 overflow-y-auto">
               {data?.customers && data.customers.length > 0 && (
                 <div>
-                  <p className="text-xs text-slate-500 font-medium px-4 py-2 uppercase tracking-wider">Customers</p>
+                  <p className="text-xs text-[#9a9585] font-medium px-4 py-2 uppercase tracking-wider">Customers</p>
                   {data.customers.map((c: { id: string; name: string; phone: string | null; type: string }) => (
                     <button key={c.id} onClick={() => { router.push(`/customers/${c.id}`); setOpen(false); setQuery('') }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#2a2d3a] transition-colors text-left">
-                      <User className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#2e2d26] transition-colors text-left">
+                      <User className="h-4 w-4 text-[#9a9585] flex-shrink-0" />
                       <div>
-                        <p className="text-sm text-white">{c.name}</p>
-                        <p className="text-xs text-slate-400">{c.type}</p>
+                        <p className="text-sm text-[#efeae2]">{c.name}</p>
+                        <p className="text-xs text-[#9a9585]">{c.type}</p>
                       </div>
                     </button>
                   ))}
@@ -83,24 +83,24 @@ export function GlobalSearch() {
               )}
               {data?.leads && data.leads.length > 0 && (
                 <div>
-                  <p className="text-xs text-slate-500 font-medium px-4 py-2 uppercase tracking-wider">Leads</p>
+                  <p className="text-xs text-[#9a9585] font-medium px-4 py-2 uppercase tracking-wider">Leads</p>
                   {data.leads.map((l: { id: string; title: string; customer_id: string | null }) => (
                     <button key={l.id} onClick={() => { router.push('/leads'); setOpen(false); setQuery('') }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#2a2d3a] transition-colors text-left">
-                      <Target className="h-4 w-4 text-slate-500 flex-shrink-0" />
-                      <p className="text-sm text-white">{l.title}</p>
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#2e2d26] transition-colors text-left">
+                      <Target className="h-4 w-4 text-[#9a9585] flex-shrink-0" />
+                      <p className="text-sm text-[#efeae2]">{l.title}</p>
                     </button>
                   ))}
                 </div>
               )}
               {data?.projects && data.projects.length > 0 && (
                 <div>
-                  <p className="text-xs text-slate-500 font-medium px-4 py-2 uppercase tracking-wider">Projects</p>
+                  <p className="text-xs text-[#9a9585] font-medium px-4 py-2 uppercase tracking-wider">Projects</p>
                   {data.projects.map((p: { id: string; title: string; customer_id: string }) => (
                     <button key={p.id} onClick={() => { router.push(`/customers/${p.customer_id}/projects/${p.id}`); setOpen(false); setQuery('') }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#2a2d3a] transition-colors text-left">
-                      <Briefcase className="h-4 w-4 text-slate-500 flex-shrink-0" />
-                      <p className="text-sm text-white">{p.title}</p>
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#2e2d26] transition-colors text-left">
+                      <Briefcase className="h-4 w-4 text-[#9a9585] flex-shrink-0" />
+                      <p className="text-sm text-[#efeae2]">{p.title}</p>
                     </button>
                   ))}
                 </div>

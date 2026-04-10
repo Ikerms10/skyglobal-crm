@@ -21,11 +21,11 @@ export function KPICard({
   loading = false,
   subtitle,
   className,
-  accentColor = 'text-sky-400',
+  accentColor = 'text-[#e6ab35]',
 }: KPICardProps) {
   if (loading) {
     return (
-      <div className="bg-[#1a1d27] rounded-xl border border-[#2a2d3a] p-5">
+      <div className="bg-[#252419] rounded-xl border-l-4 border-l-[#e6ab35] border border-[#2e2d26] p-5">
         <div className="flex items-center justify-between mb-3">
           <Skeleton className="h-4 w-28" />
           <Skeleton className="h-8 w-8 rounded-lg" />
@@ -37,22 +37,22 @@ export function KPICard({
   }
 
   return (
-    <div className={cn('bg-[#1a1d27] rounded-xl border border-[#2a2d3a] p-5 hover:border-[#3a3d4a] transition-colors', className)}>
+    <div className={cn('bg-[#252419] rounded-xl border-l-4 border-l-[#e6ab35] border border-[#2e2d26] p-5 hover:border-[#e6ab35]/40 transition-colors', className)}>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider">{title}</p>
+        <p className="text-xs font-medium text-[#9a9585] uppercase tracking-wider">{title}</p>
         {icon && (
-          <div className={cn('w-8 h-8 rounded-lg bg-[#2a2d3a] flex items-center justify-center', accentColor)}>
+          <div className={cn('w-8 h-8 rounded-lg bg-[#2e2d26] flex items-center justify-center', accentColor)}>
             {icon}
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-[#e2e8f0] mb-1">{value}</p>
+      <p className="text-2xl font-bold text-[#e6ab35] mb-1">{value}</p>
       <div className="flex items-center gap-2">
         {trend !== undefined && (
           <div
             className={cn(
               'flex items-center gap-1 text-xs font-medium',
-              trend >= 0 ? 'text-emerald-400' : 'text-red-400'
+              trend >= 0 ? 'text-emerald-400' : 'text-[#ef4444]'
             )}
           >
             {trend >= 0 ? (
@@ -64,7 +64,7 @@ export function KPICard({
           </div>
         )}
         {subtitle && (
-          <p className="text-xs text-[#94a3b8]">{subtitle}</p>
+          <p className="text-xs text-[#9a9585]">{subtitle}</p>
         )}
       </div>
     </div>

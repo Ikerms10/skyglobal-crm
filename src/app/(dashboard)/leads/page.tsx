@@ -29,23 +29,23 @@ import { formatCurrency, cn } from '@/lib/utils'
 const STAGES: LeadStage[] = ['New Lead', 'Estimate Sent', 'Follow-up', 'Negotiating', 'Won', 'Lost', 'On Hold']
 
 const STAGE_BORDER_COLORS: Record<LeadStage, string> = {
-  'New Lead': 'border-t-sky-500',
-  'Estimate Sent': 'border-t-purple-500',
-  'Follow-up': 'border-t-yellow-500',
-  'Negotiating': 'border-t-orange-500',
-  'Won': 'border-t-green-500',
-  'Lost': 'border-t-red-500',
-  'On Hold': 'border-t-slate-500',
+  'New Lead': 'border-t-[#3583b3]',
+  'Estimate Sent': 'border-t-[#e6ab35]',
+  'Follow-up': 'border-t-[#e6ab35]',
+  'Negotiating': 'border-t-[#e6ab35]',
+  'Won': 'border-t-[#e6ab35]',
+  'Lost': 'border-t-[#ef4444]',
+  'On Hold': 'border-t-[#9a9585]',
 }
 
 const STAGE_HEADER_COLORS: Record<LeadStage, string> = {
-  'New Lead': 'text-sky-400',
-  'Estimate Sent': 'text-purple-400',
-  'Follow-up': 'text-yellow-400',
-  'Negotiating': 'text-orange-400',
-  'Won': 'text-green-400',
-  'Lost': 'text-red-400',
-  'On Hold': 'text-slate-400',
+  'New Lead': 'text-[#3583b3]',
+  'Estimate Sent': 'text-[#e6ab35]',
+  'Follow-up': 'text-[#e6ab35]',
+  'Negotiating': 'text-[#e6ab35]',
+  'Won': 'text-[#e6ab35]',
+  'Lost': 'text-[#ef4444]',
+  'On Hold': 'text-[#9a9585]',
 }
 
 const SOURCES: LeadSource[] = ['Thumbtack', 'Referral', 'Google', 'Instagram', 'Door Knock', 'Facebook', 'Yelp', 'Other']
@@ -68,16 +68,16 @@ function KanbanColumn({
 
   return (
     <div className={cn(
-      'flex-shrink-0 w-72 bg-[#1a1d27] rounded-xl border border-t-2 border-[#2a2d3a] p-3 flex flex-col min-h-[400px] transition-colors',
+      'flex-shrink-0 w-72 bg-[#252419] rounded-xl border border-t-2 border-[#2e2d26] p-3 flex flex-col min-h-[400px] transition-colors',
       borderColor,
-      isOver && 'bg-[#1e2133]',
+      isOver && 'bg-[#2e2d26]',
     )}>
       <div className="flex items-center justify-between mb-2">
         <h3 className={`text-sm font-semibold ${headerColor}`}>{stage}</h3>
-        <span className="text-xs text-slate-500 bg-[#2a2d3a] px-2 py-0.5 rounded-full">{leads.length}</span>
+        <span className="text-xs text-[#9a9585] bg-[#2e2d26] px-2 py-0.5 rounded-full">{leads.length}</span>
       </div>
       {totalValue > 0 && (
-        <p className="text-xs text-slate-500 mb-2">{formatCurrency(totalValue)} total</p>
+        <p className="text-xs text-[#9a9585] mb-2">{formatCurrency(totalValue)} total</p>
       )}
       <div
         ref={setNodeRef}
@@ -86,9 +86,9 @@ function KanbanColumn({
         {leads.length === 0 ? (
           <div className={cn(
             'flex items-center justify-center h-24 border-2 border-dashed rounded-lg transition-colors',
-            isOver ? 'border-sky-500/50 bg-sky-500/5' : 'border-[#2a2d3a]',
+            isOver ? 'border-[#e6ab35]/50 bg-[#e6ab35]/5' : 'border-[#2e2d26]',
           )}>
-            <p className="text-slate-600 text-xs">Drop here</p>
+            <p className="text-[#9a9585] text-xs">Drop here</p>
           </div>
         ) : (
           leads.map(lead => (
@@ -217,7 +217,7 @@ export default function LeadsPage() {
 
   if (isLoading) return (
     <div className="p-4 md:p-6">
-      <div className="h-8 mb-6 w-48 bg-[#2a2d3a] animate-pulse rounded" />
+      <div className="h-8 mb-6 w-48 bg-[#252419] animate-pulse rounded" />
       <KanbanSkeleton />
     </div>
   )
@@ -228,7 +228,7 @@ export default function LeadsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Lead Pipeline</h1>
-          <p className="text-slate-400 text-sm">{leads.length} leads total</p>
+          <p className="text-[#9a9585] text-sm">{leads.length} leads total</p>
         </div>
         <Button onClick={() => setAddLeadOpen(true)}>
           <Plus className="h-4 w-4 mr-1" /> Add Lead
@@ -241,12 +241,12 @@ export default function LeadsPage() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search leads..."
-          className="bg-[#1a1d27] border border-[#2a2d3a] text-white placeholder-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-64"
+          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] w-64"
         />
         <select
           value={filterSource}
           onChange={e => setFilterSource(e.target.value)}
-          className="bg-[#1a1d27] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
         >
           <option value="">All Sources</option>
           {SOURCES.map(s => (

@@ -9,7 +9,7 @@ import { Download } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { subMonths, format, startOfMonth, endOfMonth } from 'date-fns'
 
-const COLORS = ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6']
+const COLORS = ['#e6ab35', '#3583b3', '#ef4444', '#9a9585', '#e6ab35', '#3583b3', '#ef4444', '#9a9585']
 
 export default function ReportsPage() {
   const [months, setMonths] = useState(6)
@@ -98,11 +98,11 @@ export default function ReportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Reports</h1>
-          <p className="text-slate-400 text-sm">Business analytics and insights</p>
+          <p className="text-[#9a9585] text-sm">Business analytics and insights</p>
         </div>
         <div className="flex items-center gap-3">
           <select value={months} onChange={e => setMonths(Number(e.target.value))}
-            className="bg-[#1a1d27] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+            className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]">
             {[3, 6, 12].map(m => <option key={m} value={m}>Last {m} months</option>)}
           </select>
         </div>
@@ -113,86 +113,86 @@ export default function ReportsPage() {
       ) : (
         <>
           {/* Revenue vs Expenses Chart */}
-          <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-4">Revenue vs Expenses (Monthly)</h3>
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Revenue vs Expenses (Monthly)</h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={data?.monthlyPL ?? []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3a" />
-                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid #2a2d3a', borderRadius: 8 }} formatter={(v: unknown) => [`$${Number(v).toLocaleString()}`, '']} />
-                <Bar dataKey="revenue" name="Revenue" fill="#0ea5e9" radius={[4,4,0,0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#2e2d26" />
+                <XAxis dataKey="month" tick={{ fill: '#9a9585', fontSize: 11 }} />
+                <YAxis tick={{ fill: '#9a9585', fontSize: 11 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                <Tooltip contentStyle={{ backgroundColor: '#252419', border: '1px solid #2e2d26', borderRadius: 8 }} formatter={(v: unknown) => [`$${Number(v).toLocaleString()}`, '']} />
+                <Bar dataKey="revenue" name="Revenue" fill="#e6ab35" radius={[4,4,0,0]} />
                 <Bar dataKey="expenses" name="Expenses" fill="#ef4444" radius={[4,4,0,0]} />
-                <Bar dataKey="profit" name="Profit" fill="#10b981" radius={[4,4,0,0]} />
+                <Bar dataKey="profit" name="Profit" fill="#3583b3" radius={[4,4,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Job Type breakdown */}
-            <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Revenue by Job Type</h3>
+            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+              <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Revenue by Job Type</h3>
               {data?.typeData && data.typeData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
                     <Pie data={data.typeData} cx="50%" cy="50%" outerRadius={80} dataKey="value"
-                      label={({ name, value }) => `${name}: $${(value/1000).toFixed(0)}k`} labelLine={{ stroke: '#94a3b8' }}>
+                      label={({ name, value }) => `${name}: $${(value/1000).toFixed(0)}k`} labelLine={{ stroke: '#9a9585' }}>
                       {data.typeData.map((_: unknown, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid #2a2d3a', borderRadius: 8 }} formatter={(v: unknown) => [formatCurrency(Number(v)), '']} />
+                    <Tooltip contentStyle={{ backgroundColor: '#252419', border: '1px solid #2e2d26', borderRadius: 8 }} formatter={(v: unknown) => [formatCurrency(Number(v)), '']} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">No project data</div>
+                <div className="flex items-center justify-center h-[220px] text-[#9a9585] text-sm">No project data</div>
               )}
             </div>
 
             {/* Top Customers */}
-            <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Top 10 Customers by Revenue</h3>
+            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+              <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Top 10 Customers by Revenue</h3>
               <div className="space-y-2">
                 {data?.topCustomers && data.topCustomers.length > 0 ? (
                   data.topCustomers.map((c: { id: string; name: string; revenue: number }, i: number) => (
                     <div key={c.id} className="flex items-center justify-between py-1.5">
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-slate-500 w-5">{i + 1}</span>
-                        <span className="text-sm text-white">{c.name}</span>
+                        <span className="text-xs text-[#9a9585] w-5">{i + 1}</span>
+                        <span className="text-sm text-[#efeae2]">{c.name}</span>
                       </div>
-                      <span className="text-sm font-medium text-green-400">{formatCurrency(c.revenue)}</span>
+                      <span className="text-sm font-medium text-[#e6ab35]">{formatCurrency(c.revenue)}</span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-slate-500 text-sm text-center py-8">No data yet</p>
+                  <p className="text-[#9a9585] text-sm text-center py-8">No data yet</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Lead Source Performance */}
-          <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white">Lead Source Performance</h3>
+              <h3 className="text-sm font-semibold text-[#efeae2]">Lead Source Performance</h3>
               <Button variant="ghost" size="sm" onClick={handleExportSources}><Download className="h-4 w-4" /> CSV</Button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#2a2d3a]">
+                  <tr className="border-b-2 border-b-[#e6ab35]">
                     {['Source', 'Total Leads', 'Won', 'Conversion Rate', 'Revenue'].map(h => (
-                      <th key={h} className="text-left px-4 py-2 text-xs font-medium text-slate-400 uppercase">{h}</th>
+                      <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[#efeae2] uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {data?.sourcePerf && data.sourcePerf.map((s: { source: string; leads: number; won: number; revenue: number }) => (
-                    <tr key={s.source} className="border-b border-[#2a2d3a] hover:bg-[#0f1117]">
-                      <td className="px-4 py-3 text-sm font-medium text-white">{s.source}</td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{s.leads}</td>
-                      <td className="px-4 py-3 text-sm text-green-400">{s.won}</td>
-                      <td className="px-4 py-3 text-sm text-slate-300">
+                  {data?.sourcePerf && data.sourcePerf.map((s: { source: string; leads: number; won: number; revenue: number }, i: number) => (
+                    <tr key={s.source} className={`border-b border-[#2e2d26] transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
+                      <td className="px-4 py-3 text-sm font-medium text-[#efeae2]">{s.source}</td>
+                      <td className="px-4 py-3 text-sm text-[#9a9585]">{s.leads}</td>
+                      <td className="px-4 py-3 text-sm text-[#e6ab35]">{s.won}</td>
+                      <td className="px-4 py-3 text-sm text-[#9a9585]">
                         {s.leads > 0 ? `${Math.round((s.won / s.leads) * 100)}%` : '—'}
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium text-green-400">{formatCurrency(s.revenue)}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{formatCurrency(s.revenue)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -201,30 +201,30 @@ export default function ReportsPage() {
           </div>
 
           {/* Monthly P&L Table */}
-          <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white">Monthly P&L</h3>
+              <h3 className="text-sm font-semibold text-[#efeae2]">Monthly P&L</h3>
               <Button variant="ghost" size="sm" onClick={handleExportPL}><Download className="h-4 w-4" /> CSV</Button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#2a2d3a]">
+                  <tr className="border-b-2 border-b-[#e6ab35]">
                     {['Month', 'Revenue', 'Expenses', 'Profit', 'Margin'].map(h => (
-                      <th key={h} className="text-left px-4 py-2 text-xs font-medium text-slate-400 uppercase">{h}</th>
+                      <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[#efeae2] uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {data?.monthlyPL && data.monthlyPL.map((row: { month: string; revenue: number; expenses: number; profit: number; margin: number }) => (
-                    <tr key={row.month} className="border-b border-[#2a2d3a] hover:bg-[#0f1117]">
-                      <td className="px-4 py-3 text-sm text-white font-medium">{row.month}</td>
-                      <td className="px-4 py-3 text-sm text-green-400">{formatCurrency(row.revenue)}</td>
-                      <td className="px-4 py-3 text-sm text-red-400">{formatCurrency(row.expenses)}</td>
-                      <td className={`px-4 py-3 text-sm font-medium ${row.profit >= 0 ? 'text-sky-400' : 'text-red-400'}`}>
+                  {data?.monthlyPL && data.monthlyPL.map((row: { month: string; revenue: number; expenses: number; profit: number; margin: number }, i: number) => (
+                    <tr key={row.month} className={`border-b border-[#2e2d26] transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
+                      <td className="px-4 py-3 text-sm text-[#efeae2] font-medium">{row.month}</td>
+                      <td className="px-4 py-3 text-sm text-[#e6ab35]">{formatCurrency(row.revenue)}</td>
+                      <td className="px-4 py-3 text-sm text-[#ef4444]">{formatCurrency(row.expenses)}</td>
+                      <td className={`px-4 py-3 text-sm font-medium ${row.profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]'}`}>
                         {formatCurrency(row.profit)}
                       </td>
-                      <td className={`px-4 py-3 text-sm ${row.margin >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <td className={`px-4 py-3 text-sm ${row.margin >= 0 ? 'text-[#e6ab35]' : 'text-[#ef4444]'}`}>
                         {row.margin}%
                       </td>
                     </tr>

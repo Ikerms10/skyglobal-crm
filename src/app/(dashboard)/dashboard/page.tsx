@@ -152,26 +152,26 @@ export default function DashboardPage() {
     staleTime: 60_000,
   })
 
-  const COLORS = ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6']
+  const COLORS = ['#e6ab35', '#3583b3', '#10b981', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316']
 
   const kpiRows = [
     [
-      { label: 'Total Revenue', value: formatCurrency(data?.revenue), icon: DollarSign, color: 'text-green-400' },
-      { label: 'Total Expenses', value: formatCurrency(data?.totalExpenses), icon: TrendingUp, color: 'text-red-400' },
-      { label: 'Gross Profit', value: formatCurrency(data?.profit), icon: DollarSign, color: 'text-sky-400' },
-      { label: 'Profit Margin', value: `${data?.margin ?? 0}%`, icon: TrendingUp, color: 'text-purple-400' },
+      { label: 'Total Revenue', value: formatCurrency(data?.revenue), icon: DollarSign, color: 'text-[#e6ab35]' },
+      { label: 'Total Expenses', value: formatCurrency(data?.totalExpenses), icon: TrendingUp, color: 'text-[#ef4444]' },
+      { label: 'Gross Profit', value: formatCurrency(data?.profit), icon: DollarSign, color: 'text-[#3583b3]' },
+      { label: 'Profit Margin', value: `${data?.margin ?? 0}%`, icon: TrendingUp, color: 'text-[#e6ab35]' },
     ],
     [
-      { label: 'Total Leads', value: String(data?.totalLeads ?? 0), icon: Target, color: 'text-sky-400' },
-      { label: 'Leads Won', value: String(data?.wonLeads ?? 0), icon: Target, color: 'text-green-400' },
-      { label: 'Conversion Rate', value: `${data?.conversionRate ?? 0}%`, icon: TrendingUp, color: 'text-yellow-400' },
-      { label: 'Active Projects', value: String(data?.activeProjects ?? 0), icon: Briefcase, color: 'text-purple-400' },
+      { label: 'Total Leads', value: String(data?.totalLeads ?? 0), icon: Target, color: 'text-[#3583b3]' },
+      { label: 'Leads Won', value: String(data?.wonLeads ?? 0), icon: Target, color: 'text-[#e6ab35]' },
+      { label: 'Conversion Rate', value: `${data?.conversionRate ?? 0}%`, icon: TrendingUp, color: 'text-[#e6ab35]' },
+      { label: 'Active Projects', value: String(data?.activeProjects ?? 0), icon: Briefcase, color: 'text-[#3583b3]' },
     ],
     [
-      { label: 'Ad Spend', value: formatCurrency(data?.adSpend), icon: DollarSign, color: 'text-orange-400' },
-      { label: 'Avg Lead Cost', value: formatCurrency(data?.avgLeadCost), icon: Target, color: 'text-red-400' },
-      { label: 'Revenue Per Lead', value: formatCurrency(data?.revenuePerLead), icon: TrendingUp, color: 'text-sky-400' },
-      { label: 'Revenue Per Won Lead', value: formatCurrency(data?.revenuePerWon), icon: TrendingUp, color: 'text-green-400' },
+      { label: 'Ad Spend', value: formatCurrency(data?.adSpend), icon: DollarSign, color: 'text-[#ef4444]' },
+      { label: 'Avg Lead Cost', value: formatCurrency(data?.avgLeadCost), icon: Target, color: 'text-[#ef4444]' },
+      { label: 'Revenue Per Lead', value: formatCurrency(data?.revenuePerLead), icon: TrendingUp, color: 'text-[#3583b3]' },
+      { label: 'Revenue Per Won Lead', value: formatCurrency(data?.revenuePerWon), icon: TrendingUp, color: 'text-[#e6ab35]' },
     ],
   ]
 
@@ -181,14 +181,14 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-slate-400 text-sm">SkyGlobal Renovations overview</p>
+          <p className="text-[#9a9585] text-sm">SkyGlobal Renovations overview</p>
         </div>
-        <div className="flex gap-1 bg-[#1a1d27] border border-[#2a2d3a] rounded-lg p-1">
+        <div className="flex gap-1 bg-[#252419] border border-[#2e2d26] rounded-lg p-1">
           {(['Weekly', 'Monthly', 'Yearly', 'All Time'] as Timeframe[]).map(t => (
             <button
               key={t}
               onClick={() => setTimeframe(t)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${timeframe === t ? 'bg-sky-500 text-white' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${timeframe === t ? 'bg-[#e6ab35] text-[#1d1c17] font-semibold' : 'text-[#9a9585] hover:text-[#efeae2]'}`}
             >
               {t}
             </button>
@@ -205,12 +205,12 @@ export default function DashboardPage() {
         kpiRows.map((row, ri) => (
           <div key={ri} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {row.map(({ label, value, icon: Icon, color }) => (
-              <div key={label} className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-5">
+              <div key={label} className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-5">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-slate-400 font-medium">{label}</span>
+                  <span className="text-xs text-[#9a9585] font-medium">{label}</span>
                   <Icon className={`h-4 w-4 ${color}`} />
                 </div>
-                <p className="text-xl font-bold text-white">{value}</p>
+                <p className="text-xl font-bold text-[#e6ab35]">{value}</p>
               </div>
             ))}
           </div>
@@ -220,25 +220,25 @@ export default function DashboardPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue vs Expenses */}
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
           <h3 className="text-sm font-semibold text-white mb-4">Revenue vs Expenses</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data?.barChartData ?? []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3a" />
-              <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2e2d26" />
+              <XAxis dataKey="month" tick={{ fill: '#9a9585', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#9a9585', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid #2a2d3a', borderRadius: 8 }}
+                contentStyle={{ backgroundColor: '#252419', border: '1px solid #2e2d26', borderRadius: 8 }}
                 formatter={(v: unknown) => [`$${Number(v).toLocaleString()}`, '']}
               />
-              <Bar dataKey="revenue" name="Revenue" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" name="Revenue" fill="#e6ab35" radius={[4, 4, 0, 0]} />
               <Bar dataKey="expenses" name="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Lead Sources */}
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
           <h3 className="text-sm font-semibold text-white mb-4">Lead Sources</h3>
           {data?.sourceData && data.sourceData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
@@ -250,22 +250,22 @@ export default function DashboardPage() {
                   outerRadius={80}
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}`}
-                  labelLine={{ stroke: '#94a3b8' }}
+                  labelLine={{ stroke: '#9a9585' }}
                 >
                   {data.sourceData.map((_: unknown, i: number) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid #2a2d3a', borderRadius: 8 }} />
+                <Tooltip contentStyle={{ backgroundColor: '#252419', border: '1px solid #2e2d26', borderRadius: 8 }} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">No lead data yet</div>
+            <div className="flex items-center justify-center h-[220px] text-[#9a9585] text-sm">No lead data yet</div>
           )}
         </div>
 
         {/* Expense breakdown */}
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
           <h3 className="text-sm font-semibold text-white mb-4">Expenses by Category</h3>
           {data?.expCatData && data.expCatData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
@@ -283,35 +283,35 @@ export default function DashboardPage() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid #2a2d3a', borderRadius: 8 }}
+                  contentStyle={{ backgroundColor: '#252419', border: '1px solid #2e2d26', borderRadius: 8 }}
                   formatter={(v: unknown) => [`$${Number(v).toLocaleString()}`, '']}
                 />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">No expense data yet</div>
+            <div className="flex items-center justify-center h-[220px] text-[#9a9585] text-sm">No expense data yet</div>
           )}
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
           <h3 className="text-sm font-semibold text-white mb-4">Recent Activity</h3>
           {isLoading ? <TableSkeleton rows={5} /> : (
             data?.activities && data.activities.length > 0 ? (
               <div className="space-y-3">
                 {data.activities.map((a: { id: string; type: string; content: string | null; created_at: string; customer_id: string; project_id: string | null }) => (
                   <div key={a.id} className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-sky-500 mt-1.5 flex-shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-[#e6ab35] mt-1.5 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-white font-medium">{a.type}</p>
-                      {a.content && <p className="text-xs text-slate-400 truncate">{a.content}</p>}
-                      <p className="text-xs text-slate-500">{formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}</p>
+                      {a.content && <p className="text-xs text-[#9a9585] truncate">{a.content}</p>}
+                      <p className="text-xs text-[#9a9585]">{formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-32 text-slate-500 text-sm">
+              <div className="flex items-center justify-center h-32 text-[#9a9585] text-sm">
                 <div className="text-center">
                   <Activity className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   <p>No activity yet</p>
@@ -325,9 +325,9 @@ export default function DashboardPage() {
       {/* Bottom: Follow-ups + Overdue */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming follow-ups */}
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Clock className="h-4 w-4 text-yellow-400" />
+            <Clock className="h-4 w-4 text-[#e6ab35]" />
             <h3 className="text-sm font-semibold text-white">Upcoming Follow-ups</h3>
           </div>
           {isLoading ? <TableSkeleton rows={3} /> : (
@@ -337,26 +337,26 @@ export default function DashboardPage() {
                   <Link
                     key={f.id}
                     href="/leads"
-                    className="flex items-center justify-between p-3 bg-[#0f1117] rounded-lg hover:bg-[#2a2d3a] transition-colors"
+                    className="flex items-center justify-between p-3 bg-[#1d1c17] rounded-lg hover:bg-[#2e2d26] transition-colors"
                   >
                     <div>
                       <p className="text-sm text-white font-medium">{f.title}</p>
-                      <p className="text-xs text-slate-400">{(f.customers as { name: string } | null)?.name}</p>
+                      <p className="text-xs text-[#9a9585]">{(f.customers as { name: string } | null)?.name}</p>
                     </div>
-                    <span className="text-xs text-yellow-400">{formatDate(f.follow_up_date)}</span>
+                    <span className="text-xs text-[#e6ab35]">{formatDate(f.follow_up_date)}</span>
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500 text-sm text-center py-6">No upcoming follow-ups</p>
+              <p className="text-[#9a9585] text-sm text-center py-6">No upcoming follow-ups</p>
             )
           )}
         </div>
 
         {/* Overdue payments */}
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-4 w-4 text-red-400" />
+            <AlertTriangle className="h-4 w-4 text-[#ef4444]" />
             <h3 className="text-sm font-semibold text-white">Overdue Payments</h3>
           </div>
           {isLoading ? <TableSkeleton rows={3} /> : (
@@ -366,20 +366,20 @@ export default function DashboardPage() {
                   <Link
                     key={p.id}
                     href={`/customers/${p.customer_id}/projects/${p.id}`}
-                    className="flex items-center justify-between p-3 bg-[#0f1117] rounded-lg hover:bg-[#2a2d3a] transition-colors"
+                    className="flex items-center justify-between p-3 bg-[#1d1c17] rounded-lg hover:bg-[#2e2d26] transition-colors"
                   >
                     <div>
                       <p className="text-sm text-white font-medium">{p.title}</p>
-                      <p className="text-xs text-slate-400">{(p.customers as { name: string } | null)?.name}</p>
+                      <p className="text-xs text-[#9a9585]">{(p.customers as { name: string } | null)?.name}</p>
                     </div>
-                    <span className="text-xs text-red-400 font-medium">
+                    <span className="text-xs text-[#ef4444] font-medium">
                       {formatCurrency((p.contract_value ?? 0) - p.amount_paid)} due
                     </span>
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500 text-sm text-center py-6">No overdue payments</p>
+              <p className="text-[#9a9585] text-sm text-center py-6">No overdue payments</p>
             )
           )}
         </div>

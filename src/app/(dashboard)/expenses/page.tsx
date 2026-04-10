@@ -142,7 +142,7 @@ export default function ExpensesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Expenses</h1>
-          <p className="text-slate-400 text-sm">Track all business costs</p>
+          <p className="text-[#9a9585] text-sm">Track all business costs</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={handleExport}><Download className="h-4 w-4" /> Export CSV</Button>
@@ -152,17 +152,17 @@ export default function ExpensesPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-          <p className="text-xs text-slate-400">General Expenses</p>
-          <p className="text-xl font-bold text-red-400">{formatCurrency(totalGeneral)}</p>
+        <div className="bg-[#252419] border-l-4 border-l-[#ef4444] border border-[#2e2d26] rounded-xl p-4">
+          <p className="text-xs text-[#9a9585]">General Expenses</p>
+          <p className="text-xl font-bold text-[#ef4444]">{formatCurrency(totalGeneral)}</p>
         </div>
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-          <p className="text-xs text-slate-400">Project Expenses</p>
-          <p className="text-xl font-bold text-orange-400">{formatCurrency(totalProject)}</p>
+        <div className="bg-[#252419] border-l-4 border-l-[#ef4444] border border-[#2e2d26] rounded-xl p-4">
+          <p className="text-xs text-[#9a9585]">Project Expenses</p>
+          <p className="text-xl font-bold text-[#ef4444]">{formatCurrency(totalProject)}</p>
         </div>
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-          <p className="text-xs text-slate-400">Total All Expenses</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(totalGeneral + totalProject)}</p>
+        <div className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-4">
+          <p className="text-xs text-[#9a9585]">Total All Expenses</p>
+          <p className="text-xl font-bold text-[#e6ab35]">{formatCurrency(totalGeneral + totalProject)}</p>
         </div>
       </div>
 
@@ -177,14 +177,14 @@ export default function ExpensesPage() {
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-              className="bg-[#1a1d27] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+              className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]">
               <option value="">All Categories</option>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)}
-              className="bg-[#1a1d27] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]" />
             <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)}
-              className="bg-[#1a1d27] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]" />
             {(filterCategory || filterFrom || filterTo) && (
               <Button variant="ghost" size="sm" onClick={() => { setFilterCategory(''); setFilterFrom(''); setFilterTo('') }}>Clear</Button>
             )}
@@ -193,25 +193,25 @@ export default function ExpensesPage() {
           {isLoading ? <TableSkeleton /> : filtered.length === 0 ? (
             <EmptyState icon={DollarSign} title="No expenses" description="Add general business expenses here (ads, insurance, software, etc.)" action={{ label: 'Add Expense', onClick: () => setAddOpen(true) }} />
           ) : (
-            <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl overflow-hidden">
+            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#2a2d3a]">
+                  <tr className="border-b-2 border-b-[#e6ab35]">
                     {['Date', 'Category', 'Description', 'Amount', 'Recurring', ''].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase">{h}</th>
+                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(e => (
-                    <tr key={e.id} className="border-b border-[#2a2d3a] hover:bg-[#0f1117] group">
-                      <td className="px-4 py-3 text-sm text-slate-400">{formatDate(e.date)}</td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{e.category}</td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{e.description ?? '—'}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-red-400">{formatCurrency(e.amount)}</td>
-                      <td className="px-4 py-3">{e.recurring ? <span className="text-xs text-yellow-400">Recurring</span> : <span className="text-xs text-slate-600">One-time</span>}</td>
+                  {filtered.map((e, i) => (
+                    <tr key={e.id} className={`border-b border-[#2e2d26] transition-colors group ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
+                      <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(e.date)}</td>
+                      <td className="px-4 py-3 text-sm text-[#efeae2]">{e.category}</td>
+                      <td className="px-4 py-3 text-sm text-[#efeae2]">{e.description ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[#ef4444]">{formatCurrency(e.amount)}</td>
+                      <td className="px-4 py-3">{e.recurring ? <span className="text-xs text-[#e6ab35]">Recurring</span> : <span className="text-xs text-[#9a9585]">One-time</span>}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => setDeleteId(e.id)} className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-all">
+                        <button onClick={() => setDeleteId(e.id)} className="opacity-0 group-hover:opacity-100 p-1 text-[#9a9585] hover:text-[#ef4444] transition-all">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
@@ -219,9 +219,9 @@ export default function ExpensesPage() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-[#0f1117]">
-                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-white text-right">Total</td>
-                    <td className="px-4 py-3 text-lg font-bold text-red-400">{formatCurrency(filtered.reduce((s, e) => s + e.amount, 0))}</td>
+                  <tr className="bg-[#1d1c17]">
+                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-[#efeae2] text-right">Total</td>
+                    <td className="px-4 py-3 text-lg font-bold text-[#ef4444]">{formatCurrency(filtered.reduce((s, e) => s + e.amount, 0))}</td>
                     <td colSpan={2} />
                   </tr>
                 </tfoot>
@@ -231,31 +231,31 @@ export default function ExpensesPage() {
         </TabsContent>
 
         <TabsContent value="project" className="mt-6">
-          <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl overflow-hidden">
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
             {projectExpenses.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-sm">No project expenses yet. Add them inside each project.</div>
+              <div className="p-8 text-center text-[#9a9585] text-sm">No project expenses yet. Add them inside each project.</div>
             ) : (
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#2a2d3a]">
+                  <tr className="border-b-2 border-b-[#e6ab35]">
                     {['Date', 'Project', 'Category', 'Description', 'Amount'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase">{h}</th>
+                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {projectExpenses.map((e: { id: string; date: string; category: string; description: string | null; amount: number; projects: { title: string; id: string; customer_id: string } | null }) => (
-                    <tr key={e.id} className="border-b border-[#2a2d3a] hover:bg-[#0f1117]">
-                      <td className="px-4 py-3 text-sm text-slate-400">{formatDate(e.date)}</td>
+                  {projectExpenses.map((e: { id: string; date: string; category: string; description: string | null; amount: number; projects: { title: string; id: string; customer_id: string } | null }, i: number) => (
+                    <tr key={e.id} className={`border-b border-[#2e2d26] transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
+                      <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(e.date)}</td>
                       <td className="px-4 py-3">
                         {e.projects && (
                           <Link href={`/customers/${e.projects.customer_id}/projects/${e.projects.id}`}
-                            className="text-sm text-white hover:text-sky-400">{e.projects.title}</Link>
+                            className="text-sm text-[#efeae2] hover:text-[#3583b3] transition-colors">{e.projects.title}</Link>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{e.category}</td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{e.description ?? '—'}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-red-400">{formatCurrency(e.amount)}</td>
+                      <td className="px-4 py-3 text-sm text-[#efeae2]">{e.category}</td>
+                      <td className="px-4 py-3 text-sm text-[#efeae2]">{e.description ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[#ef4444]">{formatCurrency(e.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -267,14 +267,14 @@ export default function ExpensesPage() {
         <TabsContent value="breakdown" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {CATEGORIES.filter(c => categoryTotals[c] > 0).map(cat => (
-              <div key={cat} className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
+              <div key={cat} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-300">{cat}</span>
-                  <span className="text-sm font-bold text-red-400">{formatCurrency(categoryTotals[cat])}</span>
+                  <span className="text-sm font-medium text-[#efeae2]">{cat}</span>
+                  <span className="text-sm font-bold text-[#ef4444]">{formatCurrency(categoryTotals[cat])}</span>
                 </div>
-                <div className="h-1.5 bg-[#2a2d3a] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[#2e2d26] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-red-500 rounded-full"
+                    className="h-full bg-[#ef4444] rounded-full"
                     style={{ width: `${Math.min(100, (categoryTotals[cat] / Math.max(...Object.values(categoryTotals))) * 100)}%` }}
                   />
                 </div>
@@ -292,7 +292,7 @@ export default function ExpensesPage() {
           <Textarea label="Description" rows={2} {...register('description')} placeholder="What was this expense for?" />
           <Input label="Amount ($)" type="number" step="0.01" {...register('amount')} error={errors.amount?.message} required />
           <Input label="Date" type="date" {...register('date')} error={errors.date?.message} required />
-          <label className="flex items-center gap-2 text-sm text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-[#efeae2]">
             <input type="checkbox" {...register('recurring')} className="rounded" />
             Recurring monthly expense
           </label>

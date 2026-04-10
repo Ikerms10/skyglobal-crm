@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/login')
 
   return (
-    <div className="flex h-screen bg-[#0f1117] overflow-hidden">
+    <div className="flex h-screen bg-[#1d1c17] overflow-hidden">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <Sidebar userEmail={user.email ?? ''} />
@@ -20,15 +20,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
-        <header className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-[#2a2d3a] bg-[#0f1117] sticky top-0 z-30 flex-shrink-0">
+        <header className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-[#2e2d26] bg-[#1d1c17] sticky top-0 z-30 flex-shrink-0">
           <div className="md:hidden">
-            <span className="font-bold text-sky-400 text-lg">SkyGlobal</span>
+            <span className="font-bold text-[#e6ab35] text-lg">SkyGlobal</span>
           </div>
           <div className="flex-1">
             <GlobalSearch />
           </div>
           <NotificationBell />
-          <div className="h-8 w-8 rounded-full bg-sky-700 flex items-center justify-center text-xs font-bold text-white">
+          <div className="h-8 w-8 rounded-full bg-[#3583b3] flex items-center justify-center text-xs font-bold text-white">
             {(user.email ?? 'U')[0].toUpperCase()}
           </div>
         </header>

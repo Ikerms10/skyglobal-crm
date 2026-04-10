@@ -82,15 +82,15 @@ export default function SettingsPage() {
     <div className="p-4 md:p-6 max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-slate-400 text-sm">Manage your account preferences</p>
+        <p className="text-[#9a9585] text-sm">Manage your account preferences</p>
       </div>
 
       {/* Profile */}
-      <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
-        <h2 className="text-base font-semibold text-white mb-4">Profile</h2>
+      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+        <h2 className="text-base font-semibold text-[#efeae2] mb-4">Profile</h2>
         <form onSubmit={profileSubmit(onProfileSubmit)} className="space-y-4">
           <Input label="Email" type="email" {...profileReg('email')} error={profileErrors.email?.message} required />
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-[#9a9585]">
             User ID: <span className="font-mono">{user?.id}</span>
           </div>
           <Button type="submit" loading={loadingProfile}>Save Profile</Button>
@@ -98,8 +98,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Password */}
-      <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
-        <h2 className="text-base font-semibold text-white mb-4">Change Password</h2>
+      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+        <h2 className="text-base font-semibold text-[#efeae2] mb-4">Change Password</h2>
         <form onSubmit={passSubmit(onPasswordSubmit)} className="space-y-4">
           <Input label="New Password" type="password" {...passReg('password')} error={passErrors.password?.message} required />
           <Input label="Confirm Password" type="password" {...passReg('confirmPassword')} error={passErrors.confirmPassword?.message} required />
@@ -108,34 +108,34 @@ export default function SettingsPage() {
       </div>
 
       {/* Account Info */}
-      <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
-        <h2 className="text-base font-semibold text-white mb-4">Account</h2>
+      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+        <h2 className="text-base font-semibold text-[#efeae2] mb-4">Account</h2>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between py-2 border-b border-[#2a2d3a]">
-            <span className="text-slate-400">Plan</span>
-            <span className="text-white">Single-user</span>
+          <div className="flex justify-between py-2 border-b border-[#2e2d26]">
+            <span className="text-[#9a9585]">Plan</span>
+            <span className="text-[#efeae2]">Single-user</span>
           </div>
-          <div className="flex justify-between py-2 border-b border-[#2a2d3a]">
-            <span className="text-slate-400">Business</span>
-            <span className="text-white">SkyGlobal Renovations</span>
+          <div className="flex justify-between py-2 border-b border-[#2e2d26]">
+            <span className="text-[#9a9585]">Business</span>
+            <span className="text-[#efeae2]">SkyGlobal Renovations</span>
           </div>
           <div className="flex justify-between py-2">
-            <span className="text-slate-400">Version</span>
-            <span className="text-white">1.0.0</span>
+            <span className="text-[#9a9585]">Version</span>
+            <span className="text-[#efeae2]">1.0.0</span>
           </div>
         </div>
       </div>
 
       {/* Webhook info */}
-      <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-6">
-        <h2 className="text-base font-semibold text-white mb-2">Thumbtack Integration</h2>
-        <p className="text-sm text-slate-400 mb-3">
+      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+        <h2 className="text-base font-semibold text-[#efeae2] mb-2">Thumbtack Integration</h2>
+        <p className="text-sm text-[#9a9585] mb-3">
           Use this webhook URL in Thumbtack + Zapier to auto-import leads:
         </p>
-        <div className="bg-[#0f1117] border border-[#2a2d3a] rounded-lg px-3 py-2 text-xs font-mono text-sky-400 break-all">
+        <div className="bg-[#1d1c17] border border-[#2e2d26] rounded-lg px-3 py-2 text-xs font-mono text-[#3583b3] break-all">
           {typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.vercel.app'}/api/webhooks/thumbtack
         </div>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs text-[#9a9585] mt-2">
           Set header: <span className="font-mono">x-webhook-secret: {'<your THUMBTACK_WEBHOOK_SECRET>'}</span>
         </p>
       </div>

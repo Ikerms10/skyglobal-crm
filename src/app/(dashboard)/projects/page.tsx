@@ -69,8 +69,8 @@ export default function ProjectsPage() {
 
   const SortIcon = ({ field }: { field: SortField }) => (
     <span className="ml-1 inline-flex flex-col">
-      <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-sky-400' : 'text-slate-600')} />
-      <ChevronDown className={cn('h-3 w-3 -mt-1', sortField === field && sortDir === 'desc' ? 'text-sky-400' : 'text-slate-600')} />
+      <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
+      <ChevronDown className={cn('h-3 w-3 -mt-1', sortField === field && sortDir === 'desc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
     </span>
   )
 
@@ -78,22 +78,22 @@ export default function ProjectsPage() {
     <div className="p-4 md:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Projects</h1>
-        <p className="text-slate-400 text-sm">{projects.length} total projects</p>
+        <p className="text-[#9a9585] text-sm">{projects.length} total projects</p>
       </div>
 
       {/* Summary bar */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-          <p className="text-xs text-slate-400">Active</p>
-          <p className="text-2xl font-bold text-sky-400">{activeCount}</p>
+        <div className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-4">
+          <p className="text-xs text-[#9a9585]">Active</p>
+          <p className="text-2xl font-bold text-[#e6ab35]">{activeCount}</p>
         </div>
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-          <p className="text-xs text-slate-400">Total Contract Value</p>
-          <p className="text-2xl font-bold text-green-400">{formatCurrency(totalContractValue)}</p>
+        <div className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-4">
+          <p className="text-xs text-[#9a9585]">Total Contract Value</p>
+          <p className="text-2xl font-bold text-[#e6ab35]">{formatCurrency(totalContractValue)}</p>
         </div>
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl p-4">
-          <p className="text-xs text-slate-400">Overdue Payments</p>
-          <p className="text-2xl font-bold text-red-400">{overdueCount}</p>
+        <div className="bg-[#252419] border-l-4 border-l-[#ef4444] border border-[#2e2d26] rounded-xl p-4">
+          <p className="text-xs text-[#9a9585]">Overdue Payments</p>
+          <p className="text-2xl font-bold text-[#ef4444]">{overdueCount}</p>
         </div>
       </div>
 
@@ -103,15 +103,15 @@ export default function ProjectsPage() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search projects..."
-          className="bg-[#1a1d27] border border-[#2a2d3a] text-white placeholder-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-64"
+          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] w-64"
         />
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-          className="bg-[#1a1d27] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]">
           <option value="">All Statuses</option>
           {['Scheduled','In Progress','On Hold','Completed','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <select value={filterPayment} onChange={e => setFilterPayment(e.target.value)}
-          className="bg-[#1a1d27] border border-[#2a2d3a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]">
           <option value="">All Payment Status</option>
           {['Unpaid','Partial','Paid','Overdue'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -120,11 +120,11 @@ export default function ProjectsPage() {
       {isLoading ? <TableSkeleton rows={8} /> : filtered.length === 0 ? (
         <EmptyState icon={Briefcase} title="No projects found" description="Projects are created when a lead is marked as Won." />
       ) : (
-        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-xl overflow-hidden">
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#2a2d3a]">
+                <tr className="border-b-2 border-b-[#e6ab35]">
                   {[
                     { label: 'Project', field: 'title' as SortField },
                     { label: 'Customer', field: null },
@@ -137,7 +137,7 @@ export default function ProjectsPage() {
                   ].map(({ label, field }) => (
                     <th key={label}
                       onClick={field ? () => handleSort(field) : undefined}
-                      className={cn('text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-white select-none')}
+                      className={cn('text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[#e6ab35] select-none')}
                     >
                       {label}{field && <SortIcon field={field} />}
                     </th>
@@ -145,26 +145,26 @@ export default function ProjectsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(p => (
-                  <tr key={p.id} className="border-b border-[#2a2d3a] hover:bg-[#0f1117] transition-colors">
+                {filtered.map((p, i) => (
+                  <tr key={p.id} className={`border-b border-[#2e2d26] transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
                     <td className="px-4 py-3">
                       <Link href={`/customers/${p.customer_id}/projects/${p.id}`}
-                        className="text-sm font-medium text-white hover:text-sky-400 transition-colors">
+                        className="text-sm font-medium text-[#efeae2] hover:text-[#3583b3] transition-colors">
                         {p.title}
                       </Link>
                     </td>
                     <td className="px-4 py-3">
                       {p.customers && (
-                        <Link href={`/customers/${p.customers.id}`} className="text-sm text-slate-400 hover:text-sky-400">
+                        <Link href={`/customers/${p.customers.id}`} className="text-sm text-[#9a9585] hover:text-[#3583b3]">
                           {p.customers.name}
                         </Link>
                       )}
                     </td>
                     <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
                     <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
-                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{formatDate(p.start_date)}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{formatDate(p.end_date)}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-green-400">{formatCurrency(p.contract_value)}</td>
+                    <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(p.start_date)}</td>
+                    <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(p.end_date)}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{formatCurrency(p.contract_value)}</td>
                     <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
                   </tr>
                 ))}

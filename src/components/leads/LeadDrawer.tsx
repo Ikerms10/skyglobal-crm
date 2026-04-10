@@ -105,10 +105,10 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
       <div className="p-5 space-y-5">
         {/* Customer info */}
         {customer && (
-          <div className="bg-[#0f1117] rounded-lg p-3 border border-[#2a2d3a]">
-            <p className="text-xs text-slate-500 mb-1">Customer</p>
+          <div className="bg-[#1d1c17] rounded-lg p-3 border border-[#2e2d26]">
+            <p className="text-xs text-[#9a9585] mb-1">Customer</p>
             {customer.id ? (
-              <Link href={`/customers/${customer.id}`} className="text-sky-400 font-medium hover:underline text-sm">
+              <Link href={`/customers/${customer.id}`} className="text-[#3583b3] font-medium hover:underline text-sm">
                 {customer.name}
               </Link>
             ) : (
@@ -116,13 +116,13 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
             )}
             <div className="mt-2 flex gap-3 flex-wrap">
               {customer.phone && (
-                <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300">
+                <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-xs text-[#3583b3] hover:text-[#efeae2]">
                   <Phone className="h-3 w-3" />
                   {customer.phone}
                 </a>
               )}
               {customer.email && (
-                <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300">
+                <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-xs text-[#3583b3] hover:text-[#efeae2]">
                   <Mail className="h-3 w-3" />
                   {customer.email}
                 </a>
@@ -165,7 +165,7 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
             placeholder="Why was this lead lost?"
           />
 
-          <div className="text-xs text-slate-500 pt-2 border-t border-[#2a2d3a]">
+          <div className="text-xs text-[#9a9585] pt-2 border-t border-[#2e2d26]">
             <p>Created: {formatDate(lead.created_at)}</p>
             <p>Updated: {formatDate(lead.updated_at)}</p>
           </div>
