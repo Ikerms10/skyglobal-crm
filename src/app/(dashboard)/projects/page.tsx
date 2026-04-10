@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { NewProjectModal } from '@/components/projects/NewProjectModal'
 import { Briefcase, Plus } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { cn } from '@/lib/utils'
 import { ChevronUp, ChevronDown } from 'lucide-react'
@@ -19,6 +20,7 @@ type SortField = 'title' | 'status' | 'start_date' | 'end_date' | 'contract_valu
 type ProjectWithCustomer = Project & { customers: { name: string; id: string } | null }
 
 export default function ProjectsPage() {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPayment, setFilterPayment] = useState('')
@@ -152,14 +154,15 @@ export default function ProjectsPage() {
               </thead>
               <tbody>
                 {filtered.map((p, i) => (
-                  <tr key={p.id} className={`border-b border-[#2e2d26] transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
+                  <tr
+                    key={p.id}
+                    onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)}
+                    className={`border-b border-[#2e2d26] transition-colors cursor-pointer ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}
+                  >
                     <td className="px-4 py-3">
-                      <Link href={`/customers/${p.customer_id}/projects/${p.id}`}
-                        className="text-sm font-medium text-[#efeae2] hover:text-[#3583b3] transition-colors">
-                        {p.title}
-                      </Link>
+                      <span className="text-sm font-medium text-[#efeae2]">{p.title}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       {p.customers && (
                         <Link href={`/customers/${p.customers.id}`} className="text-sm text-[#9a9585] hover:text-[#3583b3]">
                           {p.customers.name}

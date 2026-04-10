@@ -16,7 +16,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { AddActivityModal } from '@/components/customers/AddActivityModal'
 import { EditProjectModal } from '@/components/projects/EditProjectModal'
 import { toast } from 'sonner'
-import { ArrowLeft, DollarSign, Calendar, MapPin, Plus, Trash2, Upload, Image, Edit2, X, Check } from 'lucide-react'
+import { ArrowLeft, DollarSign, Calendar, MapPin, Plus, Trash2, Upload, Image, Edit2, X, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
@@ -79,6 +79,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [editingLeadCost, setEditingLeadCost] = useState(false)
   const [leadCostInput, setLeadCostInput] = useState('')
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
+  const [lightboxPhoto, setLightboxPhoto] = useState<ProjectPhoto | null>(null)
+  const [showCompleted, setShowCompleted] = useState(false)
 
   const { data: project, isLoading: loadingProject } = useQuery({
     queryKey: ['project', projectId],
@@ -464,7 +467,32 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <h1 className="text-2xl font-bold text-white">{project.title}</h1>
-              <StatusBadge status={project.status} />
+              <div className="relative">
+                <button
+                  onClick={() => setStatusDropdownOpen(v => !v)}
+                  className="flex items-center gap-1 focus:outline-none"
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <StatusBadge status={project.status} />
+                  <ChevronDown className="h-3 w-3 text-[#9a9585]" />
+                </button>
+                {statusDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 z-50 bg-[#252419] border border-[#2e2d26] rounded-lg shadow-xl overflow-hidden min-w-[160px]">
+                    {(['Scheduled', 'In Progress', 'On Hold', 'Completed', 'Cancelled'] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          updateStatusMutation.mutate(s)
+                          setStatusDropdownOpen(false)
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-[#2e2d26] transition-colors ${project.status === s ? 'text-[#e6ab35]' : 'text-[#efeae2]'}`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <Badge variant={project.type === 'Commercial' ? 'purple' : 'info'}>{project.type}</Badge>
             </div>
             <Link href={`/customers/${customerId}`} className="text-[#3583b3] hover:underline text-sm">
@@ -703,6 +731,47 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
+          {/* Profit Breakdown */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Profit Breakdown</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-[#9a9585]">Contract Value</span>
+                <span className="font-medium text-[#e6ab35]">{formatCurrency(contractValue)}</span>
+              </div>
+              <div className="border-t border-[#2e2d26] pt-2 space-y-1.5">
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#9a9585]">Lead Cost</span>
+                  <span className="text-[#efeae2]">−{formatCurrency(leadCost)}</span>
+                </div>
+                {(['Labor', 'Materials', 'Subcontractors', 'Fuel', 'Tools', 'Other'] as const).map(cat => {
+                  const catTotal = expenses.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0)
+                  if (catTotal === 0) return null
+                  return (
+                    <div key={cat} className="flex justify-between text-sm">
+                      <span className="text-[#9a9585]">{cat}</span>
+                      <span className="text-[#efeae2]">−{formatCurrency(catTotal)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="border-t border-[#2e2d26] pt-2 flex justify-between text-sm font-medium">
+                <span className="text-[#9a9585]">Total Costs</span>
+                <span className="text-[#ef4444]">−{formatCurrency(totalCosts)}</span>
+              </div>
+              <div className="border-t border-[#2e2d26] pt-2 space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-sm text-[#9a9585]">Gross Profit</span>
+                  <span className={`text-lg font-bold ${profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{formatCurrency(profit)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#9a9585]">Profit Margin</span>
+                  <span className={`font-medium ${margin >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{margin}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {loadingExpenses ? <TableSkeleton /> : (
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -814,10 +883,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <h3 className="text-sm font-semibold text-[#9a9585] mb-2 uppercase tracking-wider">{label}</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {labelPhotos.map(photo => (
-                        <div key={photo.id} className="relative group">
+                        <div key={photo.id} className="relative group cursor-pointer" onClick={() => setLightboxPhoto(photo)}>
                           <img src={photo.url} alt={`${label} photo`} className="w-full h-40 object-cover rounded-lg" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                            <a href={photo.url} target="_blank" rel="noopener noreferrer" className="text-white text-xs bg-[#1d1c17] px-2 py-1 rounded">View</a>
+                            <span className="text-white text-xs bg-[#1d1c17] px-2 py-1 rounded">View</span>
                           </div>
                         </div>
                       ))}
@@ -947,36 +1016,64 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           {/* Project Tasks */}
           <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Project Tasks</h3>
-            {tasks.length === 0 ? (
-              <p className="text-sm text-[#9a9585]">No tasks yet. Add one below.</p>
-            ) : (
-              <div className="space-y-2">
-                {tasks.map(task => (
-                  <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group">
-                    <button
-                      type="button"
-                      onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: !task.completed })}
-                      className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.completed ? 'bg-[#e6ab35] border-[#e6ab35]' : 'border-[#2e2d26] hover:border-[#e6ab35]'}`}
-                    >
-                      {task.completed && <Check className="h-3 w-3 text-[#1d1c17]" />}
-                    </button>
-                    <span className={`flex-1 text-sm ${task.completed ? 'line-through text-[#9a9585]' : 'text-[#efeae2]'}`}>{task.description}</span>
-                    {task.due_date && (
-                      <span className={`text-xs ${new Date(task.due_date) < new Date() && !task.completed ? 'text-[#ef4444]' : 'text-[#9a9585]'}`}>
-                        {new Date(task.due_date).toLocaleDateString()}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => deleteTaskMutation.mutate(task.id)}
-                      className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all flex-shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            {(() => {
+              const openTasks = tasks.filter(t => !t.completed)
+              const completedTasks = tasks.filter(t => t.completed)
+              return (
+                <>
+                  {/* Open Tasks */}
+                  {openTasks.length === 0 ? (
+                    <p className="text-sm text-[#9a9585]">No open tasks. Add one below.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {openTasks.map(task => (
+                        <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group">
+                          <button type="button" onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: true })}
+                            className="flex-shrink-0 w-5 h-5 rounded border border-[#2e2d26] hover:border-[#e6ab35] flex items-center justify-center transition-colors" />
+                          <span className="flex-1 text-sm text-[#efeae2]">{task.description}</span>
+                          {task.due_date && (
+                            <span className={`text-xs ${new Date(task.due_date) < new Date() ? 'text-[#ef4444] font-medium' : 'text-[#9a9585]'}`}>
+                              {new Date(task.due_date).toLocaleDateString()}
+                            </span>
+                          )}
+                          <button type="button" onClick={() => deleteTaskMutation.mutate(task.id)}
+                            className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all flex-shrink-0">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Completed Tasks */}
+                  {completedTasks.length > 0 && (
+                    <div>
+                      <button onClick={() => setShowCompleted(v => !v)} className="flex items-center gap-2 text-sm text-[#9a9585] hover:text-[#efeae2] transition-colors mb-2">
+                        <ChevronDown className={`h-4 w-4 transition-transform ${showCompleted ? 'rotate-180' : ''}`} />
+                        {completedTasks.length} completed
+                      </button>
+                      {showCompleted && (
+                        <div className="space-y-2">
+                          {completedTasks.map(task => (
+                            <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group opacity-60">
+                              <button type="button" onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: false })}
+                                className="flex-shrink-0 w-5 h-5 rounded border border-[#e6ab35] bg-[#e6ab35] flex items-center justify-center transition-colors">
+                                <Check className="h-3 w-3 text-[#1d1c17]" />
+                              </button>
+                              <span className="flex-1 text-sm text-[#9a9585] line-through">{task.description}</span>
+                              <button type="button" onClick={() => deleteTaskMutation.mutate(task.id)}
+                                className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all flex-shrink-0">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )
+            })()}
 
             {/* Add task form */}
             <form onSubmit={taskSubmit(d => addTaskMutation.mutate(d))} className="flex gap-3 items-end">
@@ -991,6 +1088,33 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </TabsContent>
       </Tabs>
+
+      {lightboxPhoto && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" onClick={() => setLightboxPhoto(null)}>
+          <button onClick={() => setLightboxPhoto(null)} className="absolute top-4 right-4 text-white hover:text-[#9a9585] z-10">
+            <X className="h-8 w-8" />
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); const allPhotos = photos; const i = allPhotos.indexOf(lightboxPhoto); if (i > 0) setLightboxPhoto(allPhotos[i-1]) }}
+            className="absolute left-4 text-white hover:text-[#9a9585] z-10 p-2"
+          >
+            <ChevronLeft className="h-8 w-8" />
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); const allPhotos = photos; const i = allPhotos.indexOf(lightboxPhoto); if (i < allPhotos.length-1) setLightboxPhoto(allPhotos[i+1]) }}
+            className="absolute right-16 text-white hover:text-[#9a9585] z-10 p-2"
+          >
+            <ChevronRight className="h-8 w-8" />
+          </button>
+          <div onClick={e => e.stopPropagation()} className="max-w-4xl max-h-[90vh] flex flex-col items-center gap-3">
+            <img src={lightboxPhoto.url} alt="Project photo" className="max-w-full max-h-[80vh] object-contain rounded-lg" />
+            <div className="flex items-center gap-3">
+              {lightboxPhoto.label && <span className="text-xs px-2 py-1 bg-[#252419] text-[#efeae2] rounded">{lightboxPhoto.label}</span>}
+              {(lightboxPhoto as any).caption && <span className="text-sm text-[#9a9585]">{(lightboxPhoto as any).caption}</span>}
+            </div>
+          </div>
+        </div>
+      )}
 
       <AddActivityModal open={addActivityOpen} onClose={() => setAddActivityOpen(false)} customerId={customerId} projectId={projectId} />
       <EditProjectModal

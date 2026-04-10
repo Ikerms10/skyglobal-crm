@@ -13,6 +13,7 @@ import { AddCustomerDrawer } from '@/components/customers/AddCustomerDrawer'
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal'
 import { Plus, Users, Phone, Mail, Trash2, Pencil, ChevronUp, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils'
 type SortField = 'name' | 'type' | 'city' | 'created_at'
 
 export default function CustomersPage() {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
   const [addOpen, setAddOpen] = useState(false)
@@ -153,24 +155,26 @@ export default function CustomersPage() {
               </thead>
               <tbody>
                 {filtered.map((customer, i) => (
-                  <tr key={customer.id} className={cn('border-b border-[#2e2d26] transition-colors group', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}>
+                  <tr
+                    key={customer.id}
+                    onClick={() => router.push(`/customers/${customer.id}`)}
+                    className={cn('border-b border-[#2e2d26] transition-colors group cursor-pointer', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}
+                  >
                     <td className="px-4 py-3">
-                      <Link href={`/customers/${customer.id}`} className="text-sm font-medium text-[#efeae2] hover:text-[#3583b3] transition-colors">
-                        {customer.name}
-                      </Link>
+                      <span className="text-sm font-medium text-[#efeae2]">{customer.name}</span>
                       {customer.company_name && <p className="text-xs text-[#9a9585]">{customer.company_name}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       {customer.phone ? (
                         <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-sm text-[#efeae2] hover:text-[#3583b3] transition-colors">
                           <Phone className="h-3 w-3" />{customer.phone}
                         </a>
                       ) : <span className="text-[#9a9585]">—</span>}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       {customer.email ? (
                         <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-sm text-[#efeae2] hover:text-[#3583b3] transition-colors">
                           <Mail className="h-3 w-3" /><span className="truncate max-w-[180px]">{customer.email}</span>
@@ -186,16 +190,16 @@ export default function CustomersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(customer.created_at)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         <button
-                          onClick={() => setEditCustomer(customer)}
+                          onClick={e => { e.stopPropagation(); setEditCustomer(customer) }}
                           className="p-1.5 text-[#9a9585] hover:text-[#3583b3] transition-colors rounded"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => setDeleteId(customer.id)}
+                          onClick={e => { e.stopPropagation(); setDeleteId(customer.id) }}
                           className="p-1.5 text-[#9a9585] hover:text-[#ef4444] transition-colors rounded"
                         >
                           <Trash2 className="h-4 w-4" />
