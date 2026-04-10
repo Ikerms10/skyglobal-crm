@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { Project, ProjectLineItem, ProjectExpense, ProjectPhoto, Activity } from '@/types'
@@ -313,13 +313,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   })
 
   // Management form
-  const { register: mgmtReg, handleSubmit: mgmtSubmit } = useForm<ManagementForm>({
+  const { register: mgmtReg, handleSubmit: mgmtSubmit, reset: mgmtReset } = useForm<ManagementForm>({
     resolver: zodResolver(managementSchema),
     defaultValues: {
       paint_brand: '', paint_colors: '', num_coats: '', primer_used: false,
       special_finishes: '', crew_notes: '', site_conditions: '', client_communication: '',
     },
   })
+
+  useEffect(() => {
+    if (project) {
+      const p = project as Record<string, unknown>
+      mgmtReset({
+        paint_brand: (p.paint_brand as string) ?? '',
+        paint_colors: (p.paint_colors as string) ?? '',
+        num_coats: p.num_coats != null ? String(p.num_coats) : '',
+        primer_used: (p.primer_used as boolean) ?? false,
+        special_finishes: (p.special_finishes as string) ?? '',
+        crew_notes: (p.crew_notes as string) ?? '',
+        site_conditions: (p.site_conditions as string) ?? '',
+        client_communication: (p.client_communication as string) ?? '',
+      })
+    }
+  }, [project, mgmtReset])
 
   const saveManagementMutation = useMutation({
     mutationFn: async (data: ManagementForm) => {
@@ -361,8 +377,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const addTaskMutation = useMutation({
     mutationFn: async (data: TaskForm) => {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
       const { error } = await supabase.from('project_tasks').insert({
         project_id: projectId,
+        user_id: user.id,
         description: data.description,
         due_date: data.due_date || null,
         completed: false,
