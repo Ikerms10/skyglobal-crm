@@ -47,7 +47,7 @@ export default function SettingsPage() {
       const { error } = await supabase.auth.updateUser({
         data: { display_name: displayName },
       })
-      if (error) throw error
+      if (error) throw new Error(error.message ?? 'Unknown error')
       toast.success('Profile updated')
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to update profile')
@@ -68,7 +68,7 @@ export default function SettingsPage() {
     setPasswordLoading(true)
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
-      if (error) throw error
+      if (error) throw new Error(error.message ?? 'Unknown error')
       toast.success('Password updated successfully')
       setNewPassword('')
       setConfirmPassword('')
@@ -90,7 +90,7 @@ export default function SettingsPage() {
           business_address: businessAddress,
         },
       })
-      if (error) throw error
+      if (error) throw new Error(error.message ?? 'Unknown error')
       toast.success('Business settings saved')
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to save business settings')

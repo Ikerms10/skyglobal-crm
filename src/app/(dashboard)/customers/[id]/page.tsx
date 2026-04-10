@@ -1,374 +1,337 @@
 'use client'
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Customer, Lead, Project, Activity, ProjectPhoto } from '@/types'
-import { formatCurrency, formatDate, formatRelativeTime } from '@/lib/utils'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
-import { Badge, StageBadge, StatusBadge, PaymentBadge } from '@/components/ui/Badge'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import { formatCurrency, formatDate, formatRelativeTime, cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { StatusBadge, PaymentBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Avatar } from '@/components/ui/Avatar'
-import { Skeleton, TableSkeleton } from '@/components/ui/Skeleton'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { AddLeadDrawer } from '@/components/leads/AddLeadDrawer'
-import { toast } from 'sonner'
-import { Phone, Mail, MapPin, Tag, Plus, Edit2, Check, X, Building2, Briefcase, Target, Activity as ActivityIcon, Image, Pencil } from 'lucide-react'
-import Link from 'next/link'
-import { use } from 'react'
-import { AddActivityModal } from '@/components/customers/AddActivityModal'
-import { EditCustomerModal } from '@/components/customers/EditCustomerModal'
 import { NewProjectModal } from '@/components/projects/NewProjectModal'
+import { EditCustomerModal } from '@/components/customers/EditCustomerModal'
+import { AddActivityModal } from '@/components/customers/AddActivityModal'
+import {
+  ArrowLeft, Phone, Mail, MapPin, Building2, Edit2, Trash2, Plus,
+  Briefcase, Target, Activity, User, DollarSign
+} from 'lucide-react'
+
+const TABS = ['projects', 'leads', 'activity', 'info'] as const
+type Tab = typeof TABS[number]
 
 const ACTIVITY_ICONS: Record<string, string> = {
-  'Call': '📞', 'Text': '💬', 'Email': '📧', 'Visit': '🏠',
-  'Note': '📝', 'Stage Change': '🔄', 'Payment Received': '💰',
+  Call: '📞', Text: '💬', Email: '📧', Visit: '🏠',
+  Note: '📝', 'Stage Change': '🔄', 'Payment Received': '💰',
   'Photo Added': '📷', 'Estimate Sent': '📋',
 }
 
-export default function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
-  const queryClient = useQueryClient()
-  const [editingTags, setEditingTags] = useState(false)
-  const [tagInput, setTagInput] = useState('')
-  const [addLeadOpen, setAddLeadOpen] = useState(false)
-  const [addActivityOpen, setAddActivityOpen] = useState(false)
-  const [editCustomerOpen, setEditCustomerOpen] = useState(false)
+export default function CustomerDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter()
+  const customerId = params.id
+
+  const [customer, setCustomer] = useState<any>(null)
+  const [projects, setProjects] = useState<any[]>([])
+  const [leads, setLeads] = useState<any[]>([])
+  const [activities, setActivities] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<Tab>('projects')
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const [newProjectOpen, setNewProjectOpen] = useState(false)
+  const [addActivityOpen, setAddActivityOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
-  const { data: customer, isLoading: loadingCustomer } = useQuery({
-    queryKey: ['customer', id],
-    queryFn: async () => {
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
       const supabase = createClient()
-      const { data } = await supabase.from('customers').select('*').eq('id', id).single()
-      return data as Customer | null
-    },
-  })
 
-  const { data: projects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ['customer-projects', id],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('projects')
-        .select('*').eq('customer_id', id).is('deleted_at', null)
+      const { data: cust, error: ce } = await supabase
+        .from('customers').select('*').eq('id', customerId).single()
+      if (ce) throw new Error(ce.message)
+      setCustomer(cust)
+
+      const { data: proj, error: pe } = await supabase
+        .from('projects').select('*').eq('customer_id', customerId)
+        .is('deleted_at', null).order('created_at', { ascending: false })
+      if (pe) throw new Error(pe.message)
+      setProjects(proj ?? [])
+
+      const { data: leds, error: le } = await supabase
+        .from('leads').select('*').eq('customer_id', customerId)
+        .is('deleted_at', null).order('created_at', { ascending: false })
+      if (le) throw new Error(le.message)
+      setLeads(leds ?? [])
+
+      const { data: acts, error: ae } = await supabase
+        .from('activities').select('*').eq('customer_id', customerId)
         .order('created_at', { ascending: false })
-      return (data ?? []) as Project[]
-    },
-  })
+      if (ae) throw new Error(ae.message)
+      setActivities(acts ?? [])
 
-  const { data: leads = [], isLoading: loadingLeads } = useQuery({
-    queryKey: ['customer-leads', id],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('leads')
-        .select('*').eq('customer_id', id).is('deleted_at', null)
-        .order('created_at', { ascending: false })
-      return (data ?? []) as Lead[]
-    },
-  })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load customer')
+    } finally {
+      setLoading(false)
+    }
+  }, [customerId])
 
-  const { data: activities = [], isLoading: loadingActivities } = useQuery({
-    queryKey: ['customer-activities', id],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('activities')
-        .select('*').eq('customer_id', id)
-        .order('created_at', { ascending: false })
-      return (data ?? []) as Activity[]
-    },
-  })
+  useEffect(() => { loadData() }, [loadData])
 
-  const { data: photos = [] } = useQuery({
-    queryKey: ['customer-photos', id],
-    queryFn: async () => {
+  const handleDelete = async () => {
+    setDeleteLoading(true)
+    try {
       const supabase = createClient()
-      const projectIds = projects.map(p => p.id)
-      if (!projectIds.length) return []
-      const { data } = await supabase.from('project_photos')
-        .select('*').in('project_id', projectIds)
-        .order('uploaded_at', { ascending: false })
-      return (data ?? []) as ProjectPhoto[]
-    },
-    enabled: projects.length > 0,
-  })
-
-  const deleteActivityMutation = useMutation({
-    mutationFn: async (activityId: string) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('activities').delete().eq('id', activityId)
+      const { error } = await supabase.from('customers')
+        .update({ deleted_at: new Date().toISOString() }).eq('id', customerId)
       if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer-activities', id] })
-      toast.success('Activity deleted')
-    },
-  })
-
-  const updateTagsMutation = useMutation({
-    mutationFn: async (tags: string[]) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('customers').update({ tags }).eq('id', id)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer', id] })
-      toast.success('Tags updated')
-      setEditingTags(false)
-    },
-  })
-
-  const addTag = () => {
-    if (!tagInput.trim() || !customer) return
-    const newTags = [...(customer.tags ?? []), tagInput.trim()]
-    updateTagsMutation.mutate(newTags)
-    setTagInput('')
+      toast.success('Customer deleted')
+      router.push('/customers')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setDeleteLoading(false)
+    }
   }
 
-  const removeTag = (tag: string) => {
-    if (!customer) return
-    updateTagsMutation.mutate((customer.tags ?? []).filter(t => t !== tag))
-  }
-
-  const totalRevenue = projects.reduce((sum, p) => sum + (p.contract_value ?? 0), 0)
-  const completedProjects = projects.filter(p => p.status === 'Completed').length
-
-  if (loadingCustomer) {
+  if (loading) {
     return (
       <div className="p-4 md:p-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
-        </div>
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     )
   }
 
-  if (!customer) return <div className="p-6 text-[#9a9585]">Customer not found.</div>
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <p className="text-[#ef4444]">{error}</p>
+        <Button onClick={loadData}>Try Again</Button>
+      </div>
+    )
+  }
+
+  if (!customer) {
+    return (
+      <div className="p-4 md:p-6">
+        <p className="text-[#9a9585]">Customer not found.</p>
+        <Link href="/customers" className="text-[#3583b3] hover:underline text-sm mt-2 inline-block">Back to Customers</Link>
+      </div>
+    )
+  }
+
+  const totalRevenue = projects.reduce((s, p) => s + (p.contract_value ?? 0), 0)
+  const activeProjects = projects.filter(p => p.status === 'In Progress').length
+  const openLeads = leads.filter(l => !['Won', 'Lost'].includes(l.stage)).length
+  const avgProjectValue = projects.length > 0 ? totalRevenue / projects.length : 0
 
   return (
     <div className="p-4 md:p-6 space-y-6">
+      {/* Back */}
+      <Link href="/customers" className="flex items-center gap-2 text-[#9a9585] hover:text-[#efeae2] transition-colors text-sm">
+        <ArrowLeft className="h-4 w-4" /> Customers
+      </Link>
+
       {/* Header */}
       <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-4">
-          <Avatar name={customer.name} size="lg" />
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-3 mb-1">
+          <div className="flex-1 space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold text-white">{customer.name}</h1>
               <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
             </div>
-            {customer.company_name && (
-              <div className="flex items-center gap-1 text-[#9a9585] text-sm mb-2">
-                <Building2 className="h-4 w-4" />{customer.company_name}
-              </div>
-            )}
-            <div className="flex flex-wrap gap-4 text-sm text-[#9a9585] mb-3">
+            <div className="flex flex-wrap gap-4 text-sm text-[#9a9585]">
               {customer.phone && (
-                <a href={`tel:${customer.phone}`} className="flex items-center gap-1 hover:text-[#3583b3] transition-colors">
+                <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 hover:text-[#3583b3] transition-colors">
                   <Phone className="h-4 w-4" />{customer.phone}
                 </a>
               )}
               {customer.email && (
-                <a href={`mailto:${customer.email}`} className="flex items-center gap-1 hover:text-[#3583b3] transition-colors">
+                <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 hover:text-[#3583b3] transition-colors">
                   <Mail className="h-4 w-4" />{customer.email}
                 </a>
               )}
-              {customer.address && (
-                <span className="flex items-center gap-1">
+              {(customer.city || customer.address) && (
+                <span className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4" />
-                  {[customer.address, customer.city, customer.state, customer.zip].filter(Boolean).join(', ')}
+                  {[customer.address, customer.city, customer.state].filter(Boolean).join(', ')}
                 </span>
               )}
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Tag className="h-4 w-4 text-[#9a9585]" />
-              {customer.tags?.map(tag => (
-                <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-[#2e2d26] text-[#efeae2] rounded-full">
-                  {tag}
-                  <button onClick={() => removeTag(tag)} className="hover:text-[#ef4444] transition-colors">
-                    <X className="h-3 w-3" />
-                  </button>
+              {customer.company_name && (
+                <span className="flex items-center gap-1.5">
+                  <Building2 className="h-4 w-4" />{customer.company_name}
                 </span>
-              ))}
-              {editingTags ? (
-                <div className="flex items-center gap-1">
-                  <input
-                    value={tagInput}
-                    onChange={e => setTagInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
-                    placeholder="Add tag..."
-                    className="text-xs bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded px-2 py-0.5 w-24 focus:outline-none focus:ring-1 focus:ring-[#3583b3]"
-                    autoFocus
-                  />
-                  <button onClick={addTag} className="text-[#e6ab35]"><Check className="h-4 w-4" /></button>
-                  <button onClick={() => setEditingTags(false)} className="text-[#9a9585]"><X className="h-4 w-4" /></button>
-                </div>
-              ) : (
-                <button onClick={() => setEditingTags(true)} className="text-xs text-[#3583b3] hover:text-[#efeae2] flex items-center gap-1">
-                  <Plus className="h-3 w-3" /> Add tag
-                </button>
               )}
             </div>
           </div>
-
-          {/* Stats */}
-          <div className="flex md:flex-col gap-4 md:text-right">
-            <div>
-              <p className="text-2xl font-bold text-[#e6ab35]">{formatCurrency(totalRevenue)}</p>
-              <p className="text-xs text-[#9a9585]">Lifetime revenue</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{completedProjects}</p>
-              <p className="text-xs text-[#9a9585]">Completed jobs</p>
-            </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+              <Edit2 className="h-4 w-4" /> Edit
+            </Button>
+            <Button size="sm" variant="danger" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4" /> Delete
+            </Button>
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#2e2d26]">
-          {customer.phone && (
-            <a href={`tel:${customer.phone}`}>
-              <Button size="sm" variant="secondary"><Phone className="h-4 w-4" /> Call</Button>
-            </a>
-          )}
-          {customer.phone && (
-            <a href={`sms:${customer.phone}`}>
-              <Button size="sm" variant="secondary">💬 Text</Button>
-            </a>
-          )}
-          <Button size="sm" variant="secondary" onClick={() => setAddActivityOpen(true)}>
-            <Plus className="h-4 w-4" /> Add Note
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => setAddLeadOpen(true)}>
-            <Target className="h-4 w-4" /> New Lead
-          </Button>
-          <Button size="sm" onClick={() => setNewProjectOpen(true)}>
-            <Briefcase className="h-4 w-4" /> New Project
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => setEditCustomerOpen(true)}>
-            <Pencil className="h-4 w-4" /> Edit Customer
-          </Button>
+        {/* Stats row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[#2e2d26]">
+          {[
+            { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'text-[#e6ab35]' },
+            { label: 'Active Projects', value: String(activeProjects), icon: Briefcase, color: 'text-[#3583b3]' },
+            { label: 'Open Leads', value: String(openLeads), icon: Target, color: 'text-[#10b981]' },
+            { label: 'Avg Project Value', value: formatCurrency(avgProjectValue), icon: DollarSign, color: 'text-[#9a9585]' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="text-center">
+              <p className={`text-xl font-bold ${color}`}>{value}</p>
+              <p className="text-xs text-[#9a9585] mt-0.5">{label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview">
-        <TabsList className="overflow-x-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
-          <TabsTrigger value="leads">Leads ({leads.length})</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="photos">Photos</TabsTrigger>
-        </TabsList>
+      <div className="border-b border-[#2e2d26]">
+        <nav className="flex gap-0 overflow-x-auto">
+          {[
+            { id: 'projects', label: `Projects (${projects.length})`, icon: Briefcase },
+            { id: 'leads', label: `Leads (${leads.length})`, icon: Target },
+            { id: 'activity', label: 'Activity', icon: Activity },
+            { id: 'info', label: 'Info', icon: User },
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id as Tab)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
+                activeTab === id
+                  ? 'border-[#e6ab35] text-[#e6ab35]'
+                  : 'border-transparent text-[#9a9585] hover:text-[#efeae2]'
+              )}
+            >
+              <Icon className="h-4 w-4" />{label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-        <TabsContent value="overview" className="mt-6 space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Total Revenue', value: formatCurrency(totalRevenue), color: 'text-[#e6ab35]' },
-              { label: 'Active Projects', value: String(projects.filter(p => ['Scheduled','In Progress'].includes(p.status)).length), color: 'text-[#3583b3]' },
-              { label: 'Total Leads', value: String(leads.length), color: 'text-[#3583b3]' },
-              { label: 'Won Leads', value: String(leads.filter(l => l.stage === 'Won').length), color: 'text-[#e6ab35]' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-                <p className="text-xs text-[#9a9585] mb-1">{label}</p>
-                <p className={`text-xl font-bold ${color}`}>{value}</p>
-              </div>
-            ))}
+      {/* Tab Content */}
+      {activeTab === 'projects' && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setNewProjectOpen(true)}>
+              <Plus className="h-4 w-4" /> New Project
+            </Button>
           </div>
-          {customer.notes && (
-            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-              <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Notes</p>
-              <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{customer.notes}</p>
-            </div>
-          )}
-          {customer.referred_by && (
-            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-              <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">Referred by</p>
-              <p className="text-sm text-[#efeae2]">{customer.referred_by}</p>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="projects" className="mt-6">
-          {loadingProjects ? <TableSkeleton /> : projects.length === 0 ? (
-            <EmptyState icon={Briefcase} title="No projects yet" description="Projects appear here when a lead is won." />
+          {projects.length === 0 ? (
+            <EmptyState
+              icon={Briefcase}
+              title="No projects yet"
+              description="Create the first project for this customer."
+              action={{ label: 'Create Project', onClick: () => setNewProjectOpen(true) }}
+            />
           ) : (
             <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b-2 border-b-[#e6ab35]">
-                    {['Title', 'Status', 'Type', 'Contract', 'Payment', 'Dates'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {projects.map((p, i) => (
-                    <tr key={p.id} className={`border-b border-[#2e2d26] transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
-                      <td className="px-4 py-3">
-                        <Link href={`/customers/${id}/projects/${p.id}`} className="text-sm font-medium text-[#efeae2] hover:text-[#3583b3] transition-colors">
-                          {p.title}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
-                      <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
-                      <td className="px-4 py-3 text-sm text-[#e6ab35] font-medium">{formatCurrency(p.contract_value)}</td>
-                      <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
-                      <td className="px-4 py-3 text-xs text-[#9a9585] whitespace-nowrap">
-                        {formatDate(p.start_date)} → {formatDate(p.end_date)}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-b-[#e6ab35]">
+                      {['Project', 'Status', 'Type', 'Contract', 'Payment', 'Start', 'End', ''].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {projects.map((p, i) => (
+                      <tr
+                        key={p.id}
+                        onClick={() => router.push(`/customers/${customerId}/projects/${p.id}`)}
+                        className={cn('border-b border-[#2e2d26] cursor-pointer transition-colors', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}
+                      >
+                        <td className="px-4 py-3 text-sm font-medium text-[#efeae2]">{p.title}</td>
+                        <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
+                        <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
+                        <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{formatCurrency(p.contract_value)}</td>
+                        <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
+                        <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(p.start_date)}</td>
+                        <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(p.end_date)}</td>
+                        <td className="px-4 py-3 text-sm text-[#3583b3]">Open</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="leads" className="mt-6">
-          {loadingLeads ? <TableSkeleton /> : leads.length === 0 ? (
-            <EmptyState icon={Target} title="No leads" description="No leads linked to this customer." action={{ label: 'Add Lead', onClick: () => setAddLeadOpen(true) }} />
+      {activeTab === 'leads' && (
+        <div className="space-y-4">
+          {leads.length === 0 ? (
+            <EmptyState icon={Target} title="No leads yet" description="No leads linked to this customer." />
           ) : (
-            <div className="space-y-2">
-              {leads.map(l => (
-                <div key={l.id} className="bg-[#252419] border border-[#2e2d26] rounded-lg p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-[#efeae2]">{l.title}</p>
-                    <p className="text-xs text-[#9a9585]">{l.source} · {formatDate(l.created_at)}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {l.estimated_value && <span className="text-sm text-[#e6ab35] font-medium">{formatCurrency(l.estimated_value)}</span>}
-                    <StageBadge stage={l.stage} />
-                  </div>
-                </div>
-              ))}
+            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-b-[#e6ab35]">
+                      {['Title', 'Stage', 'Source', 'Value', 'Follow-up', 'Added'].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((l, i) => (
+                      <tr key={l.id} className={cn('border-b border-[#2e2d26]', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]')}>
+                        <td className="px-4 py-3 text-sm font-medium text-[#efeae2]">{l.title}</td>
+                        <td className="px-4 py-3"><Badge variant="default">{l.stage}</Badge></td>
+                        <td className="px-4 py-3 text-sm text-[#9a9585]">{l.source}</td>
+                        <td className="px-4 py-3 text-sm text-[#e6ab35]">{formatCurrency(l.estimated_value)}</td>
+                        <td className={cn('px-4 py-3 text-sm whitespace-nowrap', l.follow_up_date && new Date(l.follow_up_date) < new Date() ? 'text-[#ef4444]' : 'text-[#9a9585]')}>
+                          {formatDate(l.follow_up_date)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(l.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="activity" className="mt-6">
-          {loadingActivities ? <TableSkeleton /> : activities.length === 0 ? (
-            <EmptyState icon={ActivityIcon} title="No activity" description="Activity will appear here as you interact with this customer." action={{ label: 'Add Note', onClick: () => setAddActivityOpen(true) }} />
+      {activeTab === 'activity' && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <Button size="sm" variant="secondary" onClick={() => setAddActivityOpen(true)}>
+              <Plus className="h-4 w-4" /> Log Activity
+            </Button>
+          </div>
+          {activities.length === 0 ? (
+            <EmptyState icon={Activity} title="No activity yet" description="Log calls, texts, and notes here." action={{ label: 'Log Activity', onClick: () => setAddActivityOpen(true) }} />
           ) : (
             <div className="space-y-1">
               {activities.map((a, i) => (
-                <div key={a.id} className="flex gap-4 group">
+                <div key={a.id} className="flex gap-4">
                   <div className="flex flex-col items-center">
                     <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
                       {ACTIVITY_ICONS[a.type] ?? '📋'}
                     </div>
                     {i < activities.length - 1 && <div className="w-0.5 bg-[#2e2d26] flex-1 my-1" />}
                   </div>
-                  <div className="pb-4 flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
+                  <div className="pb-4 flex-1">
+                    <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-white">{a.type}</p>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-[#9a9585] whitespace-nowrap">{formatRelativeTime(a.created_at)}</span>
-                        <button onClick={() => deleteActivityMutation.mutate(a.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all ml-2 flex-shrink-0">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
+                      <span className="text-xs text-[#9a9585]">{formatRelativeTime(a.created_at)}</span>
                     </div>
                     {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
                   </div>
@@ -376,38 +339,77 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               ))}
             </div>
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="photos" className="mt-6">
-          {photos.length === 0 ? (
-            <EmptyState icon={Image} title="No photos" description="Photos will appear here as you upload them to projects." />
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {photos.map(photo => (
-                <div key={photo.id} className="relative group">
-                  <img src={photo.url} alt={photo.label ?? 'Project photo'} className="w-full h-40 object-cover rounded-lg" />
-                  {photo.label && (
-                    <span className={`absolute top-2 left-2 text-xs px-2 py-0.5 rounded font-medium ${
-                      photo.label === 'Before' ? 'bg-[#e6ab35] text-[#1d1c17]' :
-                      photo.label === 'During' ? 'bg-[#3583b3] text-white' :
-                      'bg-emerald-500 text-white'
-                    }`}>{photo.label}</span>
-                  )}
+      {activeTab === 'info' && (
+        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              { label: 'Full Name', value: customer.name },
+              { label: 'Type', value: customer.type },
+              { label: 'Company', value: customer.company_name },
+              { label: 'Phone', value: customer.phone },
+              { label: 'Email', value: customer.email },
+              { label: 'Address', value: customer.address },
+              { label: 'City', value: customer.city },
+              { label: 'State', value: customer.state },
+              { label: 'ZIP', value: customer.zip },
+              { label: 'Referred By', value: customer.referred_by },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-sm text-[#efeae2]">{value ?? '—'}</p>
+              </div>
+            ))}
+            {customer.tags?.length > 0 && (
+              <div className="md:col-span-2">
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {customer.tags.map((tag: string) => (
+                    <span key={tag} className="text-xs px-2 py-1 bg-[#2e2d26] text-[#efeae2] rounded">{tag}</span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+              </div>
+            )}
+            {customer.notes && (
+              <div className="md:col-span-2">
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">Notes</p>
+                <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{customer.notes}</p>
+              </div>
+            )}
+          </div>
+          <div className="mt-6 pt-6 border-t border-[#2e2d26]">
+            <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+              <Edit2 className="h-4 w-4" /> Edit Customer Info
+            </Button>
+          </div>
+        </div>
+      )}
 
-      <AddLeadDrawer open={addLeadOpen} onClose={() => setAddLeadOpen(false)} />
+      {/* EditCustomerModal is controlled by passing customer or null */}
+      <EditCustomerModal
+        customer={editOpen ? customer : null}
+        onClose={() => { setEditOpen(false); loadData() }}
+      />
+      <NewProjectModal
+        open={newProjectOpen}
+        onClose={() => { setNewProjectOpen(false); loadData() }}
+        preselectedCustomerId={customerId}
+      />
       <AddActivityModal
         open={addActivityOpen}
-        onClose={() => setAddActivityOpen(false)}
-        customerId={id}
+        onClose={() => { setAddActivityOpen(false); loadData() }}
+        customerId={customerId}
       />
-      <EditCustomerModal customer={editCustomerOpen ? customer ?? null : null} onClose={() => setEditCustomerOpen(false)} />
-      <NewProjectModal open={newProjectOpen} onClose={() => setNewProjectOpen(false)} preselectedCustomerId={id} />
+      <ConfirmModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        loading={deleteLoading}
+        title="Delete Customer"
+        description={`Delete "${customer.name}"? This will also delete all their projects and leads. This cannot be undone.`}
+      />
     </div>
   )
 }

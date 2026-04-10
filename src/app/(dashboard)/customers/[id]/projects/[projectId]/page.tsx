@@ -1,311 +1,385 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Project, ProjectLineItem, ProjectExpense, ProjectPhoto, Activity } from '@/types'
-import { formatCurrency, formatDate, formatRelativeTime, calculateProfit, calculateMargin } from '@/lib/utils'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import { formatCurrency, formatDate, formatRelativeTime, cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { StatusBadge, PaymentBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import { TableSkeleton, Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { AddActivityModal } from '@/components/customers/AddActivityModal'
 import { EditProjectModal } from '@/components/projects/EditProjectModal'
-import { toast } from 'sonner'
-import { ArrowLeft, DollarSign, Calendar, MapPin, Plus, Trash2, Upload, Image, Edit2, X, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
-import { use } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { AddActivityModal } from '@/components/customers/AddActivityModal'
+import {
+  ArrowLeft, Calendar, MapPin, Plus, Trash2, Upload,
+  Edit2, X, Check, ChevronDown, ChevronLeft, ChevronRight, Image as ImageIcon
+} from 'lucide-react'
 
-const managementSchema = z.object({
-  paint_brand: z.string().optional(),
-  paint_colors: z.string().optional(),
-  num_coats: z.string().optional(),
-  primer_used: z.boolean().optional(),
-  special_finishes: z.string().optional(),
-  crew_notes: z.string().optional(),
-  site_conditions: z.string().optional(),
-  client_communication: z.string().optional(),
-})
-type ManagementForm = z.infer<typeof managementSchema>
-
-const taskSchema = z.object({
-  description: z.string().min(1, 'Required'),
-  due_date: z.string().optional(),
-})
-type TaskForm = z.infer<typeof taskSchema>
-
-const lineItemSchema = z.object({
-  description: z.string().min(1, 'Required'),
-  quantity: z.string().optional(),
-  unit: z.string().optional(),
-  unit_price: z.string().optional(),
-  total: z.string().optional(),
-})
-type LineItemForm = z.infer<typeof lineItemSchema>
-
-const expenseSchema = z.object({
-  category: z.string().min(1, 'Required'),
-  description: z.string().optional(),
-  amount: z.string().min(1, 'Required'),
-  date: z.string().min(1, 'Required'),
-})
-type ExpenseForm = z.infer<typeof expenseSchema>
+const TABS = ['overview', 'scope', 'costs', 'management', 'photos'] as const
+type Tab = typeof TABS[number]
 
 const ACTIVITY_ICONS: Record<string, string> = {
-  'Call': '📞', 'Text': '💬', 'Email': '📧', 'Visit': '🏠',
-  'Note': '📝', 'Stage Change': '🔄', 'Payment Received': '💰',
+  Call: '📞', Text: '💬', Email: '📧', Visit: '🏠',
+  Note: '📝', 'Stage Change': '🔄', 'Payment Received': '💰',
   'Photo Added': '📷', 'Estimate Sent': '📋',
 }
 
-export default function ProjectDetailPage({ params }: { params: Promise<{ id: string; projectId: string }> }) {
-  const { id: customerId, projectId } = use(params)
-  const queryClient = useQueryClient()
+const EXPENSE_CATEGORIES = ['Labor', 'Materials', 'Subcontractors', 'Fuel', 'Tools', 'Permits', 'Equipment', 'Other']
+const STATUS_OPTIONS = ['Scheduled', 'In Progress', 'On Hold', 'Completed', 'Cancelled'] as const
+
+export default function ProjectDetailPage({ params }: { params: { id: string; projectId: string } }) {
   const router = useRouter()
-  const [deleteLineItem, setDeleteLineItem] = useState<string | null>(null)
-  const [deleteExpense, setDeleteExpense] = useState<string | null>(null)
-  const [addActivityOpen, setAddActivityOpen] = useState(false)
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
-  const [photoLabel, setPhotoLabel] = useState<'Before' | 'During' | 'After'>('Before')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { id: customerId, projectId } = params
+
+  // Data state
+  const [project, setProject] = useState<any>(null)
+  const [expenses, setExpenses] = useState<any[]>([])
+  const [lineItems, setLineItems] = useState<any[]>([])
+  const [photos, setPhotos] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
+  const [activities, setActivities] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // UI state
+  const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
+  const [statusUpdating, setStatusUpdating] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [addActivityOpen, setAddActivityOpen] = useState(false)
+  const [lightboxPhoto, setLightboxPhoto] = useState<any>(null)
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false)
+
+  // Lead cost edit
   const [editingLeadCost, setEditingLeadCost] = useState(false)
   const [leadCostInput, setLeadCostInput] = useState('')
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
-  const [lightboxPhoto, setLightboxPhoto] = useState<ProjectPhoto | null>(null)
-  const [showCompleted, setShowCompleted] = useState(false)
-
-  const { data: project, isLoading: loadingProject } = useQuery({
-    queryKey: ['project', projectId],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('projects').select('*, customers(name)').eq('id', projectId).single()
-      return data as (Project & { customers: { name: string } | null }) | null
-    },
-  })
-
-  const { data: lineItems = [], isLoading: loadingLineItems } = useQuery({
-    queryKey: ['line-items', projectId],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('project_line_items').select('*').eq('project_id', projectId).order('created_at')
-      return (data ?? []) as ProjectLineItem[]
-    },
-  })
-
-  const { data: expenses = [], isLoading: loadingExpenses } = useQuery({
-    queryKey: ['project-expenses', projectId],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('project_expenses').select('*').eq('project_id', projectId).order('date', { ascending: false })
-      return (data ?? []) as ProjectExpense[]
-    },
-  })
-
-  const { data: photos = [], isLoading: loadingPhotos } = useQuery({
-    queryKey: ['project-photos', projectId],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('project_photos').select('*').eq('project_id', projectId).order('uploaded_at', { ascending: false })
-      return (data ?? []) as ProjectPhoto[]
-    },
-  })
-
-  const { data: activities = [] } = useQuery({
-    queryKey: ['project-activities', projectId],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('activities').select('*').eq('project_id', projectId).order('created_at', { ascending: false })
-      return (data ?? []) as Activity[]
-    },
-  })
-
-  const updateStatusMutation = useMutation({
-    mutationFn: async (status: string) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('projects').update({ status, updated_at: new Date().toISOString() }).eq('id', projectId)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
-      toast.success('Project updated')
-    },
-  })
-
-  const markPaidMutation = useMutation({
-    mutationFn: async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-      const { error } = await supabase.from('projects').update({
-        payment_status: 'Paid',
-        amount_paid: project?.contract_value ?? 0,
-        updated_at: new Date().toISOString(),
-      }).eq('id', projectId)
-      if (error) throw new Error(error.message)
-      await supabase.from('activities').insert({
-        user_id: user.id,
-        customer_id: customerId,
-        project_id: projectId,
-        type: 'Payment Received',
-        content: `Full payment received: ${formatCurrency(project?.contract_value)}`,
-      })
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['project-activities', projectId] })
-      toast.success('Project marked as paid')
-    },
-    onError: () => toast.error('Failed to update payment'),
-  })
-
-  const deleteProjectMutation = useMutation({
-    mutationFn: async () => {
-      const supabase = createClient()
-      const { error } = await supabase.from('projects').update({ deleted_at: new Date().toISOString() }).eq('id', projectId)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] })
-      queryClient.invalidateQueries({ queryKey: ['customer-projects', customerId] })
-      toast.success('Project deleted')
-      router.push(`/customers/${customerId}`)
-    },
-    onError: () => toast.error('Failed to delete project'),
-  })
-
-  const deleteActivityMutation = useMutation({
-    mutationFn: async (activityId: string) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('activities').delete().eq('id', activityId)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-activities', projectId] })
-      toast.success('Activity deleted')
-    },
-  })
-
-  const saveLeadCostMutation = useMutation({
-    mutationFn: async (value: number) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('projects').update({ lead_cost: value, updated_at: new Date().toISOString() }).eq('id', projectId)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
-      setEditingLeadCost(false)
-      toast.success('Lead cost updated')
-    },
-    onError: () => toast.error('Failed to update lead cost'),
-  })
-
-  // Line items form
-  const { register: liReg, handleSubmit: liSubmit, reset: liReset, watch: liWatch, setValue: liSetValue, formState: { errors: liErrors } } = useForm<LineItemForm>({
-    resolver: zodResolver(lineItemSchema),
-  })
-
-  const qty = liWatch('quantity')
-  const price = liWatch('unit_price')
-  if (qty && price) {
-    const computed = (Number(qty) * Number(price)).toFixed(2)
-    liSetValue('total', computed)
-  }
-
-  const addLineItemMutation = useMutation({
-    mutationFn: async (data: LineItemForm) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('project_line_items').insert({
-        project_id: projectId,
-        description: data.description,
-        quantity: data.quantity ? Number(data.quantity) : null,
-        unit: data.unit || null,
-        unit_price: data.unit_price ? Number(data.unit_price) : null,
-        total: data.total ? Number(data.total) : null,
-      })
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['line-items', projectId] })
-      liReset()
-      toast.success('Line item added')
-    },
-    onError: () => toast.error('Failed to add line item'),
-  })
-
-  const deleteLineItemMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('project_line_items').delete().eq('id', id)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['line-items', projectId] })
-      toast.success('Line item removed')
-      setDeleteLineItem(null)
-    },
-  })
 
   // Expense form
-  const { register: expReg, handleSubmit: expSubmit, reset: expReset, formState: { errors: expErrors } } = useForm<ExpenseForm>({
-    resolver: zodResolver(expenseSchema),
-    defaultValues: { category: 'Labor', date: new Date().toISOString().split('T')[0] },
-  })
+  const [expCategory, setExpCategory] = useState('Labor')
+  const [expDesc, setExpDesc] = useState('')
+  const [expAmount, setExpAmount] = useState('')
+  const [expDate, setExpDate] = useState(new Date().toISOString().split('T')[0])
+  const [expAdding, setExpAdding] = useState(false)
 
-  const addExpenseMutation = useMutation({
-    mutationFn: async (data: ExpenseForm) => {
+  // Line item form
+  const [liDesc, setLiDesc] = useState('')
+  const [liQty, setLiQty] = useState('')
+  const [liUnit, setLiUnit] = useState('')
+  const [liPrice, setLiPrice] = useState('')
+  const [liAdding, setLiAdding] = useState(false)
+
+  // Task form
+  const [taskDesc, setTaskDesc] = useState('')
+  const [taskDue, setTaskDue] = useState('')
+  const [taskAdding, setTaskAdding] = useState(false)
+
+  // Photo upload
+  const [photoLabel, setPhotoLabel] = useState<'Before' | 'During' | 'After'>('Before')
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Management form
+  const [mgmt, setMgmt] = useState({
+    paint_brand: '', paint_colors: '', num_coats: '', primer_used: false,
+    special_finishes: '', crew_notes: '', site_conditions: '', parking_notes: '',
+    client_communication: '',
+  })
+  const [mgmtSaving, setMgmtSaving] = useState(false)
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const supabase = createClient()
+
+      const { data: proj, error: pe } = await supabase
+        .from('projects').select('*, customers(name)').eq('id', projectId).single()
+      if (pe) throw new Error(pe.message)
+      setProject(proj)
+      setMgmt({
+        paint_brand: proj.paint_brand ?? '',
+        paint_colors: proj.paint_colors ?? '',
+        num_coats: proj.num_coats != null ? String(proj.num_coats) : '',
+        primer_used: proj.primer_used ?? false,
+        special_finishes: proj.special_finishes ?? '',
+        crew_notes: proj.crew_notes ?? '',
+        site_conditions: proj.site_conditions ?? '',
+        parking_notes: proj.parking_notes ?? '',
+        client_communication: proj.client_communication ?? '',
+      })
+
+      const [expRes, liRes, photoRes, taskRes, actRes] = await Promise.all([
+        supabase.from('project_expenses').select('*').eq('project_id', projectId).order('date', { ascending: false }),
+        supabase.from('project_line_items').select('*').eq('project_id', projectId).order('created_at'),
+        supabase.from('project_photos').select('*').eq('project_id', projectId).order('uploaded_at', { ascending: false }),
+        supabase.from('project_tasks').select('*').eq('project_id', projectId).order('created_at'),
+        supabase.from('activities').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+      ])
+
+      if (expRes.error) throw new Error(expRes.error.message)
+      if (liRes.error) throw new Error(liRes.error.message)
+      if (photoRes.error) throw new Error(photoRes.error.message)
+      if (taskRes.error) throw new Error(taskRes.error.message)
+      if (actRes.error) throw new Error(actRes.error.message)
+
+      setExpenses(expRes.data ?? [])
+      setLineItems(liRes.data ?? [])
+      setPhotos(photoRes.data ?? [])
+      setTasks(taskRes.data ?? [])
+      setActivities(actRes.data ?? [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load project')
+    } finally {
+      setLoading(false)
+    }
+  }, [projectId])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  // Close status dropdown on outside click
+  useEffect(() => {
+    if (!statusDropdownOpen) return
+    const handler = () => setStatusDropdownOpen(false)
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [statusDropdownOpen])
+
+  // Lightbox keyboard nav
+  useEffect(() => {
+    if (!lightboxPhoto) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxPhoto(null)
+      if (e.key === 'ArrowLeft') {
+        const idx = photos.indexOf(lightboxPhoto)
+        if (idx > 0) setLightboxPhoto(photos[idx - 1])
+      }
+      if (e.key === 'ArrowRight') {
+        const idx = photos.indexOf(lightboxPhoto)
+        if (idx < photos.length - 1) setLightboxPhoto(photos[idx + 1])
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [lightboxPhoto, photos])
+
+  const updateStatus = async (status: string) => {
+    setStatusUpdating(true)
+    setStatusDropdownOpen(false)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('projects')
+        .update({ status, updated_at: new Date().toISOString() }).eq('id', projectId)
+      if (error) throw new Error(error.message)
+      setProject((p: any) => ({ ...p, status }))
+      toast.success(`Status updated to ${status}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update status')
+    } finally {
+      setStatusUpdating(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setDeleteLoading(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('projects')
+        .update({ deleted_at: new Date().toISOString() }).eq('id', projectId)
+      if (error) throw new Error(error.message)
+      toast.success('Project deleted')
+      router.push(`/customers/${customerId}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
+  const saveLeadCost = async () => {
+    try {
+      const supabase = createClient()
+      const val = parseFloat(leadCostInput) || 0
+      const { error } = await supabase.from('projects')
+        .update({ lead_cost: val, updated_at: new Date().toISOString() }).eq('id', projectId)
+      if (error) throw new Error(error.message)
+      setProject((p: any) => ({ ...p, lead_cost: val }))
+      setEditingLeadCost(false)
+      toast.success('Lead cost updated')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update')
+    }
+  }
+
+  const addExpense = async () => {
+    if (!expAmount || isNaN(parseFloat(expAmount))) {
+      toast.error('Please enter a valid amount')
+      return
+    }
+    setExpAdding(true)
+    try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
       const { error } = await supabase.from('project_expenses').insert({
         project_id: projectId,
         user_id: user.id,
-        category: data.category,
-        description: data.description || null,
-        amount: Number(data.amount),
-        date: data.date,
+        category: expCategory,
+        description: expDesc || null,
+        amount: parseFloat(expAmount),
+        date: expDate,
       })
       if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-expenses', projectId] })
-      expReset({ category: 'Labor', date: new Date().toISOString().split('T')[0] })
       toast.success('Expense added')
-    },
-    onError: () => toast.error('Failed to add expense'),
-  })
+      setExpAmount('')
+      setExpDesc('')
+      setExpDate(new Date().toISOString().split('T')[0])
+      await loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add expense')
+    } finally {
+      setExpAdding(false)
+    }
+  }
 
-  const deleteExpenseMutation = useMutation({
-    mutationFn: async (id: string) => {
+  const deleteExpense = async (id: string) => {
+    try {
       const supabase = createClient()
       const { error } = await supabase.from('project_expenses').delete().eq('id', id)
       if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-expenses', projectId] })
+      setExpenses(e => e.filter(x => x.id !== id))
       toast.success('Expense removed')
-      setDeleteExpense(null)
-    },
-  })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove')
+    }
+  }
 
-  // Photo upload
-  const uploadPhotoMutation = useMutation({
-    mutationFn: async (file: File) => {
+  const addLineItem = async () => {
+    if (!liDesc.trim()) { toast.error('Description required'); return }
+    setLiAdding(true)
+    try {
+      const supabase = createClient()
+      const qty = liQty ? parseFloat(liQty) : null
+      const price = liPrice ? parseFloat(liPrice) : null
+      const total = qty != null && price != null ? qty * price : null
+      const { error } = await supabase.from('project_line_items').insert({
+        project_id: projectId,
+        description: liDesc,
+        quantity: qty,
+        unit: liUnit || null,
+        unit_price: price,
+        total,
+      })
+      if (error) throw new Error(error.message)
+      toast.success('Line item added')
+      setLiDesc(''); setLiQty(''); setLiUnit(''); setLiPrice('')
+      await loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add')
+    } finally {
+      setLiAdding(false)
+    }
+  }
+
+  const deleteLineItem = async (id: string) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('project_line_items').delete().eq('id', id)
+      if (error) throw new Error(error.message)
+      setLineItems(l => l.filter(x => x.id !== id))
+      toast.success('Line item removed')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove')
+    }
+  }
+
+  const addTask = async () => {
+    if (!taskDesc.trim()) { toast.error('Task description required'); return }
+    setTaskAdding(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { error } = await supabase.from('project_tasks').insert({
+        project_id: projectId,
+        user_id: user.id,
+        description: taskDesc,
+        due_date: taskDue || null,
+        completed: false,
+      })
+      if (error) throw new Error(error.message)
+      toast.success('Task added')
+      setTaskDesc(''); setTaskDue('')
+      await loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add task')
+    } finally {
+      setTaskAdding(false)
+    }
+  }
+
+  const toggleTask = async (id: string, completed: boolean) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('project_tasks').update({ completed }).eq('id', id)
+      if (error) throw new Error(error.message)
+      setTasks(t => t.map(x => x.id === id ? { ...x, completed } : x))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update task')
+    }
+  }
+
+  const deleteTask = async (id: string) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('project_tasks').delete().eq('id', id)
+      if (error) throw new Error(error.message)
+      setTasks(t => t.filter(x => x.id !== id))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete task')
+    }
+  }
+
+  const saveManagement = async () => {
+    setMgmtSaving(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('projects').update({
+        paint_brand: mgmt.paint_brand || null,
+        paint_colors: mgmt.paint_colors || null,
+        num_coats: mgmt.num_coats ? parseInt(mgmt.num_coats) : null,
+        primer_used: mgmt.primer_used,
+        special_finishes: mgmt.special_finishes || null,
+        crew_notes: mgmt.crew_notes || null,
+        site_conditions: mgmt.site_conditions || null,
+        parking_notes: mgmt.parking_notes || null,
+        client_communication: mgmt.client_communication || null,
+        updated_at: new Date().toISOString(),
+      } as any).eq('id', projectId)
+      if (error) throw new Error(error.message)
+      toast.success('Saved')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setMgmtSaving(false)
+    }
+  }
+
+  const uploadPhoto = async (file: File) => {
+    setPhotoUploading(true)
+    try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
       const ext = file.name.split('.').pop()
       const path = `${user.id}/${projectId}/${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('project-photos').upload(path, file)
-      if (uploadError) throw uploadError
+      const { error: upErr } = await supabase.storage.from('project-photos').upload(path, file)
+      if (upErr) throw new Error(upErr.message)
       const { data: { publicUrl } } = supabase.storage.from('project-photos').getPublicUrl(path)
       const { error } = await supabase.from('project_photos').insert({
         project_id: projectId,
@@ -314,178 +388,101 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         label: photoLabel,
       })
       if (error) throw new Error(error.message)
-      await supabase.from('activities').insert({
-        user_id: user.id,
-        customer_id: customerId,
-        project_id: projectId,
-        type: 'Photo Added',
-        content: `${photoLabel} photo uploaded`,
-      })
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-photos', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['project-activities', projectId] })
       toast.success('Photo uploaded')
-      setUploadingPhoto(false)
-    },
-    onError: () => { toast.error('Failed to upload photo'); setUploadingPhoto(false) },
-  })
-
-  // Management form
-  const { register: mgmtReg, handleSubmit: mgmtSubmit, reset: mgmtReset } = useForm<ManagementForm>({
-    resolver: zodResolver(managementSchema),
-    defaultValues: {
-      paint_brand: '', paint_colors: '', num_coats: '', primer_used: false,
-      special_finishes: '', crew_notes: '', site_conditions: '', client_communication: '',
-    },
-  })
-
-  useEffect(() => {
-    if (project) {
-      const p = project as Record<string, unknown>
-      mgmtReset({
-        paint_brand: (p.paint_brand as string) ?? '',
-        paint_colors: (p.paint_colors as string) ?? '',
-        num_coats: p.num_coats != null ? String(p.num_coats) : '',
-        primer_used: (p.primer_used as boolean) ?? false,
-        special_finishes: (p.special_finishes as string) ?? '',
-        crew_notes: (p.crew_notes as string) ?? '',
-        site_conditions: (p.site_conditions as string) ?? '',
-        client_communication: (p.client_communication as string) ?? '',
-      })
+      await loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload photo')
+    } finally {
+      setPhotoUploading(false)
     }
-  }, [project, mgmtReset])
-
-  const saveManagementMutation = useMutation({
-    mutationFn: async (data: ManagementForm) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('projects').update({
-        paint_brand: data.paint_brand || null,
-        paint_colors: data.paint_colors || null,
-        num_coats: data.num_coats ? Number(data.num_coats) : null,
-        primer_used: data.primer_used ?? false,
-        special_finishes: data.special_finishes || null,
-        crew_notes: data.crew_notes || null,
-        site_conditions: data.site_conditions || null,
-        client_communication: data.client_communication || null,
-        updated_at: new Date().toISOString(),
-      } as Record<string, unknown>).eq('id', projectId)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
-      toast.success('Saved')
-    },
-    onError: () => toast.error('Failed to save'),
-  })
-
-  // Project tasks
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['project-tasks', projectId],
-    queryFn: async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('project_tasks').select('*').eq('project_id', projectId).order('created_at')
-      return (data ?? []) as Array<{ id: string; description: string; completed: boolean; due_date: string | null; created_at: string }>
-    },
-  })
-
-  const { register: taskReg, handleSubmit: taskSubmit, reset: taskReset, formState: { errors: taskErrors } } = useForm<TaskForm>({
-    resolver: zodResolver(taskSchema),
-  })
-
-  const addTaskMutation = useMutation({
-    mutationFn: async (data: TaskForm) => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-      const { error } = await supabase.from('project_tasks').insert({
-        project_id: projectId,
-        user_id: user.id,
-        description: data.description,
-        due_date: data.due_date || null,
-        completed: false,
-      })
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] })
-      taskReset()
-      toast.success('Task added')
-    },
-    onError: () => toast.error('Failed to add task'),
-  })
-
-  const toggleTaskMutation = useMutation({
-    mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('project_tasks').update({ completed }).eq('id', id)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] }),
-  })
-
-  const deleteTaskMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const supabase = createClient()
-      const { error } = await supabase.from('project_tasks').delete().eq('id', id)
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] })
-      toast.success('Task deleted')
-    },
-  })
-
-  const lineItemsTotal = lineItems.reduce((sum, item) => sum + (item.total ?? 0), 0)
-  const expensesTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
-  const leadCost = project?.lead_cost ?? 0
-  const totalCosts = expensesTotal + leadCost
-  const contractValue = project?.contract_value ?? 0
-  const profit = calculateProfit(contractValue, totalCosts)
-  const margin = calculateMargin(contractValue, totalCosts)
-  const balanceDue = Math.max(0, contractValue - (project?.amount_paid ?? 0))
-
-  const progressSteps = ['Scheduled', 'In Progress', 'Completed']
-  const currentStep = progressSteps.indexOf(project?.status ?? 'Scheduled')
-
-  if (loadingProject) {
-    return <div className="p-4 md:p-6 space-y-6"><Skeleton className="h-32" /><Skeleton className="h-64" /></div>
   }
 
-  if (!project) return <div className="p-6 text-[#9a9585]">Project not found.</div>
+  const deletePhoto = async (id: string) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('project_photos').delete().eq('id', id)
+      if (error) throw new Error(error.message)
+      setPhotos(p => p.filter(x => x.id !== id))
+      toast.success('Photo deleted')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete photo')
+    }
+  }
+
+  // Computed financials
+  const contractValue = project?.contract_value ?? 0
+  const leadCost = project?.lead_cost ?? 0
+  const expensesTotal = expenses.reduce((s, e) => s + (e.amount ?? 0), 0)
+  const totalCosts = leadCost + expensesTotal
+  const profit = contractValue - totalCosts
+  const margin = contractValue > 0 ? Math.round((profit / contractValue) * 100 * 10) / 10 : 0
+  const balanceDue = Math.max(0, contractValue - (project?.amount_paid ?? 0))
+  const lineItemsTotal = lineItems.reduce((s, l) => s + (l.total ?? 0), 0)
+  const openTasks = tasks.filter(t => !t.completed)
+  const completedTasks = tasks.filter(t => t.completed)
+
+  if (loading) {
+    return (
+      <div className="p-4 md:p-6 space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <p className="text-[#ef4444]">{error}</p>
+        <Button onClick={loadData}>Try Again</Button>
+      </div>
+    )
+  }
+
+  if (!project) {
+    return (
+      <div className="p-4 md:p-6">
+        <p className="text-[#9a9585]">Project not found.</p>
+        <Link href={`/customers/${customerId}`} className="text-[#3583b3] hover:underline text-sm mt-2 inline-block">Back</Link>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Back */}
       <Link href={`/customers/${customerId}`} className="flex items-center gap-2 text-[#9a9585] hover:text-[#efeae2] transition-colors text-sm">
-        <ArrowLeft className="h-4 w-4" /> Back to {project.customers?.name}
+        <ArrowLeft className="h-4 w-4" /> Back to {project.customers?.name ?? 'Customer'}
       </Link>
 
-      {/* Project Header */}
+      {/* Header */}
       <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-4">
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-3 mb-2">
+          <div className="flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold text-white">{project.title}</h1>
-              <div className="relative">
+              {/* Status dropdown */}
+              <div className="relative" onClick={e => e.stopPropagation()}>
                 <button
                   onClick={() => setStatusDropdownOpen(v => !v)}
+                  disabled={statusUpdating}
                   className="flex items-center gap-1 focus:outline-none"
-                  disabled={updateStatusMutation.isPending}
                 >
                   <StatusBadge status={project.status} />
                   <ChevronDown className="h-3 w-3 text-[#9a9585]" />
                 </button>
                 {statusDropdownOpen && (
                   <div className="absolute top-full left-0 mt-1 z-50 bg-[#252419] border border-[#2e2d26] rounded-lg shadow-xl overflow-hidden min-w-[160px]">
-                    {(['Scheduled', 'In Progress', 'On Hold', 'Completed', 'Cancelled'] as const).map(s => (
+                    {STATUS_OPTIONS.map(s => (
                       <button
                         key={s}
-                        onClick={() => {
-                          updateStatusMutation.mutate(s)
-                          setStatusDropdownOpen(false)
-                        }}
-                        className={`w-full text-left px-4 py-2 text-sm hover:bg-[#2e2d26] transition-colors ${project.status === s ? 'text-[#e6ab35]' : 'text-[#efeae2]'}`}
+                        onClick={() => updateStatus(s)}
+                        className={cn(
+                          'w-full text-left px-4 py-2 text-sm hover:bg-[#2e2d26] transition-colors',
+                          project.status === s ? 'text-[#e6ab35]' : 'text-[#efeae2]'
+                        )}
                       >
                         {s}
                       </button>
@@ -495,204 +492,225 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <Badge variant={project.type === 'Commercial' ? 'purple' : 'info'}>{project.type}</Badge>
             </div>
-            <Link href={`/customers/${customerId}`} className="text-[#3583b3] hover:underline text-sm">
-              {project.customers?.name}
-            </Link>
+            <div>
+              <Link href={`/customers/${customerId}`} className="text-[#3583b3] hover:underline text-sm">
+                {project.customers?.name}
+              </Link>
+            </div>
             {project.address && (
-              <div className="flex items-center gap-1 mt-1 text-[#9a9585] text-sm">
+              <div className="flex items-center gap-1 text-[#9a9585] text-sm">
                 <MapPin className="h-4 w-4" />{project.address}
               </div>
             )}
-            <div className="flex flex-wrap gap-4 mt-3 text-sm text-[#9a9585]">
+            <div className="flex flex-wrap gap-4 text-sm text-[#9a9585]">
               {project.start_date && <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />Start: {formatDate(project.start_date)}</span>}
               {project.end_date && <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />End: {formatDate(project.end_date)}</span>}
             </div>
           </div>
-
-          <div className="flex flex-col gap-2 md:text-right">
-            <div>
-              <p className="text-2xl font-bold text-[#e6ab35]">{formatCurrency(project.contract_value)}</p>
-              <p className="text-xs text-[#9a9585]">Contract value</p>
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-[#efeae2]">{formatCurrency(project.amount_paid)}</p>
-              <p className="text-xs text-[#9a9585]">Paid</p>
-            </div>
-            <div className="flex items-center md:justify-end gap-2">
-              <PaymentBadge status={project.payment_status} />
-              {project.payment_status !== 'Paid' && (
-                <span className="text-sm text-[#ef4444] font-medium">
-                  {formatCurrency((project.contract_value ?? 0) - project.amount_paid)} due
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#2e2d26]">
-          {project.payment_status !== 'Paid' && (
-            <Button size="sm" variant="secondary" onClick={() => markPaidMutation.mutate()} loading={markPaidMutation.isPending}>
-              <DollarSign className="h-4 w-4" /> Mark Paid
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button size="sm" variant="secondary" onClick={() => setAddActivityOpen(true)}>
+              <Plus className="h-4 w-4" /> Log
             </Button>
-          )}
-          {project.status !== 'Completed' && (
-            <Button size="sm" variant="secondary" onClick={() => updateStatusMutation.mutate('Completed')}>
-              Complete Project
+            <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+              <Edit2 className="h-4 w-4" /> Edit
             </Button>
-          )}
-          {project.status === 'Scheduled' && (
-            <Button size="sm" variant="secondary" onClick={() => updateStatusMutation.mutate('In Progress')}>
-              Start Project
+            <Button size="sm" variant="danger" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4" />
             </Button>
-          )}
-          <Button size="sm" variant="ghost" onClick={() => setAddActivityOpen(true)}>
-            <Plus className="h-4 w-4" /> Log Activity
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
-            <Edit2 className="h-4 w-4" /> Edit Project
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => setDeleteOpen(true)}>
-            <Trash2 className="h-4 w-4" /> Delete
-          </Button>
-        </div>
-
-        {/* Progress bar */}
-        <div className="mt-4 pt-4 border-t border-[#2e2d26]">
-          <div className="flex items-center gap-0">
-            {progressSteps.map((step, i) => (
-              <div key={step} className="flex items-center flex-1">
-                <div className={`h-2 flex-1 rounded-full ${i <= currentStep ? 'bg-[#e6ab35]' : 'bg-[#2e2d26]'}`} />
-                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${i <= currentStep ? 'bg-[#e6ab35]' : 'bg-[#2e2d26]'}`} />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-1">
-            {progressSteps.map(s => (
-              <span key={s} className="text-xs text-[#9a9585]">{s}</span>
-            ))}
           </div>
         </div>
       </div>
 
-      {/* Financial Summary Bar */}
+      {/* Financial Bar */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[#e6ab35]' },
           { label: 'Lead Cost', value: formatCurrency(leadCost), color: 'text-[#9a9585]' },
-          { label: 'Project Costs', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
-          { label: 'Gross Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
-          { label: 'Profit Margin', value: `${margin}%`, color: margin >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
+          { label: 'Total Costs', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
+          { label: 'Gross Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]' },
+          { label: 'Margin %', value: `${margin}%`, color: margin >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]' },
           { label: 'Balance Due', value: formatCurrency(balanceDue), color: balanceDue > 0 ? 'text-[#ef4444]' : 'text-[#9a9585]' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
             <p className="text-xs text-[#9a9585] mb-1">{label}</p>
-            <p className={`text-lg font-bold ${color}`}>{value}</p>
+            <p className={cn('text-lg font-bold', color)}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview">
-        <TabsList className="overflow-x-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="scope">Scope of Work</TabsTrigger>
-          <TabsTrigger value="costs">Costs &amp; Profit</TabsTrigger>
-          <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="management">Management</TabsTrigger>
-        </TabsList>
+      <div className="border-b border-[#2e2d26]">
+        <nav className="flex gap-0 overflow-x-auto">
+          {[
+            { id: 'overview', label: 'Overview' },
+            { id: 'scope', label: 'Scope of Work' },
+            { id: 'costs', label: 'Costs & Profit' },
+            { id: 'management', label: 'Management' },
+            { id: 'photos', label: `Photos (${photos.length})` },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id as Tab)}
+              className={cn(
+                'px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
+                activeTab === id
+                  ? 'border-[#e6ab35] text-[#e6ab35]'
+                  : 'border-transparent text-[#9a9585] hover:text-[#efeae2]'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-        <TabsContent value="overview" className="mt-6">
+      {/* OVERVIEW TAB */}
+      {activeTab === 'overview' && (
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[#e6ab35]' },
-              { label: 'Total Costs', value: formatCurrency(totalCosts), color: 'text-[#ef4444]' },
-              { label: 'Net Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
+              { label: 'Amount Paid', value: formatCurrency(project.amount_paid), color: 'text-[#10b981]' },
+              { label: 'Balance Due', value: formatCurrency(balanceDue), color: balanceDue > 0 ? 'text-[#ef4444]' : 'text-[#9a9585]' },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
                 <p className="text-xs text-[#9a9585] mb-1">{label}</p>
-                <p className={`text-xl font-bold ${color}`}>{value}</p>
+                <p className={cn('text-xl font-bold', color)}>{value}</p>
               </div>
             ))}
           </div>
-          {project.description && (
-            <div className="mt-4 bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-              <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Description</p>
-              <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{project.description}</p>
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Project Details</h3>
+              <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)}>
+                <Edit2 className="h-4 w-4" /> Edit
+              </Button>
             </div>
-          )}
-          {project.notes && (
-            <div className="mt-4 bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-              <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Notes</p>
-              <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{project.notes}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { label: 'Status', value: project.status },
+                { label: 'Type', value: project.type },
+                { label: 'Payment Status', value: project.payment_status },
+                { label: 'Contract Value', value: formatCurrency(project.contract_value) },
+                { label: 'Amount Paid', value: formatCurrency(project.amount_paid) },
+                { label: 'Lead Cost', value: formatCurrency(project.lead_cost) },
+                { label: 'Start Date', value: formatDate(project.start_date) },
+                { label: 'End Date', value: formatDate(project.end_date) },
+                { label: 'Address', value: project.address },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">{label}</p>
+                  <p className="text-sm text-[#efeae2]">{value ?? '—'}</p>
+                </div>
+              ))}
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="scope" className="mt-6 space-y-4">
-          {loadingLineItems ? <TableSkeleton /> : (
-            <>
-              <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
-                {lineItems.length === 0 ? (
-                  <div className="p-8 text-center text-[#9a9585] text-sm">No line items yet. Add scope of work below.</div>
-                ) : (
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b-2 border-b-[#e6ab35]">
-                        {['Description', 'Qty', 'Unit', 'Unit Price', 'Total', ''].map(h => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase whitespace-nowrap">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lineItems.map((item, i) => (
-                        <tr key={item.id} className={`border-b border-[#2e2d26] group ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
-                          <td className="px-4 py-3 text-sm text-[#efeae2]">{item.description}</td>
-                          <td className="px-4 py-3 text-sm text-[#9a9585]">{item.quantity ?? '—'}</td>
-                          <td className="px-4 py-3 text-sm text-[#9a9585]">{item.unit ?? '—'}</td>
-                          <td className="px-4 py-3 text-sm text-[#9a9585]">{item.unit_price ? formatCurrency(item.unit_price) : '—'}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{item.total ? formatCurrency(item.total) : '—'}</td>
-                          <td className="px-4 py-3">
-                            <button onClick={() => setDeleteLineItem(item.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all p-1">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      <tr className="bg-[#1d1c17]">
-                        <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-[#efeae2] text-right">Subtotal</td>
-                        <td className="px-4 py-3 text-lg font-bold text-[#e6ab35]">{formatCurrency(lineItemsTotal)}</td>
-                        <td />
-                      </tr>
-                    </tbody>
-                  </table>
-                )}
+            {project.description && (
+              <div className="mt-6 pt-6 border-t border-[#2e2d26]">
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Description</p>
+                <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{project.description}</p>
               </div>
-
-              {/* Add line item form */}
-              <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-white mb-3">Add Line Item</h3>
-                <form onSubmit={liSubmit(d => addLineItemMutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                  <div className="col-span-2 md:col-span-2">
-                    <Input placeholder="Description (e.g. Living room ceiling)" {...liReg('description')} error={liErrors.description?.message} />
-                  </div>
-                  <Input placeholder="Qty" type="number" step="0.01" {...liReg('quantity')} />
-                  <Input placeholder="Unit (sqft, hrs)" {...liReg('unit')} />
-                  <Input placeholder="Unit Price" type="number" step="0.01" {...liReg('unit_price')} />
-                  <div className="flex gap-2 items-end">
-                    <Input placeholder="Total" type="number" step="0.01" {...liReg('total')} className="flex-1" />
-                    <Button type="submit" loading={addLineItemMutation.isPending} size="sm">Add</Button>
-                  </div>
-                </form>
+            )}
+            {project.notes && (
+              <div className="mt-4">
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Notes</p>
+                <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{project.notes}</p>
               </div>
-            </>
-          )}
+            )}
+          </div>
 
-          <ConfirmModal open={!!deleteLineItem} onClose={() => setDeleteLineItem(null)} onConfirm={() => deleteLineItem && deleteLineItemMutation.mutate(deleteLineItem)} loading={deleteLineItemMutation.isPending} title="Remove Line Item" description="Remove this line item from the scope of work?" confirmLabel="Remove" />
-        </TabsContent>
+          {/* Activity feed */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Activity ({activities.length})</h3>
+              <Button size="sm" variant="ghost" onClick={() => setAddActivityOpen(true)}>
+                <Plus className="h-4 w-4" /> Log
+              </Button>
+            </div>
+            {activities.length === 0 ? (
+              <p className="text-sm text-[#9a9585]">No activity logged yet.</p>
+            ) : (
+              <div className="space-y-1">
+                {activities.slice(0, 5).map((a, i) => (
+                  <div key={a.id} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
+                        {ACTIVITY_ICONS[a.type] ?? '📋'}
+                      </div>
+                      {i < Math.min(activities.length, 5) - 1 && <div className="w-0.5 bg-[#2e2d26] flex-1 my-1" />}
+                    </div>
+                    <div className="pb-4 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-white">{a.type}</p>
+                        <span className="text-xs text-[#9a9585]">{formatRelativeTime(a.created_at)}</span>
+                      </div>
+                      {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-        <TabsContent value="costs" className="mt-6 space-y-4">
+      {/* SCOPE TAB */}
+      {activeTab === 'scope' && (
+        <div className="space-y-4">
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+            {lineItems.length === 0 ? (
+              <div className="p-8 text-center text-[#9a9585] text-sm">No line items yet. Add scope of work below.</div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-b-[#e6ab35]">
+                    {['#', 'Description', 'Qty', 'Unit', 'Unit Price', 'Total', ''].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItems.map((item, i) => (
+                    <tr key={item.id} className={cn('border-b border-[#2e2d26] group', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}>
+                      <td className="px-4 py-3 text-sm text-[#9a9585]">{i + 1}</td>
+                      <td className="px-4 py-3 text-sm text-[#efeae2]">{item.description}</td>
+                      <td className="px-4 py-3 text-sm text-[#9a9585]">{item.quantity ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-[#9a9585]">{item.unit ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-[#9a9585]">{item.unit_price ? formatCurrency(item.unit_price) : '—'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{item.total ? formatCurrency(item.total) : '—'}</td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => deleteLineItem(item.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all p-1">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-[#1d1c17]">
+                    <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-[#efeae2] text-right">Subtotal</td>
+                    <td className="px-4 py-3 text-lg font-bold text-[#e6ab35]">{formatCurrency(lineItemsTotal)}</td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+            <h3 className="text-sm font-semibold text-white mb-3">Add Line Item</h3>
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <div className="col-span-2">
+                <input value={liDesc} onChange={e => setLiDesc(e.target.value)} placeholder="Description" className="w-full bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              </div>
+              <input value={liQty} onChange={e => setLiQty(e.target.value)} placeholder="Qty" type="number" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <input value={liUnit} onChange={e => setLiUnit(e.target.value)} placeholder="Unit" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <input value={liPrice} onChange={e => setLiPrice(e.target.value)} placeholder="Unit Price" type="number" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <Button onClick={addLineItem} loading={liAdding} size="sm">Add</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* COSTS TAB */}
+      {activeTab === 'costs' && (
+        <div className="space-y-4">
           {/* Lead Cost */}
           <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
             <div className="flex items-center justify-between">
@@ -700,21 +718,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">Lead Acquisition Cost</p>
                 {editingLeadCost ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-[#9a9585]">$</span>
+                    <span className="text-[#9a9585] text-sm">$</span>
                     <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      autoFocus
+                      type="number" step="0.01" min="0" autoFocus
                       value={leadCostInput}
                       onChange={e => setLeadCostInput(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') saveLeadCostMutation.mutate(Number(leadCostInput) || 0)
-                        if (e.key === 'Escape') setEditingLeadCost(false)
-                      }}
+                      onKeyDown={e => { if (e.key === 'Enter') saveLeadCost(); if (e.key === 'Escape') setEditingLeadCost(false) }}
                       className="w-32 bg-[#1d1c17] border border-[#3583b3] rounded-lg px-3 py-1 text-sm text-[#efeae2] focus:outline-none"
                     />
-                    <button onClick={() => saveLeadCostMutation.mutate(Number(leadCostInput) || 0)} className="text-xs text-[#3583b3] hover:text-[#efeae2]">Save</button>
+                    <button onClick={saveLeadCost} className="text-xs text-[#3583b3] hover:text-[#efeae2]">Save</button>
                     <button onClick={() => setEditingLeadCost(false)} className="text-xs text-[#9a9585] hover:text-[#efeae2]">Cancel</button>
                   </div>
                 ) : (
@@ -722,12 +734,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     onClick={() => { setLeadCostInput(String(leadCost)); setEditingLeadCost(true) }}
                     className="text-lg font-bold text-[#9a9585] hover:text-[#efeae2] transition-colors flex items-center gap-2"
                   >
-                    {formatCurrency(leadCost)}
-                    <Edit2 className="h-3 w-3 opacity-50" />
+                    {formatCurrency(leadCost)}<Edit2 className="h-3 w-3 opacity-50" />
                   </button>
                 )}
               </div>
-              <p className="text-xs text-[#9a9585] max-w-xs text-right">Cost to acquire this lead (ads, referral fees, platform fees)</p>
+              <p className="text-xs text-[#9a9585] max-w-xs text-right hidden md:block">Cost to acquire this lead (ads, referral fees, etc.)</p>
             </div>
           </div>
 
@@ -735,25 +746,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Profit Breakdown</h3>
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-[#9a9585]">Contract Value</span>
-                <span className="font-medium text-[#e6ab35]">{formatCurrency(contractValue)}</span>
-              </div>
-              <div className="border-t border-[#2e2d26] pt-2 space-y-1.5">
+              <div>
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Revenue</p>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#9a9585]">Lead Cost</span>
-                  <span className="text-[#efeae2]">−{formatCurrency(leadCost)}</span>
+                  <span className="text-[#9a9585]">Contract Value</span>
+                  <span className="font-medium text-[#e6ab35]">{formatCurrency(contractValue)}</span>
                 </div>
-                {(['Labor', 'Materials', 'Subcontractors', 'Fuel', 'Tools', 'Other'] as const).map(cat => {
-                  const catTotal = expenses.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0)
-                  if (catTotal === 0) return null
-                  return (
-                    <div key={cat} className="flex justify-between text-sm">
-                      <span className="text-[#9a9585]">{cat}</span>
-                      <span className="text-[#efeae2]">−{formatCurrency(catTotal)}</span>
-                    </div>
-                  )
-                })}
+              </div>
+              <div className="border-t border-[#2e2d26] pt-2">
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Costs</p>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#9a9585]">Lead Cost</span>
+                    <span className="text-[#efeae2]">−{formatCurrency(leadCost)}</span>
+                  </div>
+                  {EXPENSE_CATEGORIES.map(cat => {
+                    const catTotal = expenses.filter(e => e.category === cat).reduce((s, e) => s + (e.amount ?? 0), 0)
+                    if (catTotal === 0) return null
+                    return (
+                      <div key={cat} className="flex justify-between text-sm">
+                        <span className="text-[#9a9585]">{cat}</span>
+                        <span className="text-[#efeae2]">−{formatCurrency(catTotal)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
               <div className="border-t border-[#2e2d26] pt-2 flex justify-between text-sm font-medium">
                 <span className="text-[#9a9585]">Total Costs</span>
@@ -762,190 +779,76 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="border-t border-[#2e2d26] pt-2 space-y-1">
                 <div className="flex justify-between">
                   <span className="text-sm text-[#9a9585]">Gross Profit</span>
-                  <span className={`text-lg font-bold ${profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{formatCurrency(profit)}</span>
+                  <span className={cn('text-lg font-bold', profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]')}>{formatCurrency(profit)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-[#9a9585]">Profit Margin</span>
-                  <span className={`font-medium ${margin >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{margin}%</span>
+                  <span className={cn('font-medium', margin >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]')}>{margin}%</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {loadingExpenses ? <TableSkeleton /> : (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[#e6ab35]' },
-                  { label: 'Lead Cost', value: formatCurrency(leadCost), color: 'text-[#9a9585]' },
-                  { label: 'Project Costs', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
-                  { label: 'Net Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#3583b3]' : 'text-[#ef4444]' },
-                ].map(({ label, value, color }) => (
-                  <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-                    <p className="text-xs text-[#9a9585] mb-1">{label}</p>
-                    <p className={`text-lg font-bold ${color}`}>{value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
-                {expenses.length === 0 ? (
-                  <div className="p-8 text-center text-[#9a9585] text-sm">No expenses logged for this project.</div>
-                ) : (
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b-2 border-b-[#e6ab35]">
-                        {['Date', 'Category', 'Description', 'Amount', ''].map(h => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {expenses.map((exp, i) => (
-                        <tr key={exp.id} className={`border-b border-[#2e2d26] group ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
-                          <td className="px-4 py-3 text-sm text-[#9a9585]">{formatDate(exp.date)}</td>
-                          <td className="px-4 py-3 text-sm text-[#efeae2]">{exp.category}</td>
-                          <td className="px-4 py-3 text-sm text-[#efeae2]">{exp.description ?? '—'}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-[#ef4444]">{formatCurrency(exp.amount)}</td>
-                          <td className="px-4 py-3">
-                            <button onClick={() => setDeleteExpense(exp.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all p-1">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-
-              {/* Add expense */}
-              <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-white mb-3">Add Expense</h3>
-                <form onSubmit={expSubmit(d => addExpenseMutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <Select {...expReg('category')} options={['Labor','Materials','Subcontractors','Fuel','Tools','Other'].map(c => ({ value: c, label: c }))} />
-                  <Input placeholder="Description" {...expReg('description')} />
-                  <Input placeholder="Amount" type="number" step="0.01" {...expReg('amount')} error={expErrors.amount?.message} />
-                  <Input type="date" {...expReg('date')} error={expErrors.date?.message} />
-                  <Button type="submit" loading={addExpenseMutation.isPending}>Add</Button>
-                </form>
-              </div>
-            </>
-          )}
-
-          <ConfirmModal open={!!deleteExpense} onClose={() => setDeleteExpense(null)} onConfirm={() => deleteExpense && deleteExpenseMutation.mutate(deleteExpense)} loading={deleteExpenseMutation.isPending} title="Remove Expense" description="Remove this expense?" confirmLabel="Remove" />
-        </TabsContent>
-
-        <TabsContent value="photos" className="mt-6 space-y-4">
-          {/* Upload section */}
+          {/* Add Expense */}
           <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-white mb-3">Upload Photo</h3>
-            <div className="flex flex-wrap items-center gap-3">
-              <select value={photoLabel} onChange={e => setPhotoLabel(e.target.value as 'Before' | 'During' | 'After')}
-                className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]">
-                <option value="Before">Before</option>
-                <option value="During">During</option>
-                <option value="After">After</option>
+            <h3 className="text-sm font-semibold text-white mb-3">Add Expense</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <select value={expCategory} onChange={e => setExpCategory(e.target.value)} className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]">
+                {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  setUploadingPhoto(true)
-                  uploadPhotoMutation.mutate(file)
-                  e.target.value = ''
-                }}
-              />
-              <Button variant="secondary" loading={uploadingPhoto} onClick={() => fileInputRef.current?.click()}>
-                <Upload className="h-4 w-4" /> Upload Photo
-              </Button>
+              <input value={expDesc} onChange={e => setExpDesc(e.target.value)} placeholder="Description" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <input value={expAmount} onChange={e => setExpAmount(e.target.value)} placeholder="Amount" type="number" step="0.01" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <input value={expDate} onChange={e => setExpDate(e.target.value)} type="date" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <Button onClick={addExpense} loading={expAdding}>Add</Button>
             </div>
           </div>
 
-          {/* Photo grid */}
-          {loadingPhotos ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
-            </div>
-          ) : photos.length === 0 ? (
-            <EmptyState icon={Image} title="No photos yet" description="Upload before, during, and after photos to document this project." />
-          ) : (
-            <>
-              {(['Before', 'During', 'After'] as const).map(label => {
-                const labelPhotos = photos.filter(p => p.label === label)
-                if (!labelPhotos.length) return null
-                return (
-                  <div key={label}>
-                    <h3 className="text-sm font-semibold text-[#9a9585] mb-2 uppercase tracking-wider">{label}</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {labelPhotos.map(photo => (
-                        <div key={photo.id} className="relative group cursor-pointer" onClick={() => setLightboxPhoto(photo)}>
-                          <img src={photo.url} alt={`${label} photo`} className="w-full h-40 object-cover rounded-lg" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                            <span className="text-white text-xs bg-[#1d1c17] px-2 py-1 rounded">View</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </>
-          )}
-        </TabsContent>
-
-        <TabsContent value="activity" className="mt-6 space-y-4">
-          <div className="flex justify-end">
-            <Button size="sm" variant="secondary" onClick={() => setAddActivityOpen(true)}>
-              <Plus className="h-4 w-4" /> Log Activity
-            </Button>
-          </div>
-          {activities.length === 0 ? (
-            <EmptyState icon={Plus} title="No activity" description="Log calls, texts, payments, and notes here." action={{ label: 'Log Activity', onClick: () => setAddActivityOpen(true) }} />
-          ) : (
-            <div className="space-y-1">
-              {activities.map((a, i) => (
-                <div key={a.id} className="flex gap-4 group">
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
-                      {ACTIVITY_ICONS[a.type] ?? '📋'}
-                    </div>
-                    {i < activities.length - 1 && <div className="w-0.5 bg-[#2e2d26] flex-1 my-1" />}
-                  </div>
-                  <div className="pb-4 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-white">{a.type}</p>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-[#9a9585]">{formatRelativeTime(a.created_at)}</span>
-                        <button onClick={() => deleteActivityMutation.mutate(a.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all ml-2 flex-shrink-0">
-                          <X className="h-3 w-3" />
+          {/* Expenses Table */}
+          {expenses.length > 0 && (
+            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-b-[#e6ab35]">
+                    {['Date', 'Category', 'Description', 'Amount', ''].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenses.map((exp, i) => (
+                    <tr key={exp.id} className={cn('border-b border-[#2e2d26] group', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}>
+                      <td className="px-4 py-3 text-sm text-[#9a9585]">{formatDate(exp.date)}</td>
+                      <td className="px-4 py-3 text-sm text-[#efeae2]">{exp.category}</td>
+                      <td className="px-4 py-3 text-sm text-[#efeae2]">{exp.description ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[#ef4444]">{formatCurrency(exp.amount)}</td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => deleteExpense(exp.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all p-1">
+                          <Trash2 className="h-4 w-4" />
                         </button>
-                      </div>
-                    </div>
-                    {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
-                  </div>
-                </div>
-              ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="management" className="mt-6 space-y-6">
+      {/* MANAGEMENT TAB */}
+      {activeTab === 'management' && (
+        <div className="space-y-6">
           {/* Schedule */}
           <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Schedule</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-xs text-[#9a9585] mb-1">Start Date</p>
-                <p className="text-sm text-[#efeae2]">{project.start_date ? new Date(project.start_date).toLocaleDateString() : '—'}</p>
+                <p className="text-sm text-[#efeae2]">{formatDate(project.start_date)}</p>
               </div>
               <div>
                 <p className="text-xs text-[#9a9585] mb-1">End Date</p>
-                <p className="text-sm text-[#efeae2]">{project.end_date ? new Date(project.end_date).toLocaleDateString() : '—'}</p>
+                <p className="text-sm text-[#efeae2]">{formatDate(project.end_date)}</p>
               </div>
               {project.start_date && (
                 <div>
@@ -956,178 +859,263 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {project.end_date && (
                 <div>
                   <p className="text-xs text-[#9a9585] mb-1">Days Remaining</p>
-                  <p className={`text-sm font-medium ${new Date(project.end_date) < new Date() ? 'text-[#ef4444]' : 'text-[#efeae2]'}`}>
+                  <p className={cn('text-sm font-medium', new Date(project.end_date) < new Date() ? 'text-[#ef4444]' : 'text-[#efeae2]')}>
                     {Math.ceil((new Date(project.end_date).getTime() - Date.now()) / 86400000)} days
+                    {new Date(project.end_date) < new Date() ? ' (OVERDUE)' : ''}
                   </p>
                 </div>
               )}
             </div>
-            {project.start_date && project.end_date && (
+          </div>
+
+          {/* Paint & Materials */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Paint & Materials</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Paint Brand" value={mgmt.paint_brand} onChange={e => setMgmt(m => ({ ...m, paint_brand: e.target.value }))} placeholder="e.g. Sherwin Williams" />
+              <Input label="Number of Coats" type="number" value={mgmt.num_coats} onChange={e => setMgmt(m => ({ ...m, num_coats: e.target.value }))} placeholder="2" />
+              <div className="col-span-2">
+                <Input label="Paint Colors" value={mgmt.paint_colors} onChange={e => setMgmt(m => ({ ...m, paint_colors: e.target.value }))} placeholder="e.g. SW Agreeable Gray 7029" />
+              </div>
+              <div className="col-span-2">
+                <Textarea label="Special Finishes" rows={2} value={mgmt.special_finishes} onChange={e => setMgmt(m => ({ ...m, special_finishes: e.target.value }))} placeholder="Any special techniques..." />
+              </div>
+              <div className="col-span-2 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="primer"
+                  checked={mgmt.primer_used}
+                  onChange={e => setMgmt(m => ({ ...m, primer_used: e.target.checked }))}
+                  className="rounded border-[#2e2d26]"
+                />
+                <label htmlFor="primer" className="text-sm text-[#efeae2]">Primer used</label>
+              </div>
+            </div>
+          </div>
+
+          {/* Crew & Site */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Crew & Site</h3>
+            <Textarea label="Crew Notes" rows={3} value={mgmt.crew_notes} onChange={e => setMgmt(m => ({ ...m, crew_notes: e.target.value }))} placeholder="Notes for the crew..." />
+            <Textarea label="Site Conditions" rows={3} value={mgmt.site_conditions} onChange={e => setMgmt(m => ({ ...m, site_conditions: e.target.value }))} placeholder="Site condition notes..." />
+            <Textarea label="Parking / Access Notes" rows={2} value={mgmt.parking_notes} onChange={e => setMgmt(m => ({ ...m, parking_notes: e.target.value }))} placeholder="Parking and access instructions..." />
+            <Textarea label="Client Communication Log" rows={3} value={mgmt.client_communication} onChange={e => setMgmt(m => ({ ...m, client_communication: e.target.value }))} placeholder="Notes from client communications..." />
+          </div>
+
+          {/* Tasks */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Task Checklist</h3>
+
+            {/* Add task */}
+            <div className="flex gap-3">
+              <input value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder="Task description..." className="flex-1 bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" onKeyDown={e => { if (e.key === 'Enter') addTask() }} />
+              <input value={taskDue} onChange={e => setTaskDue(e.target.value)} type="date" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <Button onClick={addTask} loading={taskAdding} size="sm">Add</Button>
+            </div>
+
+            {/* Open tasks */}
+            {openTasks.length === 0 ? (
+              <p className="text-sm text-[#9a9585]">No open tasks.</p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-[#9a9585] uppercase tracking-wider">{openTasks.length} open</p>
+                {openTasks.map(task => (
+                  <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group">
+                    <button type="button" onClick={() => toggleTask(task.id, true)}
+                      className="flex-shrink-0 w-5 h-5 rounded border border-[#2e2d26] hover:border-[#e6ab35] flex items-center justify-center transition-colors" />
+                    <span className="flex-1 text-sm text-[#efeae2]">{task.description}</span>
+                    {task.due_date && (
+                      <span className={cn('text-xs', new Date(task.due_date) < new Date() ? 'text-[#ef4444] font-medium' : 'text-[#9a9585]')}>
+                        {new Date(task.due_date).toLocaleDateString()}
+                      </span>
+                    )}
+                    <button type="button" onClick={() => deleteTask(task.id)}
+                      className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Completed tasks */}
+            {completedTasks.length > 0 && (
               <div>
-                <div className="flex justify-between text-xs text-[#9a9585] mb-1">
-                  <span>Progress</span>
-                  <span>{Math.min(100, Math.max(0, Math.round(((Date.now() - new Date(project.start_date).getTime()) / (new Date(project.end_date).getTime() - new Date(project.start_date).getTime())) * 100)))}%</span>
-                </div>
-                <div className="h-2 bg-[#2e2d26] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#e6ab35] rounded-full"
-                    style={{ width: `${Math.min(100, Math.max(0, Math.round(((Date.now() - new Date(project.start_date).getTime()) / (new Date(project.end_date).getTime() - new Date(project.start_date).getTime())) * 100)))}%` }}
-                  />
-                </div>
+                <button onClick={() => setShowCompletedTasks(v => !v)} className="flex items-center gap-2 text-sm text-[#9a9585] hover:text-[#efeae2] transition-colors mb-2">
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', showCompletedTasks && 'rotate-180')} />
+                  {completedTasks.length} completed
+                </button>
+                {showCompletedTasks && (
+                  <div className="space-y-2">
+                    {completedTasks.map(task => (
+                      <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group opacity-60">
+                        <button type="button" onClick={() => toggleTask(task.id, false)}
+                          className="flex-shrink-0 w-5 h-5 rounded border border-[#e6ab35] bg-[#e6ab35] flex items-center justify-center">
+                          <Check className="h-3 w-3 text-[#1d1c17]" />
+                        </button>
+                        <span className="flex-1 text-sm text-[#9a9585] line-through">{task.description}</span>
+                        <button type="button" onClick={() => deleteTask(task.id)}
+                          className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Paint Details */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Paint Details</h3>
-            <form onSubmit={mgmtSubmit(d => saveManagementMutation.mutate(d))} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="Paint Brand" {...mgmtReg('paint_brand')} placeholder="e.g. Sherwin Williams" />
-                <Input label="Number of Coats" type="number" {...mgmtReg('num_coats')} placeholder="2" />
-                <div className="col-span-2">
-                  <Input label="Paint Colors" {...mgmtReg('paint_colors')} placeholder="e.g. Agreeable Gray SW7029" />
-                </div>
-                <div className="col-span-2">
-                  <Textarea label="Special Finishes" rows={2} {...mgmtReg('special_finishes')} placeholder="Any special techniques or finishes..." />
-                </div>
-                <div className="col-span-2">
-                  <label className="flex items-center gap-2 text-sm text-[#efeae2]">
-                    <input type="checkbox" {...mgmtReg('primer_used')} className="rounded border-[#2e2d26]" />
-                    Primer used
-                  </label>
-                </div>
-              </div>
-              <Button type="submit" loading={saveManagementMutation.isPending} size="sm">Save Paint Details</Button>
-            </form>
+          <Button onClick={saveManagement} loading={mgmtSaving}>Save Management Details</Button>
+        </div>
+      )}
+
+      {/* PHOTOS TAB */}
+      {activeTab === 'photos' && (
+        <div className="space-y-4">
+          {/* Upload */}
+          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+            <h3 className="text-sm font-semibold text-white mb-3">Upload Photos</h3>
+            <div className="flex flex-wrap items-center gap-3">
+              <select value={photoLabel} onChange={e => setPhotoLabel(e.target.value as 'Before' | 'During' | 'After')}
+                className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]">
+                <option value="Before">Before</option>
+                <option value="During">During</option>
+                <option value="After">After</option>
+              </select>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? [])
+                  for (const file of files) {
+                    await uploadPhoto(file)
+                  }
+                  e.target.value = ''
+                }}
+              />
+              <Button variant="secondary" loading={photoUploading} onClick={() => fileInputRef.current?.click()}>
+                <Upload className="h-4 w-4" /> Upload Photos
+              </Button>
+            </div>
+
+            {/* Drop zone */}
+            <div
+              className="mt-3 border-2 border-dashed border-[#2e2d26] rounded-lg p-8 text-center cursor-pointer hover:border-[#3583b3] transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={async (e) => {
+                e.preventDefault()
+                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+                for (const file of files) { await uploadPhoto(file) }
+              }}
+              onDragOver={e => e.preventDefault()}
+            >
+              <ImageIcon className="h-8 w-8 text-[#9a9585] mx-auto mb-2" />
+              <p className="text-sm text-[#9a9585]">Drag photos here or click to browse</p>
+              <p className="text-xs text-[#9a9585] mt-1">JPG, PNG, WebP, HEIC accepted</p>
+            </div>
           </div>
 
-          {/* Notes */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Notes</h3>
-            <form onSubmit={mgmtSubmit(d => saveManagementMutation.mutate(d))} className="space-y-4">
-              <Textarea label="Crew & Team Notes" rows={3} {...mgmtReg('crew_notes')} placeholder="Notes for the crew..." />
-              <Textarea label="Site Conditions" rows={3} {...mgmtReg('site_conditions')} placeholder="Site condition notes..." />
-              <Textarea label="Client Communication Notes" rows={3} {...mgmtReg('client_communication')} placeholder="Notes from client communications..." />
-              <Button type="submit" loading={saveManagementMutation.isPending} size="sm">Save Notes</Button>
-            </form>
-          </div>
-
-          {/* Project Tasks */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Project Tasks</h3>
-            {(() => {
-              const openTasks = tasks.filter(t => !t.completed)
-              const completedTasks = tasks.filter(t => t.completed)
+          {/* Photo grid by label */}
+          {photos.length === 0 ? (
+            <EmptyState icon={ImageIcon} title="No photos yet" description="Upload before, during, and after photos to document this project." />
+          ) : (
+            (['Before', 'During', 'After'] as const).map(label => {
+              const labelPhotos = photos.filter(p => p.label === label)
+              if (!labelPhotos.length) return null
               return (
-                <>
-                  {/* Open Tasks */}
-                  {openTasks.length === 0 ? (
-                    <p className="text-sm text-[#9a9585]">No open tasks. Add one below.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {openTasks.map(task => (
-                        <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group">
-                          <button type="button" onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: true })}
-                            className="flex-shrink-0 w-5 h-5 rounded border border-[#2e2d26] hover:border-[#e6ab35] flex items-center justify-center transition-colors" />
-                          <span className="flex-1 text-sm text-[#efeae2]">{task.description}</span>
-                          {task.due_date && (
-                            <span className={`text-xs ${new Date(task.due_date) < new Date() ? 'text-[#ef4444] font-medium' : 'text-[#9a9585]'}`}>
-                              {new Date(task.due_date).toLocaleDateString()}
-                            </span>
-                          )}
-                          <button type="button" onClick={() => deleteTaskMutation.mutate(task.id)}
-                            className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all flex-shrink-0">
+                <div key={label}>
+                  <h3 className="text-sm font-semibold text-[#9a9585] mb-2 uppercase tracking-wider">{label} Photos ({labelPhotos.length})</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {labelPhotos.map(photo => (
+                      <div key={photo.id} className="relative group rounded-lg overflow-hidden">
+                        <img
+                          src={photo.url}
+                          alt={`${label} photo`}
+                          className="w-full aspect-[4/3] object-cover cursor-pointer"
+                          onClick={() => setLightboxPhoto(photo)}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deletePhoto(photo.id) }}
+                            className="absolute top-2 right-2 bg-[#ef4444] text-white rounded-full p-1 hover:bg-[#dc2626] transition-colors"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </button>
+                          <button onClick={() => setLightboxPhoto(photo)} className="text-white text-xs bg-[#1d1c17]/80 px-3 py-1.5 rounded-lg">
+                            View
+                          </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Completed Tasks */}
-                  {completedTasks.length > 0 && (
-                    <div>
-                      <button onClick={() => setShowCompleted(v => !v)} className="flex items-center gap-2 text-sm text-[#9a9585] hover:text-[#efeae2] transition-colors mb-2">
-                        <ChevronDown className={`h-4 w-4 transition-transform ${showCompleted ? 'rotate-180' : ''}`} />
-                        {completedTasks.length} completed
-                      </button>
-                      {showCompleted && (
-                        <div className="space-y-2">
-                          {completedTasks.map(task => (
-                            <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group opacity-60">
-                              <button type="button" onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: false })}
-                                className="flex-shrink-0 w-5 h-5 rounded border border-[#e6ab35] bg-[#e6ab35] flex items-center justify-center transition-colors">
-                                <Check className="h-3 w-3 text-[#1d1c17]" />
-                              </button>
-                              <span className="flex-1 text-sm text-[#9a9585] line-through">{task.description}</span>
-                              <button type="button" onClick={() => deleteTaskMutation.mutate(task.id)}
-                                className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all flex-shrink-0">
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
+                        {photo.caption && (
+                          <p className="text-xs text-[#9a9585] p-2 bg-[#1d1c17] truncate">{photo.caption}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )
-            })()}
+            })
+          )}
+        </div>
+      )}
 
-            {/* Add task form */}
-            <form onSubmit={taskSubmit(d => addTaskMutation.mutate(d))} className="flex gap-3 items-end">
-              <div className="flex-1">
-                <Input placeholder="Task description..." {...taskReg('description')} error={taskErrors.description?.message} />
-              </div>
-              <div>
-                <Input type="date" {...taskReg('due_date')} />
-              </div>
-              <Button type="submit" loading={addTaskMutation.isPending} size="sm">Add Task</Button>
-            </form>
-          </div>
-        </TabsContent>
-      </Tabs>
-
+      {/* Lightbox */}
       {lightboxPhoto && (
         <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" onClick={() => setLightboxPhoto(null)}>
-          <button onClick={() => setLightboxPhoto(null)} className="absolute top-4 right-4 text-white hover:text-[#9a9585] z-10">
+          <button onClick={() => setLightboxPhoto(null)} className="absolute top-4 right-4 text-white hover:text-[#9a9585] z-10 p-2">
             <X className="h-8 w-8" />
           </button>
-          <button
-            onClick={e => { e.stopPropagation(); const allPhotos = photos; const i = allPhotos.indexOf(lightboxPhoto); if (i > 0) setLightboxPhoto(allPhotos[i-1]) }}
-            className="absolute left-4 text-white hover:text-[#9a9585] z-10 p-2"
-          >
-            <ChevronLeft className="h-8 w-8" />
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); const allPhotos = photos; const i = allPhotos.indexOf(lightboxPhoto); if (i < allPhotos.length-1) setLightboxPhoto(allPhotos[i+1]) }}
-            className="absolute right-16 text-white hover:text-[#9a9585] z-10 p-2"
-          >
-            <ChevronRight className="h-8 w-8" />
-          </button>
-          <div onClick={e => e.stopPropagation()} className="max-w-4xl max-h-[90vh] flex flex-col items-center gap-3">
+          {(() => {
+            const idx = photos.indexOf(lightboxPhoto)
+            return (
+              <>
+                {idx > 0 && (
+                  <button onClick={e => { e.stopPropagation(); setLightboxPhoto(photos[idx - 1]) }}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-[#9a9585] z-10 p-2 bg-black/40 rounded-full">
+                    <ChevronLeft className="h-8 w-8" />
+                  </button>
+                )}
+                {idx < photos.length - 1 && (
+                  <button onClick={e => { e.stopPropagation(); setLightboxPhoto(photos[idx + 1]) }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-[#9a9585] z-10 p-2 bg-black/40 rounded-full">
+                    <ChevronRight className="h-8 w-8" />
+                  </button>
+                )}
+              </>
+            )
+          })()}
+          <div onClick={e => e.stopPropagation()} className="max-w-4xl max-h-[90vh] flex flex-col items-center gap-3 px-16">
             <img src={lightboxPhoto.url} alt="Project photo" className="max-w-full max-h-[80vh] object-contain rounded-lg" />
             <div className="flex items-center gap-3">
               {lightboxPhoto.label && <span className="text-xs px-2 py-1 bg-[#252419] text-[#efeae2] rounded">{lightboxPhoto.label}</span>}
-              {(lightboxPhoto as any).caption && <span className="text-sm text-[#9a9585]">{(lightboxPhoto as any).caption}</span>}
+              {lightboxPhoto.caption && <span className="text-sm text-[#9a9585]">{lightboxPhoto.caption}</span>}
+              <span className="text-xs text-[#9a9585]">{photos.indexOf(lightboxPhoto) + 1} / {photos.length}</span>
             </div>
           </div>
         </div>
       )}
 
-      <AddActivityModal open={addActivityOpen} onClose={() => setAddActivityOpen(false)} customerId={customerId} projectId={projectId} />
+      {/* Modals */}
       <EditProjectModal
         project={project}
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['project', projectId] })}
+        onSuccess={() => { setEditOpen(false); loadData() }}
+      />
+      <AddActivityModal
+        open={addActivityOpen}
+        onClose={() => { setAddActivityOpen(false); loadData() }}
+        customerId={customerId}
+        projectId={projectId}
       />
       <ConfirmModal
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
-        onConfirm={() => deleteProjectMutation.mutate()}
-        loading={deleteProjectMutation.isPending}
+        onConfirm={handleDelete}
+        loading={deleteLoading}
         title="Delete Project"
         description={`Delete "${project.title}"? This cannot be undone.`}
       />
