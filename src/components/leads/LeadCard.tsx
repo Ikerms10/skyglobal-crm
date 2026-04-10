@@ -101,6 +101,10 @@ export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps
             </span>
           </div>
         )}
+
+        <div className="text-xs text-[#9a9585]">
+          {Math.floor((Date.now() - new Date(lead.updated_at).getTime()) / 86400000)}d in stage
+        </div>
       </div>
     </div>
   )
