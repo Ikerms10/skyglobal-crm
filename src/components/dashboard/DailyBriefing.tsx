@@ -12,6 +12,33 @@ interface BriefingData {
   todayLeads: Array<{ id: string; estimated_value: number | null }>
 }
 
+const LABEL: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  color: 'var(--text-tertiary)',
+  margin: '0 0 8px',
+}
+
+const COUNT = (color: string): React.CSSProperties => ({
+  fontSize: 32,
+  fontWeight: 700,
+  color,
+  letterSpacing: '-0.02em',
+  lineHeight: 1,
+  margin: 0,
+})
+
+const ITEM: React.CSSProperties = {
+  fontSize: 12,
+  color: 'var(--text-secondary)',
+  margin: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}
+
 export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
   const [data, setData] = useState<BriefingData | null>(null)
 
@@ -71,67 +98,74 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
   const totalOwed = data?.overduePayments.reduce((s, p) => s + p.owed, 0) ?? 0
   const todayLeadValue = data?.todayLeads.reduce((s, l) => s + (l.estimated_value ?? 0), 0) ?? 0
 
-  const cellStyle: React.CSSProperties = {
-    background: 'var(--bg-tertiary)',
-    borderRadius: 'var(--radius-md)',
-    padding: '14px 16px',
-  }
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-    letterSpacing: '0.08em', color: 'var(--text-tertiary)', margin: '0 0 6px',
-  }
-
-  const countStyle = (color: string): React.CSSProperties => ({
-    fontSize: 28, fontWeight: 700, color, letterSpacing: '-0.02em', lineHeight: 1,
-  })
-
   return (
     <div style={{
-      background: 'var(--bg-card)', border: '1px solid var(--border-card)',
-      borderRadius: 'var(--radius-xl)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border-card)',
+      borderRadius: 'var(--radius-xl)',
+      boxShadow: 'var(--shadow-sm)',
+      overflow: 'hidden',
     }}>
-      <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>
-        ☀️ Today&apos;s Briefing
-      </p>
+      {/* Header */}
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          ☀️ Today&apos;s Briefing
+        </p>
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        {/* Active Jobs */}
-        <div style={cellStyle}>
-          <p style={labelStyle}>Jobs in Progress</p>
-          <p style={countStyle('var(--gold)')}>{data?.activeJobs.length ?? '—'}</p>
+      {/* 2×2 grid — no gap, dividers via borders */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gridTemplateRows: '1fr 1fr',
+      }}>
+        {/* TOP-LEFT: Active Jobs */}
+        <div style={{
+          padding: 16,
+          minHeight: 120,
+          borderRight: '1px solid var(--border-subtle)',
+          borderBottom: '1px solid var(--border-subtle)',
+        }}>
+          <p style={LABEL}>Jobs in Progress</p>
+          <p style={COUNT('var(--gold)')}>{data?.activeJobs.length ?? '—'}</p>
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {(data?.activeJobs ?? []).slice(0, 3).map(j => (
-              <p key={j.id} style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {j.customer_name ?? j.title}
-              </p>
+            {(data?.activeJobs ?? []).slice(0, 2).map(j => (
+              <p key={j.id} style={ITEM}>{j.customer_name ?? j.title}</p>
             ))}
-            {(!data?.activeJobs.length) && (
-              <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>✓ No active jobs</p>
+            {!data?.activeJobs.length && (
+              <p style={{ ...ITEM, color: 'var(--text-tertiary)' }}>✓ No active jobs</p>
             )}
           </div>
         </div>
 
-        {/* Follow-ups */}
-        <div style={cellStyle}>
-          <p style={labelStyle}>Follow-ups Due Today</p>
-          <p style={countStyle('var(--blue)')}>{data?.followUps.length ?? '—'}</p>
+        {/* TOP-RIGHT: Follow-ups */}
+        <div style={{
+          padding: 16,
+          minHeight: 120,
+          borderBottom: '1px solid var(--border-subtle)',
+        }}>
+          <p style={LABEL}>Follow-ups Due Today</p>
+          <p style={COUNT('var(--blue)')}>{data?.followUps.length ?? '—'}</p>
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {(data?.followUps ?? []).slice(0, 3).map(f => (
-              <Link key={f.id} href="/leads" style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {(data?.followUps ?? []).slice(0, 2).map(f => (
+              <Link key={f.id} href="/leads" style={{ ...ITEM, textDecoration: 'none', display: 'block' }}>
                 {f.customer_name ?? f.title}
               </Link>
             ))}
-            {(!data?.followUps.length) && (
-              <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>✓ All clear</p>
+            {!data?.followUps.length && (
+              <p style={{ ...ITEM, color: 'var(--text-tertiary)' }}>✓ All clear</p>
             )}
           </div>
         </div>
 
-        {/* Overdue Payments */}
-        <div style={cellStyle}>
-          <p style={labelStyle}>Payments Outstanding</p>
-          <p style={countStyle((data?.overduePayments.length ?? 0) > 0 ? 'var(--error)' : 'var(--success)')}>
+        {/* BOTTOM-LEFT: Overdue Payments */}
+        <div style={{
+          padding: 16,
+          minHeight: 120,
+          borderRight: '1px solid var(--border-subtle)',
+        }}>
+          <p style={LABEL}>Payments Outstanding</p>
+          <p style={COUNT((data?.overduePayments.length ?? 0) > 0 ? 'var(--error)' : 'var(--success)')}>
             {data?.overduePayments.length ?? '—'}
           </p>
           {totalOwed > 0 && (
@@ -140,36 +174,39 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
             </p>
           )}
           <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {(data?.overduePayments ?? []).slice(0, 3).map(p => (
-              <Link key={p.id} href={`/customers/${p.customer_id}/projects/${p.id}`} style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+            {(data?.overduePayments ?? []).slice(0, 2).map(p => (
+              <Link key={p.id} href={`/customers/${p.customer_id}/projects/${p.id}`} style={{ ...ITEM, textDecoration: 'none', display: 'block' }}>
                 {p.title}
               </Link>
             ))}
-            {(!data?.overduePayments.length) && (
-              <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>✓ All paid up</p>
+            {!data?.overduePayments.length && (
+              <p style={{ ...ITEM, color: 'var(--text-tertiary)' }}>✓ All paid up</p>
             )}
           </div>
         </div>
 
-        {/* New Leads Today */}
-        <div style={cellStyle}>
-          <p style={labelStyle}>New Leads Today</p>
-          <p style={countStyle('var(--blue)')}>{data?.todayLeads.length ?? '—'}</p>
+        {/* BOTTOM-RIGHT: New Leads Today */}
+        <div style={{
+          padding: 16,
+          minHeight: 120,
+        }}>
+          <p style={LABEL}>New Leads Today</p>
+          <p style={COUNT('var(--blue)')}>{data?.todayLeads.length ?? '—'}</p>
           {todayLeadValue > 0 && (
             <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
               {formatCurrency(todayLeadValue)} pipeline
             </p>
           )}
-          {(!data?.todayLeads.length) && (
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>No leads yet today</p>
+          {!data?.todayLeads.length && (
+            <p style={{ ...ITEM, color: 'var(--text-tertiary)', marginTop: 4 }}>No leads yet today</p>
           )}
           {onAddLead && (
             <button
               onClick={onAddLead}
               style={{
                 marginTop: 8, display: 'flex', alignItems: 'center', gap: 4,
-                fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: 'none',
-                cursor: 'pointer', padding: 0,
+                fontSize: 12, color: 'var(--text-tertiary)', background: 'none',
+                border: 'none', cursor: 'pointer', padding: 0,
               }}
             >
               <Plus size={12} /> Add Lead
