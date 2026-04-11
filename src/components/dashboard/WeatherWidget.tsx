@@ -130,12 +130,12 @@ export function WeatherWidget() {
       : null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, height: '100%' }}>
       {alertStyle && (
         <div style={{
           ...alertStyle,
           borderRadius: 'var(--radius-md)', padding: '10px 16px',
-          fontSize: 13, fontWeight: 500,
+          fontSize: 13, fontWeight: 500, flexShrink: 0,
         }}>
           {rain > 80
             ? '🚨 High rain chance · Exterior work not recommended today'
@@ -146,6 +146,7 @@ export function WeatherWidget() {
       <div style={{
         background: 'var(--bg-card)', border: '1px solid var(--border-card)',
         borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+        flex: 1, display: 'flex', flexDirection: 'column',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -170,8 +171,8 @@ export function WeatherWidget() {
           </span>
         </div>
 
-        {/* 3-day forecast */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        {/* 3-day forecast pushed to bottom */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
           {weather.forecast.map((day, i) => {
             const info = getWeatherInfo(day.code)
             return (

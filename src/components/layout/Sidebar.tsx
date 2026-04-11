@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, Briefcase, DollarSign, BarChart3,
-  Settings, LogOut, Target, Sun, Moon,
+  Settings, LogOut, Target, Sun, Moon, CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -12,6 +12,7 @@ import { useTheme } from '@/components/providers/ThemeProvider'
 
 const mainNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/daily', label: 'Daily', icon: CalendarDays },
   { href: '/leads', label: 'Leads', icon: Target },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/projects', label: 'Projects', icon: Briefcase },

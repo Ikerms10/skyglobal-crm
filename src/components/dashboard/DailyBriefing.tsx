@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, ArrowRight } from 'lucide-react'
 
 interface BriefingData {
   activeJobs: Array<{ id: string; title: string; customer_name: string | null }>
@@ -22,16 +22,16 @@ const LABEL: React.CSSProperties = {
 }
 
 const COUNT = (color: string): React.CSSProperties => ({
-  fontSize: 32,
+  fontSize: 36,
   fontWeight: 700,
   color,
   letterSpacing: '-0.02em',
   lineHeight: 1,
-  margin: 0,
+  margin: '0 0 6px',
 })
 
 const ITEM: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 13,
   color: 'var(--text-secondary)',
   margin: 0,
   overflow: 'hidden',
@@ -105,12 +105,18 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
       borderRadius: 'var(--radius-xl)',
       boxShadow: 'var(--shadow-sm)',
       overflow: 'hidden',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       {/* Header */}
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           ☀️ Today&apos;s Briefing
         </p>
+        <Link href="/daily" style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}>
+          Daily Notes <ArrowRight size={12} />
+        </Link>
       </div>
 
       {/* 2×2 grid — no gap, dividers via borders */}
@@ -118,13 +124,15 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gridTemplateRows: '1fr 1fr',
+        flex: 1,
       }}>
         {/* TOP-LEFT: Active Jobs */}
         <div style={{
-          padding: 16,
-          minHeight: 120,
+          padding: '16px 20px',
+          minHeight: 110,
           borderRight: '1px solid var(--border-subtle)',
           borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex', flexDirection: 'column',
         }}>
           <p style={LABEL}>Jobs in Progress</p>
           <p style={COUNT('var(--gold)')}>{data?.activeJobs.length ?? '—'}</p>
@@ -140,9 +148,10 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
 
         {/* TOP-RIGHT: Follow-ups */}
         <div style={{
-          padding: 16,
-          minHeight: 120,
+          padding: '16px 20px',
+          minHeight: 110,
           borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex', flexDirection: 'column',
         }}>
           <p style={LABEL}>Follow-ups Due Today</p>
           <p style={COUNT('var(--blue)')}>{data?.followUps.length ?? '—'}</p>
@@ -160,9 +169,10 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
 
         {/* BOTTOM-LEFT: Overdue Payments */}
         <div style={{
-          padding: 16,
-          minHeight: 120,
+          padding: '16px 20px',
+          minHeight: 110,
           borderRight: '1px solid var(--border-subtle)',
+          display: 'flex', flexDirection: 'column',
         }}>
           <p style={LABEL}>Payments Outstanding</p>
           <p style={COUNT((data?.overduePayments.length ?? 0) > 0 ? 'var(--error)' : 'var(--success)')}>
@@ -187,8 +197,9 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
 
         {/* BOTTOM-RIGHT: New Leads Today */}
         <div style={{
-          padding: 16,
-          minHeight: 120,
+          padding: '16px 20px',
+          minHeight: 110,
+          display: 'flex', flexDirection: 'column',
         }}>
           <p style={LABEL}>New Leads Today</p>
           <p style={COUNT('var(--blue)')}>{data?.todayLeads.length ?? '—'}</p>

@@ -233,7 +233,7 @@ export default function DashboardPage() {
         <BibleVerse />
 
         {/* ── ROW 2: Weather + Briefing ─────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '38% 1fr', gap: 16 }} className="grid-cols-1 md:grid-cols-[38%_1fr]">
+        <div style={{ display: 'grid', gridTemplateColumns: '38% 1fr', gap: 16, alignItems: 'stretch' }} className="grid-cols-1 md:grid-cols-[38%_1fr]">
           <WeatherWidget />
           <DailyBriefing />
         </div>
