@@ -413,6 +413,34 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
     }
   }
 
+  // Extract the storage path from any Supabase URL (public or signed)
+  const extractStoragePath = (url: string): string | null => {
+    const publicMatch = url.match(/\/object\/public\/project-photos\/(.+)$/)
+    if (publicMatch) return publicMatch[1]
+    const signedMatch = url.match(/\/object\/sign\/project-photos\/([^?]+)/)
+    if (signedMatch) return signedMatch[1]
+    return null
+  }
+
+  // Refresh a broken signed URL and update photos state
+  const refreshPhotoUrl = async (photoId: string, currentUrl: string) => {
+    const path = extractStoragePath(currentUrl)
+    if (!path) return
+    try {
+      const supabase = createClient()
+      // 1-year TTL (31536000 seconds)
+      const { data } = await supabase.storage.from('project-photos').createSignedUrl(path, 31536000)
+      if (!data?.signedUrl) return
+      const newUrl = data.signedUrl
+      // Persist the refreshed URL to DB so it doesn't break again immediately
+      await supabase.from('project_photos').update({ url: newUrl }).eq('id', photoId)
+      setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, url: newUrl } : p))
+      if (lightboxPhoto?.id === photoId) {
+        setLightboxPhoto((prev: any) => prev ? { ...prev, url: newUrl } : prev)
+      }
+    } catch {}
+  }
+
   const uploadPhoto = async (file: File) => {
     setPhotoUploading(true)
     try {
@@ -423,11 +451,18 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       const path = `${user.id}/${projectId}/${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage.from('project-photos').upload(path, file)
       if (upErr) throw new Error(upErr.message)
-      const { data: { publicUrl } } = supabase.storage.from('project-photos').getPublicUrl(path)
+
+      // Use signed URL (works with private buckets) — 1-year TTL
+      const { data: signedData } = await supabase.storage
+        .from('project-photos').createSignedUrl(path, 31536000)
+      // Fall back to public URL if signed fails (public bucket)
+      const url = signedData?.signedUrl
+        ?? supabase.storage.from('project-photos').getPublicUrl(path).data.publicUrl
+
       const { error } = await supabase.from('project_photos').insert({
         project_id: projectId,
         user_id: user.id,
-        url: publicUrl,
+        url,
         label: photoLabel,
       })
       if (error) throw new Error(error.message)
@@ -1095,12 +1130,15 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
                   <h3 className="text-sm font-semibold text-[#9a9585] mb-2 uppercase tracking-wider">{label} Photos ({labelPhotos.length})</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {labelPhotos.map(photo => (
-                      <div key={photo.id} className="relative group rounded-lg overflow-hidden">
+                      <div key={photo.id} className="relative group rounded-lg overflow-hidden bg-[#2a2920]"
+                        style={{ aspectRatio: '4/3' }}>
                         <img
                           src={photo.url}
                           alt={`${label} photo`}
-                          className="w-full aspect-[4/3] object-cover cursor-pointer"
+                          className="w-full h-full object-cover cursor-pointer"
                           onClick={() => setLightboxPhoto(photo)}
+                          onError={() => refreshPhotoUrl(photo.id, photo.url)}
+                          style={{ display: 'block' }}
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
@@ -1109,7 +1147,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
-                          <button onClick={() => setLightboxPhoto(photo)} className="text-white text-xs bg-[#1d1c17]/80 px-3 py-1.5 rounded-lg">
+                          <button onClick={(e) => { e.stopPropagation(); setLightboxPhoto(photo) }} className="text-white text-xs bg-[#1d1c17]/80 px-3 py-1.5 rounded-lg">
                             View
                           </button>
                         </div>
@@ -1152,7 +1190,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
             )
           })()}
           <div onClick={e => e.stopPropagation()} className="max-w-4xl max-h-[90vh] flex flex-col items-center gap-3 px-16">
-            <img src={lightboxPhoto.url} alt="Project photo" className="max-w-full max-h-[80vh] object-contain rounded-lg" />
+            <img
+              src={lightboxPhoto.url}
+              alt="Project photo"
+              className="max-w-full max-h-[80vh] object-contain rounded-lg"
+              onError={() => refreshPhotoUrl(lightboxPhoto.id, lightboxPhoto.url)}
+            />
             <div className="flex items-center gap-3">
               {lightboxPhoto.label && <span className="text-xs px-2 py-1 bg-[#252419] text-[#efeae2] rounded">{lightboxPhoto.label}</span>}
               {lightboxPhoto.caption && <span className="text-sm text-[#9a9585]">{lightboxPhoto.caption}</span>}
