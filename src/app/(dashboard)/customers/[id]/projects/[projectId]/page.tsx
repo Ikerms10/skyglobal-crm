@@ -413,30 +413,35 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
     }
   }
 
-  // Extract the storage path from any Supabase URL (public or signed)
+  // Extract the storage path from any Supabase storage URL
   const extractStoragePath = (url: string): string | null => {
-    const publicMatch = url.match(/\/object\/public\/project-photos\/(.+)$/)
-    if (publicMatch) return publicMatch[1]
-    const signedMatch = url.match(/\/object\/sign\/project-photos\/([^?]+)/)
-    if (signedMatch) return signedMatch[1]
-    return null
+    const m = url.match(/\/object\/(?:public|sign)\/project-photos\/([^?]+)/)
+    return m?.[1] ?? null
   }
 
-  // Refresh a broken signed URL and update photos state
-  const refreshPhotoUrl = async (photoId: string, currentUrl: string) => {
+  // When a photo URL fails to load, download the blob through the authenticated
+  // Supabase SDK and swap the img src directly — works even with private buckets
+  // as long as the user has SELECT permission on storage.objects.
+  const handlePhotoError = async (e: React.SyntheticEvent<HTMLImageElement>, photoId: string, currentUrl: string) => {
+    const img = e.currentTarget
+    // Guard: only retry once to avoid infinite error loops
+    if (img.dataset.retried) return
+    img.dataset.retried = 'true'
+
     const path = extractStoragePath(currentUrl)
     if (!path) return
+
     try {
       const supabase = createClient()
-      // 1-year TTL (31536000 seconds)
-      const { data } = await supabase.storage.from('project-photos').createSignedUrl(path, 31536000)
-      if (!data?.signedUrl) return
-      const newUrl = data.signedUrl
-      // Persist the refreshed URL to DB so it doesn't break again immediately
-      await supabase.from('project_photos').update({ url: newUrl }).eq('id', photoId)
-      setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, url: newUrl } : p))
+      const { data: blob, error } = await supabase.storage.from('project-photos').download(path)
+      if (error || !blob) return
+
+      const objectUrl = URL.createObjectURL(blob)
+      img.src = objectUrl
+      // Also update state so lightbox gets the working URL
+      setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, url: objectUrl } : p))
       if (lightboxPhoto?.id === photoId) {
-        setLightboxPhoto((prev: any) => prev ? { ...prev, url: newUrl } : prev)
+        setLightboxPhoto((prev: any) => prev ? { ...prev, url: objectUrl } : prev)
       }
     } catch {}
   }
@@ -452,17 +457,13 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       const { error: upErr } = await supabase.storage.from('project-photos').upload(path, file)
       if (upErr) throw new Error(upErr.message)
 
-      // Use signed URL (works with private buckets) — 1-year TTL
-      const { data: signedData } = await supabase.storage
-        .from('project-photos').createSignedUrl(path, 31536000)
-      // Fall back to public URL if signed fails (public bucket)
-      const url = signedData?.signedUrl
-        ?? supabase.storage.from('project-photos').getPublicUrl(path).data.publicUrl
+      // Public bucket: store the permanent public URL (no expiry, no token)
+      const { data: { publicUrl } } = supabase.storage.from('project-photos').getPublicUrl(path)
 
       const { error } = await supabase.from('project_photos').insert({
         project_id: projectId,
         user_id: user.id,
-        url,
+        url: publicUrl,
         label: photoLabel,
       })
       if (error) throw new Error(error.message)
@@ -1137,7 +1138,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
                           alt={`${label} photo`}
                           className="w-full h-full object-cover cursor-pointer"
                           onClick={() => setLightboxPhoto(photo)}
-                          onError={() => refreshPhotoUrl(photo.id, photo.url)}
+                          onError={e => handlePhotoError(e, photo.id, photo.url)}
                           style={{ display: 'block' }}
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -1194,7 +1195,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               src={lightboxPhoto.url}
               alt="Project photo"
               className="max-w-full max-h-[80vh] object-contain rounded-lg"
-              onError={() => refreshPhotoUrl(lightboxPhoto.id, lightboxPhoto.url)}
+              onError={e => handlePhotoError(e, lightboxPhoto.id, lightboxPhoto.url)}
             />
             <div className="flex items-center gap-3">
               {lightboxPhoto.label && <span className="text-xs px-2 py-1 bg-[#252419] text-[#efeae2] rounded">{lightboxPhoto.label}</span>}
