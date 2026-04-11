@@ -26,26 +26,24 @@ import {
 } from '@dnd-kit/core'
 import { formatCurrency, cn } from '@/lib/utils'
 
-const STAGES: LeadStage[] = ['New Lead', 'Estimate Sent', 'Follow-up', 'Negotiating', 'Won', 'Lost', 'On Hold']
+const STAGES: LeadStage[] = ['New Lead', 'Estimate Sent', 'Follow-up', 'Won', 'Lost', 'On Hold']
 
 const STAGE_BORDER_COLORS: Record<LeadStage, string> = {
-  'New Lead': 'border-t-[#3583b3]',
+  'New Lead':      'border-t-[#3583b3]',
   'Estimate Sent': 'border-t-[#e6ab35]',
-  'Follow-up': 'border-t-[#e6ab35]',
-  'Negotiating': 'border-t-[#e6ab35]',
-  'Won': 'border-t-[#e6ab35]',
-  'Lost': 'border-t-[#ef4444]',
-  'On Hold': 'border-t-[#9a9585]',
+  'Follow-up':     'border-t-[#bf5af2]',
+  'Won':           'border-t-[#30d158]',
+  'Lost':          'border-t-[#ff453a]',
+  'On Hold':       'border-t-[#9a9585]',
 }
 
 const STAGE_HEADER_COLORS: Record<LeadStage, string> = {
-  'New Lead': 'text-[#3583b3]',
+  'New Lead':      'text-[#3583b3]',
   'Estimate Sent': 'text-[#e6ab35]',
-  'Follow-up': 'text-[#e6ab35]',
-  'Negotiating': 'text-[#e6ab35]',
-  'Won': 'text-[#e6ab35]',
-  'Lost': 'text-[#ef4444]',
-  'On Hold': 'text-[#9a9585]',
+  'Follow-up':     'text-[#bf5af2]',
+  'Won':           'text-[#30d158]',
+  'Lost':          'text-[#ff453a]',
+  'On Hold':       'text-[#9a9585]',
 }
 
 const SOURCES: LeadSource[] = ['Thumbtack', 'Referral', 'Google', 'Instagram', 'Door Knock', 'Facebook', 'Yelp', 'Other']

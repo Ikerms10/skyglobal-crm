@@ -36,17 +36,20 @@ export function Badge({ children, className, variant = 'default' }: BadgeProps) 
 }
 
 export function StageBadge({ stage }: { stage: LeadStage }) {
-  const config: Record<LeadStage, { variant: BadgeProps['variant'] }> = {
-    'New Lead':      { variant: 'info' },
-    'Estimate Sent': { variant: 'gold' },
-    'Follow-up':     { variant: 'warning' },
-    'Negotiating':   { variant: 'warning' },
-    'Won':           { variant: 'success' },
-    'Lost':          { variant: 'danger' },
-    'On Hold':       { variant: 'default' },
+  const stageStyles: Record<LeadStage, React.CSSProperties> = {
+    'New Lead':      { background: 'rgba(53,131,179,0.15)',  color: '#3583b3' },
+    'Estimate Sent': { background: 'rgba(230,171,53,0.15)',  color: '#e6ab35' },
+    'Follow-up':     { background: 'rgba(191,90,242,0.15)',  color: '#bf5af2' },
+    'Won':           { background: 'rgba(48,209,88,0.15)',   color: '#30d158' },
+    'Lost':          { background: 'rgba(255,69,58,0.15)',   color: '#ff453a' },
+    'On Hold':       { background: 'rgba(239,234,226,0.10)', color: '#9a9585' },
   }
-  const { variant } = config[stage] ?? { variant: 'default' }
-  return <Badge variant={variant}>{stage}</Badge>
+  const style = stageStyles[stage] ?? stageStyles['On Hold']
+  return (
+    <span style={{ ...style, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
+      {stage}
+    </span>
+  )
 }
 
 export function SourceBadge({ source }: { source: LeadSource }) {

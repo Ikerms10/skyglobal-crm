@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -27,6 +27,7 @@ function Section({ icon: Icon, title, children }: { icon: React.ElementType; tit
 
 export default function SettingsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   // Profile
@@ -59,6 +60,20 @@ export default function SettingsPage() {
   // Backup
   const [lastBackup, setLastBackup] = useState<string | null>(null)
   const [backupLoading, setBackupLoading] = useState(false)
+
+  // Handle Google Calendar OAuth callback
+  useEffect(() => {
+    const cal = searchParams.get('calendar')
+    if (cal === 'connected') {
+      toast.success('✓ Google Calendar connected!')
+      setCalendarConnected(true)
+      router.replace('/settings')
+    } else if (cal === 'error') {
+      const reason = searchParams.get('reason')
+      toast.error(reason ? `Failed to connect: ${reason}` : 'Failed to connect Google Calendar')
+      router.replace('/settings')
+    }
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {

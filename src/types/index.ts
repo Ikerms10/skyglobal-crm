@@ -1,5 +1,5 @@
 export type CustomerType = 'Residential' | 'Commercial'
-export type LeadStage = 'New Lead' | 'Estimate Sent' | 'Follow-up' | 'Negotiating' | 'Won' | 'Lost' | 'On Hold'
+export type LeadStage = 'New Lead' | 'Estimate Sent' | 'Follow-up' | 'Won' | 'Lost' | 'On Hold'
 export type LeadSource = 'Thumbtack' | 'Referral' | 'Google' | 'Instagram' | 'Door Knock' | 'Facebook' | 'Yelp' | 'Other'
 export type ProjectStatus = 'Scheduled' | 'In Progress' | 'On Hold' | 'Completed' | 'Cancelled'
 export type PaymentStatus = 'Unpaid' | 'Partial' | 'Paid' | 'Overdue'

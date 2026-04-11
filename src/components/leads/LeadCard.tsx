@@ -12,13 +12,12 @@ interface LeadCardProps {
 }
 
 const STAGE_BORDER: Record<string, string> = {
-  'New Lead': '#3583b3',
+  'New Lead':      '#3583b3',
   'Estimate Sent': '#e6ab35',
-  'Follow-up': '#8b5cf6',
-  'Negotiating': '#f97316',
-  'Won': '#10b981',
-  'Lost': '#ef4444',
-  'On Hold': '#9a9585',
+  'Follow-up':     '#bf5af2',
+  'Won':           '#30d158',
+  'Lost':          '#ff453a',
+  'On Hold':       '#6e6e73',
 }
 
 const SOURCE_STYLES: Record<string, { bg: string; text: string }> = {
