@@ -3,12 +3,11 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, Briefcase, DollarSign, BarChart3,
-  Settings, LogOut, Target, Sun, Moon, CalendarDays,
+  Settings, LogOut, Target, CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { useTheme } from '@/components/providers/ThemeProvider'
 
 const mainNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -56,7 +55,6 @@ function NavSection({ label, items, pathname }: { label: string; items: typeof m
 export function Sidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { theme, toggle } = useTheme()
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -119,31 +117,17 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
           </p>
         </div>
 
-        {/* Theme toggle + Sign out */}
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button onClick={toggle} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 6, padding: '7px', borderRadius: 10,
-              background: 'var(--bg-elevated)', border: 'none', cursor: 'pointer',
-              color: 'var(--text-secondary)', fontSize: 12,
-            }}
-            className="hover:bg-[var(--bg-surface)] transition-colors">
-            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-            <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-          </button>
-          <button onClick={handleSignOut}
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 6, padding: '7px', borderRadius: 10,
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              color: 'var(--error)', fontSize: 12,
-            }}
-            className="hover:bg-[var(--error-light)] transition-colors">
-            <LogOut size={14} />
-            <span>Sign out</span>
-          </button>
-        </div>
+        <button onClick={handleSignOut}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 6, padding: '7px', borderRadius: 10,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--error)', fontSize: 12,
+          }}
+          className="hover:bg-[var(--error-light)] transition-colors">
+          <LogOut size={14} />
+          <span>Sign out</span>
+        </button>
       </div>
     </aside>
   )

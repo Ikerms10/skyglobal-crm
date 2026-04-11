@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { EditProjectModal } from '@/components/projects/EditProjectModal'
+import { WorkOrdersTab } from '@/components/projects/WorkOrdersTab'
 import { AddActivityModal } from '@/components/customers/AddActivityModal'
 import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink'
 import dynamic from 'next/dynamic'
@@ -24,6 +25,11 @@ import {
 const DownloadEstimateButton = dynamic(
   () => import('@/components/pdf/EstimatePDFContent').then(m => m.DownloadEstimateButton),
   { ssr: false, loading: () => <span className="text-xs text-[#9a9585]">Loading PDF...</span> }
+)
+
+const DownloadProjectReportButton = dynamic(
+  () => import('@/components/pdf/ProjectReportPDF').then(m => m.DownloadProjectReportButton),
+  { ssr: false, loading: () => <span className="text-xs text-[#9a9585]">Loading…</span> }
 )
 
 function PDFButtons({ project, lineItems, projectId }: { project: any; lineItems: any[]; projectId: string }) {
@@ -49,7 +55,7 @@ function PDFButtons({ project, lineItems, projectId }: { project: any; lineItems
   )
 }
 
-const TABS = ['overview', 'scope', 'costs', 'management', 'photos'] as const
+const TABS = ['overview', 'scope', 'costs', 'workorders', 'management', 'photos'] as const
 type Tab = typeof TABS[number]
 
 const ACTIVITY_ICONS: Record<string, string> = {
@@ -72,8 +78,10 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
   const [photos, setPhotos] = useState<any[]>([])
   const [tasks, setTasks] = useState<any[]>([])
   const [activities, setActivities] = useState<any[]>([])
+  const [workOrders, setWorkOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -128,8 +136,11 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       setError(null)
       const supabase = createClient()
 
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) setUserId(user.id)
+
       const { data: proj, error: pe } = await supabase
-        .from('projects').select('*, customers(name)').eq('id', projectId).single()
+        .from('projects').select('*, customers(name, phone, email, address)').eq('id', projectId).single()
       if (pe) throw new Error(pe.message)
       setProject(proj)
       setMgmt({
@@ -144,12 +155,13 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
         client_communication: proj.client_communication ?? '',
       })
 
-      const [expRes, liRes, photoRes, taskRes, actRes] = await Promise.all([
+      const [expRes, liRes, photoRes, taskRes, actRes, woRes] = await Promise.all([
         supabase.from('project_expenses').select('*').eq('project_id', projectId).order('date', { ascending: false }),
         supabase.from('project_line_items').select('*').eq('project_id', projectId).order('created_at'),
         supabase.from('project_photos').select('*').eq('project_id', projectId).order('uploaded_at', { ascending: false }),
         supabase.from('project_tasks').select('*').eq('project_id', projectId).order('created_at'),
         supabase.from('activities').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+        supabase.from('work_orders').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
       ])
 
       if (expRes.error) throw new Error(expRes.error.message)
@@ -163,6 +175,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       setPhotos(photoRes.data ?? [])
       setTasks(taskRes.data ?? [])
       setActivities(actRes.data ?? [])
+      setWorkOrders(woRes.data ?? [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load project')
     } finally {
@@ -539,7 +552,11 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               {project.end_date && <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />End: {formatDate(project.end_date)}</span>}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            <DownloadProjectReportButton data={{
+              project, customer: project.customers ?? {},
+              lineItems, expenses, photos,
+            }} />
             <Button size="sm" variant="secondary" onClick={() => setAddActivityOpen(true)}>
               <Plus className="h-4 w-4" /> Log
             </Button>
@@ -577,6 +594,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
             { id: 'overview', label: 'Overview' },
             { id: 'scope', label: 'Scope of Work' },
             { id: 'costs', label: 'Costs & Profit' },
+            { id: 'workorders', label: `Work Orders (${workOrders.length})` },
             { id: 'management', label: 'Management' },
             { id: 'photos', label: `Photos (${photos.length})` },
           ].map(({ id, label }) => (
@@ -867,6 +885,18 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
             </div>
           )}
         </div>
+      )}
+
+      {/* WORK ORDERS TAB */}
+      {activeTab === 'workorders' && userId && (
+        <WorkOrdersTab
+          projectId={projectId}
+          projectTitle={project.title}
+          projectAddress={project.address}
+          userId={userId}
+          workOrders={workOrders}
+          onRefresh={loadData}
+        />
       )}
 
       {/* MANAGEMENT TAB */}
