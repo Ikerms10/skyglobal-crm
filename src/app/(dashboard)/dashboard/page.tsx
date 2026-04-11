@@ -3,29 +3,55 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { CardSkeleton, TableSkeleton } from '@/components/ui/Skeleton'
-import { formatDistanceToNow, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear } from 'date-fns'
+import { formatDistanceToNow, subMonths, startOfWeek, startOfMonth, startOfYear } from 'date-fns'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  LineChart, Line, XAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { TrendingUp, DollarSign, Target, Briefcase, Activity, Clock, AlertTriangle } from 'lucide-react'
+import { DollarSign, Briefcase, Target, TrendingUp, TrendingDown, ArrowRight, Clock, AlertTriangle, Activity } from 'lucide-react'
 import Link from 'next/link'
 
-type Timeframe = 'Weekly' | 'Monthly' | 'Yearly' | 'All Time'
+type Timeframe = 'Week' | 'Month' | 'Year' | 'All'
 
-function getStartDate(timeframe: Timeframe): string | null {
+function getStartDate(tf: Timeframe): string | null {
   const now = new Date()
-  switch (timeframe) {
-    case 'Weekly': return startOfWeek(now).toISOString()
-    case 'Monthly': return startOfMonth(now).toISOString()
-    case 'Yearly': return startOfYear(now).toISOString()
-    case 'All Time': return null
-  }
+  if (tf === 'Week')  return startOfWeek(now).toISOString()
+  if (tf === 'Month') return startOfMonth(now).toISOString()
+  if (tf === 'Year')  return startOfYear(now).toISOString()
+  return null
+}
+
+function greeting(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function todayLabel(): string {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+}
+
+// Custom tooltip for charts
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; color: string; name: string }>; label?: string }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+      borderRadius: 12, padding: '10px 14px', boxShadow: 'var(--shadow-md)',
+      fontSize: 13,
+    }}>
+      <p style={{ color: 'var(--text-tertiary)', marginBottom: 6 }}>{label}</p>
+      {payload.map(p => (
+        <p key={p.name} style={{ color: p.color, fontWeight: 600 }}>
+          {p.name}: {formatCurrency(p.value)}
+        </p>
+      ))}
+    </div>
+  )
 }
 
 export default function DashboardPage() {
-  const [timeframe, setTimeframe] = useState<Timeframe>('Monthly')
+  const [timeframe, setTimeframe] = useState<Timeframe>('Month')
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', timeframe],
@@ -35,20 +61,21 @@ export default function DashboardPage() {
       if (!user) return null
 
       const startDate = getStartDate(timeframe)
+      const dateFilter = startDate ?? '00000000-0000-0000-0000-000000000000'
 
       const [projectsRes, leadsRes, expensesRes, projectExpensesRes, activitiesRes] = await Promise.all([
         supabase.from('projects')
-          .select('id, contract_value, amount_paid, payment_status, status, created_at, type')
+          .select('id, contract_value, amount_paid, payment_status, status, created_at, customer_id, title, customers(name)')
           .eq('user_id', user.id).is('deleted_at', null)
-          .gte(startDate ? 'created_at' : 'id', startDate ?? '00000000-0000-0000-0000-000000000000'),
+          .gte(startDate ? 'created_at' : 'id', dateFilter),
         supabase.from('leads')
           .select('id, stage, source, estimated_value, follow_up_date, title, customer_id, created_at')
           .eq('user_id', user.id).is('deleted_at', null)
-          .gte(startDate ? 'created_at' : 'id', startDate ?? '00000000-0000-0000-0000-000000000000'),
+          .gte(startDate ? 'created_at' : 'id', dateFilter),
         supabase.from('expenses')
           .select('id, amount, category, date')
           .eq('user_id', user.id).is('deleted_at', null)
-          .gte(startDate ? 'date' : 'id', startDate ? startDate.split('T')[0] : '00000000-0000-0000-0000-000000000000'),
+          .gte(startDate ? 'date' : 'id', startDate ? startDate.split('T')[0] : dateFilter),
         supabase.from('project_expenses')
           .select('id, amount, category, date, project_id')
           .eq('user_id', user.id),
@@ -56,7 +83,7 @@ export default function DashboardPage() {
           .select('id, type, content, created_at, customer_id, project_id')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(10),
+          .limit(8),
       ])
 
       const projects = projectsRes.data ?? []
@@ -67,322 +94,427 @@ export default function DashboardPage() {
 
       const revenue = projects
         .filter(p => p.status === 'In Progress' || p.status === 'Completed')
-        .reduce((sum, p) => sum + (p.contract_value ?? 0), 0)
-      const totalExpenses = [
-        ...expenses.map(e => e.amount),
-        ...projectExpenses.map(e => e.amount),
-      ].reduce((sum, a) => sum + a, 0)
+        .reduce((s, p) => s + (p.contract_value ?? 0), 0)
+      const totalExpenses = [...expenses.map(e => e.amount), ...projectExpenses.map(e => e.amount)]
+        .reduce((s, a) => s + a, 0)
       const profit = revenue - totalExpenses
       const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
-
       const wonLeads = leads.filter(l => l.stage === 'Won').length
-      const totalLeads = leads.length
-      const conversionRate = totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 100) : 0
       const activeProjects = projects.filter(p => p.status === 'In Progress' || p.status === 'Scheduled').length
 
-      const adSpend = expenses.filter(e => e.category === 'Advertising').reduce((sum, e) => sum + e.amount, 0)
-      const avgLeadCost = totalLeads > 0 ? adSpend / totalLeads : 0
-      const revenuePerLead = totalLeads > 0 ? revenue / totalLeads : 0
-      const revenuePerWon = wonLeads > 0 ? revenue / wonLeads : 0
-
-      const monthlyData = Array.from({ length: 6 }, (_, i) => {
-        const d = subMonths(new Date(), 5 - i)
-        const month = d.toLocaleDateString('en-US', { month: 'short' })
-        const year = d.getFullYear()
-        return { month, year }
-      })
-
+      // 6-month chart data
       const [allProjectsRes, allExpensesRes, allProjExpRes] = await Promise.all([
-        supabase.from('projects').select('contract_value, created_at').eq('user_id', user.id).is('deleted_at', null),
-        supabase.from('expenses').select('amount, date, category').eq('user_id', user.id).is('deleted_at', null),
+        supabase.from('projects').select('contract_value, created_at, status').eq('user_id', user.id).is('deleted_at', null),
+        supabase.from('expenses').select('amount, date').eq('user_id', user.id).is('deleted_at', null),
         supabase.from('project_expenses').select('amount, date').eq('user_id', user.id),
       ])
 
-      const barChartData = monthlyData.map(({ month, year }) => {
+      const chartData = Array.from({ length: 6 }, (_, i) => {
+        const d = subMonths(new Date(), 5 - i)
+        const month = d.toLocaleDateString('en-US', { month: 'short' })
+        const yr = d.getFullYear()
         const rev = (allProjectsRes.data ?? [])
           .filter(p => {
-            const d = new Date(p.created_at)
-            return d.toLocaleDateString('en-US', { month: 'short' }) === month && d.getFullYear() === year
+            const pd = new Date(p.created_at)
+            return pd.toLocaleDateString('en-US', { month: 'short' }) === month && pd.getFullYear() === yr
+              && (p.status === 'In Progress' || p.status === 'Completed')
           })
-          .reduce((sum, p) => sum + (p.contract_value ?? 0), 0)
+          .reduce((s, p) => s + (p.contract_value ?? 0), 0)
         const exp = [
           ...(allExpensesRes.data ?? []).filter(e => {
-            const d = new Date(e.date)
-            return d.toLocaleDateString('en-US', { month: 'short' }) === month && d.getFullYear() === year
+            const ed = new Date(e.date); return ed.toLocaleDateString('en-US', { month: 'short' }) === month && ed.getFullYear() === yr
           }).map(e => e.amount),
           ...(allProjExpRes.data ?? []).filter(e => {
-            const d = new Date(e.date)
-            return d.toLocaleDateString('en-US', { month: 'short' }) === month && d.getFullYear() === year
+            const ed = new Date(e.date); return ed.toLocaleDateString('en-US', { month: 'short' }) === month && ed.getFullYear() === yr
           }).map(e => e.amount),
-        ].reduce((sum, a) => sum + a, 0)
+        ].reduce((s, a) => s + a, 0)
         return { month, revenue: Math.round(rev), expenses: Math.round(exp) }
       })
 
-      const sourceCounts: Record<string, number> = {}
-      leads.forEach(l => { sourceCounts[l.source] = (sourceCounts[l.source] ?? 0) + 1 })
-      const sourceData = Object.entries(sourceCounts).map(([name, value]) => ({ name, value }))
-
-      const expCats: Record<string, number> = {}
-      expenses.forEach(e => { expCats[e.category] = (expCats[e.category] ?? 0) + e.amount })
-      const expCatData = Object.entries(expCats).map(([name, value]) => ({ name, value: Math.round(value) }))
+      // Pipeline summary
+      const stages = ['New Lead', 'Estimate Sent', 'Follow-up', 'Negotiating', 'Won', 'Lost'] as const
+      const stageCounts = Object.fromEntries(stages.map(s => [s, leads.filter(l => l.stage === s).length]))
 
       const today = new Date().toISOString().split('T')[0]
-      const followUpsRes = await supabase.from('leads')
-        .select('id, title, follow_up_date, stage, customers(name)')
-        .eq('user_id', user.id).is('deleted_at', null)
-        .lte('follow_up_date', subWeeks(new Date(), -1).toISOString().split('T')[0])
-        .gte('follow_up_date', today)
-        .not('stage', 'in', '("Won","Lost")')
-        .order('follow_up_date', { ascending: true })
-        .limit(5)
-
-      const overdueRes = await supabase.from('projects')
-        .select('id, title, contract_value, amount_paid, payment_status, customer_id, customers(name)')
-        .eq('user_id', user.id).is('deleted_at', null)
-        .in('payment_status', ['Unpaid', 'Partial', 'Overdue'])
-        .lt('end_date', today)
-        .limit(5)
+      const [followUpsRes, overdueRes] = await Promise.all([
+        supabase.from('leads')
+          .select('id, title, follow_up_date, stage, customers(name)')
+          .eq('user_id', user.id).is('deleted_at', null)
+          .lte('follow_up_date', subMonths(new Date(), -1).toISOString().split('T')[0])
+          .gte('follow_up_date', today)
+          .not('stage', 'in', '("Won","Lost")')
+          .order('follow_up_date', { ascending: true })
+          .limit(4),
+        supabase.from('projects')
+          .select('id, title, contract_value, amount_paid, payment_status, customer_id, customers(name)')
+          .eq('user_id', user.id).is('deleted_at', null)
+          .in('payment_status', ['Unpaid', 'Partial', 'Overdue'])
+          .lt('end_date', today)
+          .limit(4),
+      ])
 
       return {
         revenue, totalExpenses, profit, margin,
-        wonLeads, totalLeads, conversionRate, activeProjects,
-        adSpend, avgLeadCost, revenuePerLead, revenuePerWon,
-        barChartData, sourceData, expCatData,
-        activities, followUps: followUpsRes.data ?? [], overdue: overdueRes.data ?? [],
+        wonLeads, totalLeads: leads.length, activeProjects,
+        chartData, stageCounts,
+        activities,
+        followUps: followUpsRes.data ?? [],
+        overdue: overdueRes.data ?? [],
+        activeProjectsList: projects.filter(p => p.status === 'In Progress').slice(0, 4),
       }
     },
     staleTime: 60_000,
   })
 
-  const COLORS = ['#e6ab35', '#3583b3', '#10b981', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316']
-
-  const kpiRows = [
-    [
-      { label: 'Total Revenue', value: formatCurrency(data?.revenue), icon: DollarSign, color: 'text-[#e6ab35]', href: '/reports' },
-      { label: 'Total Expenses', value: formatCurrency(data?.totalExpenses), icon: TrendingUp, color: 'text-[#ef4444]', href: '/expenses' },
-      { label: 'Gross Profit', value: formatCurrency(data?.profit), icon: DollarSign, color: 'text-[#3583b3]', href: '/reports' },
-      { label: 'Profit Margin', value: `${data?.margin ?? 0}%`, icon: TrendingUp, color: 'text-[#e6ab35]', href: '/reports' },
-    ],
-    [
-      { label: 'Total Leads', value: String(data?.totalLeads ?? 0), icon: Target, color: 'text-[#3583b3]', href: '/leads' },
-      { label: 'Leads Won', value: String(data?.wonLeads ?? 0), icon: Target, color: 'text-[#e6ab35]', href: '/leads' },
-      { label: 'Conversion Rate', value: `${data?.conversionRate ?? 0}%`, icon: TrendingUp, color: 'text-[#e6ab35]', href: '/leads' },
-      { label: 'Active Projects', value: String(data?.activeProjects ?? 0), icon: Briefcase, color: 'text-[#3583b3]', href: '/projects' },
-    ],
-    [
-      { label: 'Ad Spend', value: formatCurrency(data?.adSpend), icon: DollarSign, color: 'text-[#ef4444]', href: '/expenses' },
-      { label: 'Avg Lead Cost', value: formatCurrency(data?.avgLeadCost), icon: Target, color: 'text-[#ef4444]', href: '/reports' },
-      { label: 'Revenue Per Lead', value: formatCurrency(data?.revenuePerLead), icon: TrendingUp, color: 'text-[#3583b3]', href: '/reports' },
-      { label: 'Revenue Per Won Lead', value: formatCurrency(data?.revenuePerWon), icon: TrendingUp, color: 'text-[#e6ab35]', href: '/reports' },
-    ],
+  const TIMEFRAMES: { label: string; value: Timeframe }[] = [
+    { label: 'This Week', value: 'Week' },
+    { label: 'This Month', value: 'Month' },
+    { label: 'This Year', value: 'Year' },
+    { label: 'All Time', value: 'All' },
   ]
 
+  const kpis = [
+    {
+      label: 'Total Revenue',
+      value: formatCurrency(data?.revenue),
+      icon: DollarSign,
+      trend: null,
+      href: '/reports',
+    },
+    {
+      label: 'Gross Profit',
+      value: formatCurrency(data?.profit),
+      sub: data?.margin != null ? `${data.margin}% margin` : null,
+      icon: TrendingUp,
+      positive: (data?.profit ?? 0) >= 0,
+      href: '/reports',
+    },
+    {
+      label: 'Active Projects',
+      value: String(data?.activeProjects ?? 0),
+      icon: Briefcase,
+      href: '/projects',
+    },
+    {
+      label: 'Leads',
+      value: String(data?.totalLeads ?? 0),
+      sub: data?.wonLeads != null ? `${data.wonLeads} won` : null,
+      icon: Target,
+      href: '/leads',
+    },
+  ]
+
+  const STAGE_COLORS: Record<string, string> = {
+    'New Lead': 'var(--blue)',
+    'Estimate Sent': 'var(--gold)',
+    'Follow-up': 'var(--warning)',
+    'Negotiating': '#8b5cf6',
+    'Won': 'var(--success)',
+    'Lost': 'var(--error)',
+  }
+
+  const maxStageCount = Math.max(...Object.values(data?.stageCounts ?? {}).map(Number), 1)
+
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div style={{ padding: '32px', maxWidth: 1200, margin: '0 auto' }} className="space-y-8 p-4 md:p-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-[#9a9585] text-sm">SkyGlobal Renovations overview</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+            {greeting()}, Iker
+          </h1>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginTop: 4 }}>{todayLabel()}</p>
         </div>
-        <div className="flex gap-1 bg-[#252419] border border-[#2e2d26] rounded-lg p-1">
-          {(['Weekly', 'Monthly', 'Yearly', 'All Time'] as Timeframe[]).map(t => (
+        {/* Timeframe toggle */}
+        <div style={{
+          display: 'flex', gap: 2, padding: 3,
+          background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-subtle)',
+        }}>
+          {TIMEFRAMES.map(tf => (
             <button
-              key={t}
-              onClick={() => setTimeframe(t)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${timeframe === t ? 'bg-[#e6ab35] text-[#1d1c17] font-semibold' : 'text-[#9a9585] hover:text-[#efeae2]'}`}
+              key={tf.value}
+              onClick={() => setTimeframe(tf.value)}
+              style={{
+                padding: '6px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: timeframe === tf.value ? 600 : 450,
+                background: timeframe === tf.value ? 'var(--gold)' : 'transparent',
+                color: timeframe === tf.value ? 'var(--gold-text)' : 'var(--text-secondary)',
+                transition: 'all 150ms',
+              }}
             >
-              {t}
+              {tf.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* KPI rows */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => <CardSkeleton key={i} />)}
-        </div>
-      ) : (
-        kpiRows.map((row, ri) => (
-          <div key={ri} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {row.map(({ label, value, icon: Icon, color, href }) => (
-              <Link key={label} href={href} className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-5 cursor-pointer hover:border-[#e6ab35] transition-colors block">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-[#9a9585] font-medium">{label}</span>
-                  <Icon className={`h-4 w-4 ${color}`} />
-                </div>
-                <p className="text-xl font-bold text-[#e6ab35]">{value}</p>
-              </Link>
-            ))}
-          </div>
-        ))
-      )}
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue vs Expenses */}
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Revenue vs Expenses</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={data?.barChartData ?? []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2e2d26" />
-              <XAxis dataKey="month" tick={{ fill: '#9a9585', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#9a9585', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#252419', border: '1px solid #2e2d26', borderRadius: 8 }}
-                formatter={(v: unknown) => [`$${Number(v).toLocaleString()}`, '']}
-              />
-              <Bar dataKey="revenue" name="Revenue" fill="#e6ab35" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expenses" name="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Lead Sources */}
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Lead Sources</h3>
-          {data?.sourceData && data.sourceData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={data.sourceData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
-                  labelLine={{ stroke: '#9a9585' }}
-                >
-                  {data.sourceData.map((_: unknown, i: number) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#252419', border: '1px solid #2e2d26', borderRadius: 8 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-[220px] text-[#9a9585] text-sm">No lead data yet</div>
-          )}
-        </div>
-
-        {/* Expense breakdown */}
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Expenses by Category</h3>
-          {data?.expCatData && data.expCatData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={data.expCatData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name }) => name}
-                >
-                  {data.expCatData.map((_: unknown, i: number) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#252419', border: '1px solid #2e2d26', borderRadius: 8 }}
-                  formatter={(v: unknown) => [`$${Number(v).toLocaleString()}`, '']}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-[220px] text-[#9a9585] text-sm">No expense data yet</div>
-          )}
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Recent Activity</h3>
-          {isLoading ? <TableSkeleton rows={5} /> : (
-            data?.activities && data.activities.length > 0 ? (
-              <div className="space-y-3">
-                {data.activities.map((a: { id: string; type: string; content: string | null; created_at: string; customer_id: string; project_id: string | null }) => (
-                  <Link key={a.id} href={a.customer_id ? `/customers/${a.customer_id}` : '#'} className="flex items-start gap-3 hover:bg-[#2e2d26] p-2 rounded-lg transition-colors cursor-pointer">
-                    <div className="w-2 h-2 rounded-full bg-[#e6ab35] mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-white font-medium">{a.type}</p>
-                      {a.content && <p className="text-xs text-[#9a9585] truncate">{a.content}</p>}
-                      <p className="text-xs text-[#9a9585]">{formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+        {kpis.map(({ label, value, sub, icon: Icon, href }) => (
+          <Link
+            key={label}
+            href={href}
+            style={{
+              display: 'block', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)', padding: '20px 24px',
+              boxShadow: 'var(--shadow-sm)', textDecoration: 'none',
+              transition: 'transform 200ms, box-shadow 200ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)' }}
+          >
+            {isLoading ? (
+              <div className="skeleton-shimmer" style={{ height: 56, borderRadius: 8 }} />
             ) : (
-              <div className="flex items-center justify-center h-32 text-[#9a9585] text-sm">
-                <div className="text-center">
-                  <Activity className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  <p>No activity yet</p>
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</span>
+                  <Icon size={16} style={{ color: 'var(--text-tertiary)' }} />
+                </div>
+                <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1 }}>
+                  {value}
+                </p>
+                {sub && (
+                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>{sub}</p>
+                )}
+              </>
+            )}
+          </Link>
+        ))}
+      </div>
+
+      {/* Second row: Chart + Pipeline */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="grid-cols-1 lg:grid-cols-2">
+        {/* Revenue Line Chart */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+        }}>
+          <div style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Revenue vs Expenses</h3>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>Last 6 months</p>
+          </div>
+          {isLoading ? (
+            <div className="skeleton-shimmer" style={{ height: 200, borderRadius: 8 }} />
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--gold)' }} />
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Revenue</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--blue)' }} />
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Expenses</span>
                 </div>
               </div>
-            )
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={data?.chartData ?? []} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Line dataKey="revenue" name="Revenue" stroke="#e6ab35" strokeWidth={2} dot={false} type="monotone" />
+                  <Line dataKey="expenses" name="Expenses" stroke="#3583b3" strokeWidth={2} dot={false} type="monotone" />
+                </LineChart>
+              </ResponsiveContainer>
+            </>
+          )}
+        </div>
+
+        {/* Pipeline Summary */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Pipeline</h3>
+              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{data?.totalLeads ?? 0} total leads</p>
+            </div>
+            <Link href="/leads" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}>
+              View all <ArrowRight size={12} />
+            </Link>
+          </div>
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="skeleton-shimmer" style={{ height: 32, borderRadius: 6 }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {Object.entries(data?.stageCounts ?? {}).map(([stage, count]) => (
+                count > 0 && (
+                  <div key={stage}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{stage}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{count}</span>
+                    </div>
+                    <div style={{ height: 4, borderRadius: 2, background: 'var(--bg-secondary)' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 2,
+                        background: STAGE_COLORS[stage] ?? 'var(--text-tertiary)',
+                        width: `${Math.round((Number(count) / maxStageCount) * 100)}%`,
+                        transition: 'width 500ms var(--ease-smooth)',
+                      }} />
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Bottom: Follow-ups + Overdue */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming follow-ups */}
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="h-4 w-4 text-[#e6ab35]" />
-            <h3 className="text-sm font-semibold text-white">Upcoming Follow-ups</h3>
+      {/* Third row: Activity + Follow-ups + Projects */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }} className="grid-cols-1 md:grid-cols-3">
+        {/* Recent Activity */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Activity</h3>
+            <Activity size={14} style={{ color: 'var(--text-tertiary)' }} />
           </div>
-          {isLoading ? <TableSkeleton rows={3} /> : (
-            data?.followUps && data.followUps.length > 0 ? (
-              <div className="space-y-2">
-                {(data.followUps as unknown as Array<{ id: string; title: string; follow_up_date: string | null; customers: { name: string } | null }>).map((f) => (
-                  <Link
-                    key={f.id}
-                    href="/leads"
-                    className="flex items-center justify-between p-3 bg-[#1d1c17] rounded-lg hover:bg-[#2e2d26] transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm text-white font-medium">{f.title}</p>
-                      <p className="text-xs text-[#9a9585]">{(f.customers as { name: string } | null)?.name}</p>
-                    </div>
-                    <span className="text-xs text-[#e6ab35]">{formatDate(f.follow_up_date)}</span>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[#9a9585] text-sm text-center py-6">No upcoming follow-ups</p>
-            )
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton-shimmer" style={{ height: 40, borderRadius: 6 }} />)}
+            </div>
+          ) : data?.activities && data.activities.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {data.activities.map((a: { id: string; type: string; content: string | null; created_at: string; customer_id: string }) => (
+                <Link
+                  key={a.id}
+                  href={a.customer_id ? `/customers/${a.customer_id}` : '#'}
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    padding: '8px 0', borderBottom: '1px solid var(--border-subtle)',
+                    textDecoration: 'none', transition: 'opacity 150ms',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                >
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--border-subtle)', flexShrink: 0, marginTop: 5 }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{a.type}</p>
+                    {a.content && <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.content}</p>}
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0, marginTop: 2 }}>
+                    {formatDistanceToNow(new Date(a.created_at), { addSuffix: false }).replace('about ', '').replace('less than a minute', '1m')}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>No recent activity</p>
           )}
         </div>
 
-        {/* Overdue payments */}
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-4 w-4 text-[#ef4444]" />
-            <h3 className="text-sm font-semibold text-white">Overdue Payments</h3>
+        {/* Follow-ups */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Follow-ups</h3>
+            <Clock size={14} style={{ color: 'var(--text-tertiary)' }} />
           </div>
-          {isLoading ? <TableSkeleton rows={3} /> : (
-            data?.overdue && data.overdue.length > 0 ? (
-              <div className="space-y-2">
-                {(data.overdue as unknown as Array<{ id: string; title: string; customer_id: string; contract_value: number | null; amount_paid: number; customers: { name: string } | null }>).map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/customers/${p.customer_id}/projects/${p.id}`}
-                    className="flex items-center justify-between p-3 bg-[#1d1c17] rounded-lg hover:bg-[#2e2d26] transition-colors"
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton-shimmer" style={{ height: 48, borderRadius: 8 }} />)}
+            </div>
+          ) : data?.followUps && data.followUps.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(data.followUps as Array<{ id: string; title: string; follow_up_date: string | null; customers: { name: string } | null }>).map(f => {
+                const isToday = f.follow_up_date === new Date().toISOString().split('T')[0]
+                return (
+                  <Link key={f.id} href="/leads" style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                    background: 'var(--bg-secondary)', borderRadius: 10, textDecoration: 'none',
+                    transition: 'background 150ms',
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-elevated, #3a3a3c)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
                   >
-                    <div>
-                      <p className="text-sm text-white font-medium">{p.title}</p>
-                      <p className="text-xs text-[#9a9585]">{(p.customers as { name: string } | null)?.name}</p>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: isToday ? 'var(--gold)' : 'var(--border-subtle)', flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.title}</p>
+                      <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>{(f.customers as { name: string } | null)?.name}</p>
                     </div>
-                    <span className="text-xs text-[#ef4444] font-medium">
-                      {formatCurrency((p.contract_value ?? 0) - p.amount_paid)} due
+                    <span style={{ fontSize: 11, color: isToday ? 'var(--gold)' : 'var(--text-tertiary)', fontWeight: isToday ? 600 : 400 }}>
+                      {isToday ? 'Today' : formatDate(f.follow_up_date)}
                     </span>
                   </Link>
-                ))}
+                )
+              })}
+            </div>
+          ) : (
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>No upcoming follow-ups</p>
+          )}
+          {data?.overdue && data.overdue.length > 0 && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '16px 0 8px' }}>
+                <AlertTriangle size={12} style={{ color: 'var(--error)' }} />
+                <span style={{ fontSize: 12, color: 'var(--error)', fontWeight: 500 }}>Overdue payments</span>
               </div>
-            ) : (
-              <p className="text-[#9a9585] text-sm text-center py-6">No overdue payments</p>
-            )
+              {(data.overdue as Array<{ id: string; title: string; customer_id: string; contract_value: number | null; amount_paid: number; customers: { name: string } | null }>).map(p => (
+                <Link key={p.id} href={`/customers/${p.customer_id}/projects/${p.id}`} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px',
+                  background: 'var(--error-light)', borderRadius: 10, textDecoration: 'none', marginBottom: 4,
+                }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: 0, fontWeight: 500 }}>{p.title}</p>
+                  <span style={{ fontSize: 12, color: 'var(--error)', fontWeight: 600 }}>
+                    {formatCurrency((p.contract_value ?? 0) - p.amount_paid)}
+                  </span>
+                </Link>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* Active Projects */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Active Projects</h3>
+            <Link href="/projects" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}>
+              <ArrowRight size={12} />
+            </Link>
+          </div>
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton-shimmer" style={{ height: 56, borderRadius: 8 }} />)}
+            </div>
+          ) : data?.activeProjectsList && data.activeProjectsList.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(data.activeProjectsList as Array<{ id: string; title: string; contract_value: number | null; customer_id: string; customers: { name: string } | null }>).map(p => {
+                return (
+                  <Link key={p.id} href={`/customers/${p.customer_id}/projects/${p.id}`} style={{
+                    display: 'block', padding: '10px 12px',
+                    background: 'var(--bg-secondary)', borderRadius: 10, textDecoration: 'none',
+                    transition: 'background 150ms',
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-elevated, #3a3a3c)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{p.title}</p>
+                      <span style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 600, marginLeft: 8, flexShrink: 0 }}>
+                        {formatCurrency(p.contract_value)}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
+                      {(p.customers as { name: string } | null)?.name}
+                    </p>
+                  </Link>
+                )
+              })}
+            </div>
+          ) : (
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>No active projects</p>
           )}
         </div>
       </div>

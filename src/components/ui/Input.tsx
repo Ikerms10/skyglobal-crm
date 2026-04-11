@@ -4,30 +4,62 @@ import { cn } from '@/lib/utils'
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
-  required?: boolean
+  hint?: string
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, required, id, ...props }, ref) => {
-    const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  ({ className, label, error, hint, id, required, ...props }, ref) => {
+    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
+
     return (
-      <div className="space-y-1">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-[#efeae2]">
-            {label}{required && <span className="text-[#ef4444] ml-1">*</span>}
+          <label htmlFor={inputId} style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            {label}
+            {required && (
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--gold)', display: 'inline-block', flexShrink: 0 }} />
+            )}
           </label>
         )}
         <input
           ref={ref}
           id={inputId}
+          required={required}
           className={cn(
-            'w-full bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] transition-colors',
-            error && 'border-[#ef4444] focus:ring-[#ef4444]',
+            'w-full transition-all outline-none',
+            error ? 'ring-1 ring-[var(--error)]' : '',
             className
           )}
+          style={{
+            background: 'var(--bg-input)',
+            border: `1px solid ${error ? 'var(--error)' : 'var(--border-subtle)'}`,
+            borderRadius: 'var(--radius-md)',
+            padding: '10px 14px',
+            fontSize: 15,
+            color: 'var(--text-primary)',
+            transition: 'border-color 150ms, box-shadow 150ms',
+            ...props.style,
+          }}
+          onFocus={(e) => {
+            if (!error) {
+              e.currentTarget.style.borderColor = 'var(--border-focus)'
+              e.currentTarget.style.boxShadow = '0 0 0 3px var(--gold-light)'
+            }
+            props.onFocus?.(e)
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = error ? 'var(--error)' : 'var(--border-subtle)'
+            e.currentTarget.style.boxShadow = 'none'
+            props.onBlur?.(e)
+          }}
           {...props}
         />
-        {error && <p className="text-xs text-[#ef4444]">{error}</p>}
+        {error && (
+          <p style={{ fontSize: 12, color: 'var(--error)', marginTop: 2 }}>{error}</p>
+        )}
+        {hint && !error && (
+          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{hint}</p>
+        )}
       </div>
     )
   }

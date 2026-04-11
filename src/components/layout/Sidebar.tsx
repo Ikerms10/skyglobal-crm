@@ -1,24 +1,61 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Briefcase, DollarSign, BarChart3, Settings, LogOut, Target } from 'lucide-react'
+import {
+  LayoutDashboard, Users, Briefcase, DollarSign, BarChart3,
+  Settings, LogOut, Target, Sun, Moon,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { useTheme } from '@/components/providers/ThemeProvider'
 
-const navItems = [
+const mainNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/leads', label: 'Leads', icon: Target },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/projects', label: 'Projects', icon: Briefcase },
+]
+const businessNav = [
   { href: '/expenses', label: 'Expenses', icon: DollarSign },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
+]
+const accountNav = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
+
+function NavSection({ label, items, pathname }: { label: string; items: typeof mainNav; pathname: string }) {
+  return (
+    <div>
+      <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '12px 12px 4px' }}>
+        {label}
+      </p>
+      {items.map(({ href, label: itemLabel, icon: Icon }) => {
+        const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href + '/'))
+        return (
+          <Link key={href} href={href}
+            className={cn('flex items-center gap-2.5 mx-1 rounded-xl transition-all duration-100', isActive ? '' : 'hover:bg-[var(--bg-elevated)]')}
+            style={{
+              padding: '8px 12px',
+              fontSize: 14,
+              fontWeight: isActive ? 600 : 450,
+              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+              background: isActive ? 'var(--bg-surface)' : 'transparent',
+              marginBottom: 1,
+            }}>
+            <Icon size={16} strokeWidth={isActive ? 2 : 1.5} style={{ color: isActive ? 'var(--gold)' : 'var(--text-tertiary)', flexShrink: 0 }} />
+            {itemLabel}
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
 
 export function Sidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { theme, toggle } = useTheme()
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -28,57 +65,84 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
     router.refresh()
   }
 
+  const initials = (userEmail[0] ?? 'U').toUpperCase()
+
   return (
-    <aside className="w-60 flex flex-col bg-[#252419] border-r border-[#2e2d26] h-full">
+    <aside style={{
+      width: 240,
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      background: 'var(--bg-card)',
+      borderRight: '1px solid var(--border-subtle)',
+    }}>
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-[#2e2d26]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#e6ab35] rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-[#1d1c17]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+      <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d1c17" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-bold text-[#e6ab35]">SkyGlobal</p>
-            <p className="text-xs text-[#9a9585]">Renovations CRM</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>SkyGlobal</p>
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1 }}>CRM</p>
           </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + '/')
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-[#e6ab35] text-[#1d1c17] font-semibold'
-                  : 'text-[#efeae2] hover:bg-[#2e2d26] hover:text-[#e6ab35]'
-              )}
-            >
-              <Icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-[#1d1c17]' : 'text-[#9a9585]')} />
-              {label}
-            </Link>
-          )
-        })}
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+        <NavSection label="Main" items={mainNav} pathname={pathname} />
+        <NavSection label="Business" items={businessNav} pathname={pathname} />
+        <NavSection label="Account" items={accountNav} pathname={pathname} />
       </nav>
 
-      {/* User / Sign out */}
-      <div className="px-3 py-4 border-t border-[#2e2d26]">
-        <div className="px-3 py-2 mb-2">
-          <p className="text-xs text-[#9a9585] truncate">{userEmail}</p>
+      {/* Footer */}
+      <div style={{ padding: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+        {/* User */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px', marginBottom: 4 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: '50%',
+            background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 700, color: '#1d1c17', flexShrink: 0,
+          }}>
+            {initials}
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {userEmail}
+          </p>
         </div>
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#3583b3] hover:bg-[#2e2d26] hover:text-[#efeae2] transition-colors w-full"
-        >
-          <LogOut className="h-5 w-5 text-[#3583b3]" />
-          Sign out
-        </button>
+
+        {/* Theme toggle + Sign out */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button onClick={toggle} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 6, padding: '7px', borderRadius: 10,
+              background: 'var(--bg-elevated)', border: 'none', cursor: 'pointer',
+              color: 'var(--text-secondary)', fontSize: 12,
+            }}
+            className="hover:bg-[var(--bg-surface)] transition-colors">
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+            <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+          </button>
+          <button onClick={handleSignOut}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 6, padding: '7px', borderRadius: 10,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: 'var(--error)', fontSize: 12,
+            }}
+            className="hover:bg-[var(--error-light)] transition-colors">
+            <LogOut size={14} />
+            <span>Sign out</span>
+          </button>
+        </div>
       </div>
     </aside>
   )

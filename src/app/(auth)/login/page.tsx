@@ -2,10 +2,11 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -13,15 +14,78 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
+// 6-digit OTP input with auto-advance
+function OTPInput({ onComplete }: { onComplete: (code: string) => void }) {
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const refs = useRef<Array<HTMLInputElement | null>>([])
+
+  const handleChange = (i: number, val: string) => {
+    const digit = val.replace(/\D/g, '').slice(-1)
+    const next = [...digits]
+    next[i] = digit
+    setDigits(next)
+    if (digit && i < 5) refs.current[i + 1]?.focus()
+    if (next.every(d => d !== '') && digit) {
+      onComplete(next.join(''))
+    }
+  }
+
+  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) {
+      refs.current[i - 1]?.focus()
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (text.length === 6) {
+      setDigits(text.split(''))
+      onComplete(text)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          ref={el => { refs.current[i] = el }}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={d}
+          onChange={e => handleChange(i, e.target.value)}
+          onKeyDown={e => handleKeyDown(i, e)}
+          onPaste={i === 0 ? handlePaste : undefined}
+          style={{
+            width: 44, height: 52, textAlign: 'center',
+            fontSize: 20, fontWeight: 700,
+            background: 'var(--bg-input)',
+            border: `1px solid ${d ? 'var(--border-focus)' : 'var(--border-subtle)'}`,
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--text-primary)',
+            outline: 'none',
+            transition: 'border-color 150ms',
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [otpScreen, setOtpScreen] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState('')
+  const [otpLoading, setOtpLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { email: '', password: '' },
   })
 
-  // Restore draft (email only, not password)
   useEffect(() => {
     try {
       const saved = localStorage.getItem('draft:login')
@@ -32,7 +96,6 @@ export default function LoginPage() {
     } catch {}
   }, [reset])
 
-  // Save draft on change (email only)
   useEffect(() => {
     const sub = watch((vals) => {
       try { localStorage.setItem('draft:login', JSON.stringify({ email: vals.email })) } catch {}
@@ -40,60 +103,181 @@ export default function LoginPage() {
     return () => sub.unsubscribe()
   }, [watch])
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const t = setInterval(() => setResendCooldown(c => c - 1), 1000)
+    return () => clearInterval(t)
+  }, [resendCooldown])
+
   const onSubmit = async (data: FormData) => {
     setLoading(true)
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
+      const { data: authData, error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
+      if (error) throw new Error(error.message)
+
+      // Check if 2FA enabled in user metadata
+      const twoFaEnabled = authData.user?.user_metadata?.two_factor_enabled
+      if (twoFaEnabled) {
+        // Sign out temporarily, send OTP
+        await supabase.auth.signOut()
+        const { error: otpError } = await supabase.auth.signInWithOtp({ email: data.email })
+        if (otpError) throw new Error(otpError.message)
+        setPendingEmail(data.email)
+        setOtpScreen(true)
+        setResendCooldown(30)
+        toast.success('Check your email for the 6-digit code')
+      } else {
+        localStorage.removeItem('draft:login')
+        toast.success('Welcome back!')
+        router.push('/dashboard')
+        router.refresh()
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const verifyOTP = async (code: string) => {
+    setOtpLoading(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.verifyOtp({
+        email: pendingEmail,
+        token: code,
+        type: 'email',
+      })
       if (error) throw new Error(error.message)
       localStorage.removeItem('draft:login')
       toast.success('Welcome back!')
       router.push('/dashboard')
       router.refresh()
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Login failed'
-      toast.error(message)
+      toast.error(err instanceof Error ? err.message : 'Invalid code')
     } finally {
-      setLoading(false)
+      setOtpLoading(false)
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      <div>
-        <h2 className="text-xl font-semibold text-white mb-1">Sign in</h2>
-        <p className="text-[#9a9585] text-sm">Access your CRM dashboard</p>
+  const resendOTP = async () => {
+    if (resendCooldown > 0) return
+    try {
+      const supabase = createClient()
+      await supabase.auth.signInWithOtp({ email: pendingEmail })
+      setResendCooldown(30)
+      toast.success('New code sent')
+    } catch {
+      toast.error('Failed to resend code')
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: 'var(--radius-md)',
+    padding: '10px 14px',
+    fontSize: 15,
+    color: 'var(--text-primary)',
+    outline: 'none',
+    transition: 'border-color 150ms, box-shadow 150ms',
+  }
+
+  if (otpScreen) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Two-factor verification</h2>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 6 }}>
+            Enter the 6-digit code sent to <strong>{pendingEmail}</strong>
+          </p>
+        </div>
+
+        {otpLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--gold)' }} />
+          </div>
+        ) : (
+          <OTPInput onComplete={verifyOTP} />
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            onClick={() => setOtpScreen(false)}
+            style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            ← Back to login
+          </button>
+          <button
+            onClick={resendOTP}
+            disabled={resendCooldown > 0}
+            style={{
+              fontSize: 13, color: resendCooldown > 0 ? 'var(--text-tertiary)' : 'var(--gold)',
+              background: 'none', border: 'none', cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer', padding: 0,
+            }}
+          >
+            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
+          </button>
+        </div>
       </div>
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-[#efeae2]">Email</label>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Sign in</h2>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 4 }}>Access your CRM dashboard</p>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Email</label>
         <input
           {...register('email')}
           type="email"
           placeholder="you@example.com"
-          className="w-full bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
+          style={inputStyle}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--border-focus)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--gold-light)' }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.boxShadow = 'none' }}
         />
-        {errors.email && <p className="text-xs text-[#ef4444]">{errors.email.message}</p>}
+        {errors.email && <p style={{ fontSize: 12, color: 'var(--error)' }}>{errors.email.message}</p>}
       </div>
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-[#efeae2]">Password</label>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Password</label>
         <input
           {...register('password')}
           type="password"
           placeholder="••••••••"
-          className="w-full bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
+          style={inputStyle}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--border-focus)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--gold-light)' }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.boxShadow = 'none' }}
         />
-        {errors.password && <p className="text-xs text-[#ef4444]">{errors.password.message}</p>}
+        {errors.password && <p style={{ fontSize: 12, color: 'var(--error)' }}>{errors.password.message}</p>}
       </div>
+
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-[#e6ab35] hover:bg-[#d4982e] disabled:opacity-50 text-[#1d1c17] font-semibold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+        style={{
+          width: '100%', height: 44, borderRadius: 'var(--radius-md)',
+          background: 'var(--gold)', color: 'var(--gold-text)',
+          fontSize: 15, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          opacity: loading ? 0.6 : 1,
+          transition: 'opacity 150ms, transform 100ms',
+        }}
+        onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.9' }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = loading ? '0.6' : '1' }}
+        onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)' }}
+        onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)' }}
       >
-        {loading ? (
-          <><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Signing in...</>
-        ) : 'Sign in'}
+        {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : 'Sign in'}
       </button>
-      <p className="text-center text-xs text-[#9a9585]">
+
+      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-tertiary)' }}>
         SkyGlobal Renovations — Internal Access Only
       </p>
     </form>

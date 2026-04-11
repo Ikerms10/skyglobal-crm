@@ -146,7 +146,7 @@ Deno.serve(async (_req) => {
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: 'SkyGlobal CRM <reports@skyglobalsvcs.com>',
-        to: [REPORT_EMAIL],
+        to: REPORT_EMAIL.split(',').map(e => e.trim()).filter(Boolean),
         subject: `📊 Weekly Business Report — ${weekLabel}`,
         html,
       }),
@@ -157,7 +157,7 @@ Deno.serve(async (_req) => {
       return new Response(JSON.stringify({ error: err }), { status: 500 })
     }
 
-    return new Response(JSON.stringify({ success: true, sent_to: REPORT_EMAIL }), {
+    return new Response(JSON.stringify({ success: true, sent_to: REPORT_EMAIL.split(',').map(e => e.trim()).filter(Boolean) }), {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (err) {

@@ -4,52 +4,64 @@ import { LeadStage, LeadSource, ProjectStatus, PaymentStatus } from '@/types'
 interface BadgeProps {
   children: React.ReactNode
   className?: string
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'purple'
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'gold'
+}
+
+const variantStyles: Record<NonNullable<BadgeProps['variant']>, React.CSSProperties> = {
+  default:  { background: 'var(--bg-elevated, #3a3a3c)', color: 'var(--text-secondary)' },
+  success:  { background: 'var(--success-light)', color: 'var(--success)' },
+  warning:  { background: 'var(--warning-light)', color: 'var(--warning)' },
+  danger:   { background: 'var(--error-light)', color: 'var(--error)' },
+  info:     { background: 'var(--blue-light)', color: 'var(--blue)' },
+  gold:     { background: 'var(--gold-light)', color: 'var(--gold)' },
 }
 
 export function Badge({ children, className, variant = 'default' }: BadgeProps) {
-  const variants = {
-    default: 'bg-[#2e2d26] text-[#efeae2]',
-    success: 'bg-[#e6ab35] text-[#1d1c17]',
-    warning: 'bg-[#e6ab35]/20 text-[#e6ab35]',
-    danger: 'bg-[#ef4444]/20 text-[#ef4444]',
-    info: 'bg-[#3583b3] text-white',
-    purple: 'bg-[#3583b3]/20 text-[#3583b3]',
-  }
   return (
-    <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-medium', variants[variant], className)}>
+    <span
+      className={cn('inline-flex items-center', className)}
+      style={{
+        ...variantStyles[variant],
+        borderRadius: 6,
+        padding: '3px 8px',
+        fontSize: 12,
+        fontWeight: 500,
+        letterSpacing: '0.01em',
+        whiteSpace: 'nowrap',
+      }}
+    >
       {children}
     </span>
   )
 }
 
 export function StageBadge({ stage }: { stage: LeadStage }) {
-  const config: Record<LeadStage, { label: string; variant: BadgeProps['variant'] }> = {
-    'New Lead': { label: 'New Lead', variant: 'info' },
-    'Estimate Sent': { label: 'Estimate Sent', variant: 'warning' },
-    'Follow-up': { label: 'Follow-up', variant: 'warning' },
-    'Negotiating': { label: 'Negotiating', variant: 'warning' },
-    'Won': { label: 'Won', variant: 'success' },
-    'Lost': { label: 'Lost', variant: 'danger' },
-    'On Hold': { label: 'On Hold', variant: 'default' },
+  const config: Record<LeadStage, { variant: BadgeProps['variant'] }> = {
+    'New Lead':      { variant: 'info' },
+    'Estimate Sent': { variant: 'gold' },
+    'Follow-up':     { variant: 'warning' },
+    'Negotiating':   { variant: 'warning' },
+    'Won':           { variant: 'success' },
+    'Lost':          { variant: 'danger' },
+    'On Hold':       { variant: 'default' },
   }
-  const { label, variant } = config[stage] ?? { label: stage, variant: 'default' }
-  return <Badge variant={variant}>{label}</Badge>
+  const { variant } = config[stage] ?? { variant: 'default' }
+  return <Badge variant={variant}>{stage}</Badge>
 }
 
 export function SourceBadge({ source }: { source: LeadSource }) {
-  const colors: Record<LeadSource, string> = {
-    Thumbtack: 'bg-orange-900/30 text-orange-400',
-    Referral: 'bg-[#e6ab35]/20 text-[#e6ab35]',
-    Google: 'bg-[#3583b3]/20 text-[#3583b3]',
-    Instagram: 'bg-pink-900/30 text-pink-400',
-    'Door Knock': 'bg-[#2e2d26] text-[#efeae2]',
-    Facebook: 'bg-[#3583b3]/20 text-[#3583b3]',
-    Yelp: 'bg-[#ef4444]/20 text-[#ef4444]',
-    Other: 'bg-[#2e2d26] text-[#efeae2]',
+  const styles: Record<LeadSource, React.CSSProperties> = {
+    Thumbtack:   { background: 'rgba(234,88,12,0.12)', color: '#ea580c' },
+    Referral:    { background: 'var(--gold-light)', color: 'var(--gold)' },
+    Google:      { background: 'var(--blue-light)', color: 'var(--blue)' },
+    Instagram:   { background: 'rgba(219,39,119,0.10)', color: '#db2777' },
+    'Door Knock':{ background: 'var(--bg-elevated, #3a3a3c)', color: 'var(--text-secondary)' },
+    Facebook:    { background: 'rgba(59,130,246,0.12)', color: '#3b82f6' },
+    Yelp:        { background: 'var(--error-light)', color: 'var(--error)' },
+    Other:       { background: 'var(--bg-elevated, #3a3a3c)', color: 'var(--text-secondary)' },
   }
   return (
-    <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-medium', colors[source])}>
+    <span style={{ ...styles[source] ?? styles.Other, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
       {source}
     </span>
   )
@@ -57,20 +69,20 @@ export function SourceBadge({ source }: { source: LeadSource }) {
 
 export function StatusBadge({ status }: { status: ProjectStatus }) {
   const config: Record<ProjectStatus, BadgeProps['variant']> = {
-    Scheduled: 'info',
+    Scheduled:    'info',
     'In Progress': 'warning',
-    'On Hold': 'default',
-    Completed: 'success',
-    Cancelled: 'danger',
+    'On Hold':    'default',
+    Completed:    'success',
+    Cancelled:    'danger',
   }
   return <Badge variant={config[status]}>{status}</Badge>
 }
 
 export function PaymentBadge({ status }: { status: PaymentStatus }) {
   const config: Record<PaymentStatus, BadgeProps['variant']> = {
-    Unpaid: 'danger',
+    Unpaid:  'danger',
     Partial: 'warning',
-    Paid: 'success',
+    Paid:    'success',
     Overdue: 'danger',
   }
   return <Badge variant={config[status]}>{status}</Badge>

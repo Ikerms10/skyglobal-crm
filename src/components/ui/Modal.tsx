@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -9,9 +9,14 @@ interface ModalProps {
   title?: string
   children: React.ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  footer?: React.ReactNode
 }
 
-export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
+const maxWidths = { sm: 400, md: 480, lg: 560, xl: 720 }
+
+export function Modal({ open, onClose, title, children, size = 'md', footer }: ModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }, [onClose])
@@ -29,27 +34,87 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
 
   if (!open) return null
 
-  const sizes = { sm: 'md:max-w-sm', md: 'md:max-w-md', lg: 'md:max-w-lg', xl: 'md:max-w-2xl' }
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="absolute inset-0 bg-[#1d1c17]/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="min-h-full flex items-end md:items-center justify-center md:p-4">
-        <div className={cn(
-          'relative bg-[#252419] border border-[#2e2d26] w-full flex flex-col max-h-[95vh]',
-          'rounded-t-2xl md:rounded-xl md:shadow-2xl',
-          sizes[size],
-        )}>
-          {title && (
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2e2d26] flex-shrink-0">
-              <h2 className="text-lg font-semibold text-white">{title}</h2>
-              <button onClick={onClose} className="text-[#9a9585] hover:text-[#efeae2] transition-colors p-1 rounded">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          )}
-          <div className="px-5 py-5 overflow-y-auto flex-1">{children}</div>
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        padding: '0',
+      }}
+      className="md:items-center md:p-4"
+    >
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+        }}
+      />
+
+      {/* Dialog */}
+      <div
+        ref={dialogRef}
+        className={cn('animate-scale-in relative w-full flex flex-col', 'rounded-t-[20px] md:rounded-[20px]')}
+        style={{
+          maxWidth: maxWidths[size],
+          maxHeight: '95vh',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-xl)',
+          overflow: 'hidden',
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? 'modal-title' : undefined}
+      >
+        {/* Header */}
+        {title && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '20px 24px 16px',
+            borderBottom: '1px solid var(--border-subtle)',
+            flexShrink: 0,
+          }}>
+            <h2 id="modal-title" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              {title}
+            </h2>
+            <button
+              onClick={onClose}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 28, height: 28, borderRadius: 8,
+                background: 'var(--bg-secondary)', border: 'none',
+                color: 'var(--text-tertiary)', cursor: 'pointer',
+                transition: 'background 150ms, color 150ms',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-elevated, #3a3a3c)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; e.currentTarget.style.color = 'var(--text-tertiary)' }}
+              aria-label="Close"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Body */}
+        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+          {children}
         </div>
+
+        {/* Footer */}
+        {footer && (
+          <div style={{
+            display: 'flex', justifyContent: 'flex-end', gap: 8,
+            padding: '16px 24px',
+            borderTop: '1px solid var(--border-subtle)',
+            flexShrink: 0,
+          }}>
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   )
