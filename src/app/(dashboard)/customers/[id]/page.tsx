@@ -13,9 +13,11 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { NewProjectModal } from '@/components/projects/NewProjectModal'
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal'
 import { AddActivityModal } from '@/components/customers/AddActivityModal'
+import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink'
+import { TextTemplatesModal } from '@/components/ui/TextTemplatesModal'
 import {
   ArrowLeft, Phone, Mail, MapPin, Building2, Edit2, Trash2, Plus,
-  Briefcase, Target, Activity, User, DollarSign
+  Briefcase, Target, Activity, User, DollarSign, MessageSquare
 } from 'lucide-react'
 
 const TABS = ['projects', 'leads', 'activity', 'info'] as const
@@ -44,6 +46,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   const [newProjectOpen, setNewProjectOpen] = useState(false)
   const [addActivityOpen, setAddActivityOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [textTemplatesOpen, setTextTemplatesOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -160,8 +163,8 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               )}
               {(customer.city || customer.address) && (
                 <span className="flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4" />
-                  {[customer.address, customer.city, customer.state].filter(Boolean).join(', ')}
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <MapsLink address={[customer.address, customer.city, customer.state].filter(Boolean).join(', ')} showIcon={false} />
                 </span>
               )}
               {customer.company_name && (
@@ -171,7 +174,11 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            {customer.address && <DirectionsButton address={[customer.address, customer.city, customer.state].filter(Boolean).join(', ')} />}
+            <Button size="sm" variant="secondary" onClick={() => setTextTemplatesOpen(true)}>
+              <MessageSquare className="h-4 w-4" /> Text
+            </Button>
             <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
               <Edit2 className="h-4 w-4" /> Edit
             </Button>
@@ -409,6 +416,12 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         loading={deleteLoading}
         title="Delete Customer"
         description={`Delete "${customer.name}"? This will also delete all their projects and leads. This cannot be undone.`}
+      />
+      <TextTemplatesModal
+        open={textTemplatesOpen}
+        onClose={() => setTextTemplatesOpen(false)}
+        customerName={customer.name}
+        customerPhone={customer.phone ?? undefined}
       />
     </div>
   )

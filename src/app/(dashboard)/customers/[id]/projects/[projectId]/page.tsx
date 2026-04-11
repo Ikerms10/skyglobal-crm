@@ -14,10 +14,40 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { EditProjectModal } from '@/components/projects/EditProjectModal'
 import { AddActivityModal } from '@/components/customers/AddActivityModal'
+import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink'
+import dynamic from 'next/dynamic'
 import {
   ArrowLeft, Calendar, MapPin, Plus, Trash2, Upload,
   Edit2, X, Check, ChevronDown, ChevronLeft, ChevronRight, Image as ImageIcon
 } from 'lucide-react'
+
+const DownloadEstimateButton = dynamic(
+  () => import('@/components/pdf/EstimatePDFContent').then(m => m.DownloadEstimateButton),
+  { ssr: false, loading: () => <span className="text-xs text-[#9a9585]">Loading PDF...</span> }
+)
+
+function PDFButtons({ project, lineItems, projectId }: { project: any; lineItems: any[]; projectId: string }) {
+  if (!project) return null
+  const customer = project.customers ?? {}
+  return (
+    <div className="flex gap-2 flex-wrap">
+      <DownloadEstimateButton
+        type="estimate"
+        project={project}
+        customer={customer}
+        lineItems={lineItems}
+        projectId={projectId}
+      />
+      <DownloadEstimateButton
+        type="invoice"
+        project={project}
+        customer={customer}
+        lineItems={lineItems}
+        projectId={projectId}
+      />
+    </div>
+  )
+}
 
 const TABS = ['overview', 'scope', 'costs', 'management', 'photos'] as const
 type Tab = typeof TABS[number]
@@ -498,8 +528,10 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               </Link>
             </div>
             {project.address && (
-              <div className="flex items-center gap-1 text-[#9a9585] text-sm">
-                <MapPin className="h-4 w-4" />{project.address}
+              <div className="flex items-center gap-2 text-sm flex-wrap">
+                <MapPin className="h-4 w-4 text-[#9a9585] flex-shrink-0" />
+                <MapsLink address={project.address} showIcon={false} />
+                <DirectionsButton address={project.address} />
               </div>
             )}
             <div className="flex flex-wrap gap-4 text-sm text-[#9a9585]">
@@ -656,6 +688,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       {/* SCOPE TAB */}
       {activeTab === 'scope' && (
         <div className="space-y-4">
+          {/* PDF Buttons */}
+          <PDFButtons project={project} lineItems={lineItems} projectId={projectId} />
           <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
             {lineItems.length === 0 ? (
               <div className="p-8 text-center text-[#9a9585] text-sm">No line items yet. Add scope of work below.</div>

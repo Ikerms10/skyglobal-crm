@@ -2,10 +2,8 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Lead } from '@/types'
-import { SourceBadge } from '@/components/ui/Badge'
-import { formatCurrency, formatDate, cn } from '@/lib/utils'
-import { Calendar, DollarSign, User, GripVertical } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatCurrency, cn } from '@/lib/utils'
+import { format, isToday, isPast, parseISO, differenceInDays } from 'date-fns'
 
 interface LeadCardProps {
   lead: Lead
@@ -13,99 +11,163 @@ interface LeadCardProps {
   isDragOverlay?: boolean
 }
 
-const STAGE_BORDER_COLORS: Record<string, string> = {
-  'New Lead': 'border-l-[#3583b3]',
-  'Estimate Sent': 'border-l-[#e6ab35]',
-  'Follow-up': 'border-l-[#e6ab35]',
-  'Negotiating': 'border-l-[#e6ab35]',
-  'Won': 'border-l-[#e6ab35]',
-  'Lost': 'border-l-[#ef4444]',
-  'On Hold': 'border-l-[#9a9585]',
+const STAGE_BORDER: Record<string, string> = {
+  'New Lead': '#3583b3',
+  'Estimate Sent': '#e6ab35',
+  'Follow-up': '#8b5cf6',
+  'Negotiating': '#f97316',
+  'Won': '#10b981',
+  'Lost': '#ef4444',
+  'On Hold': '#9a9585',
+}
+
+const SOURCE_STYLES: Record<string, { bg: string; text: string }> = {
+  Thumbtack:    { bg: '#3583b3', text: '#fff' },
+  Referral:     { bg: '#10b981', text: '#fff' },
+  Google:       { bg: '#e6ab35', text: '#1d1c17' },
+  Instagram:    { bg: '#8b5cf6', text: '#fff' },
+  Facebook:     { bg: '#1877f2', text: '#fff' },
+  'Door Knock': { bg: '#f97316', text: '#fff' },
+  Yelp:         { bg: '#ef4444', text: '#fff' },
+  Other:        { bg: '#9a9585', text: '#fff' },
+}
+
+function DaysInStageBadge({ updatedAt }: { updatedAt: string }) {
+  const days = differenceInDays(new Date(), new Date(updatedAt))
+  const color = days > 7 ? '#ef4444' : days >= 3 ? '#e6ab35' : '#9a9585'
+  return (
+    <span style={{ color, fontSize: 11, fontWeight: 600 }}>{days}d</span>
+  )
+}
+
+function FollowUpRow({ date, stage }: { date: string; stage: string }) {
+  if (['Won', 'Lost'].includes(stage)) return null
+  const parsed = parseISO(date)
+  const past = isPast(parsed) && !isToday(parsed)
+  const today = isToday(parsed)
+  const formatted = format(parsed, 'MMM d')
+
+  if (past) {
+    return (
+      <div className="flex items-center gap-1 text-[11px] font-semibold text-[#ef4444]">
+        <span>📅</span>
+        <span>OVERDUE · {formatted}</span>
+      </div>
+    )
+  }
+  if (today) {
+    return (
+      <div className="flex items-center gap-1 text-[11px] font-semibold text-[#e6ab35]">
+        <span>📅</span>
+        <span>Today</span>
+      </div>
+    )
+  }
+  return (
+    <div className="flex items-center gap-1 text-[11px] text-[#9a9585]">
+      <span>📅</span>
+      <span>{formatted}</span>
+    </div>
+  )
 }
 
 export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: lead.id, data: { lead } })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: lead.id,
+    data: { lead },
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    borderLeft: `3px solid ${STAGE_BORDER[lead.stage] ?? '#9a9585'}`,
   }
 
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const isOverdue = lead.follow_up_date && lead.follow_up_date < today && !['Won', 'Lost'].includes(lead.stage)
-  const isDueToday = lead.follow_up_date && lead.follow_up_date === today
-  const customer = lead.customer as { name?: string } | null
-  const borderColor = STAGE_BORDER_COLORS[lead.stage] ?? 'border-l-[#9a9585]'
+  const customer = lead.customer as { name?: string; phone?: string } | null
+  const srcStyle = SOURCE_STYLES[lead.source] ?? SOURCE_STYLES.Other
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'bg-[#1d1c17] border-l-4 border border-[#2e2d26] rounded-lg p-3 cursor-pointer',
-        'hover:border-[#e6ab35]/40 hover:shadow-lg transition-all group',
-        borderColor,
+        'bg-[#252419] border border-[#2e2d26] rounded-lg p-3 cursor-pointer transition-all',
+        'hover:bg-[#2a2920] hover:shadow-lg',
         isDragging && 'opacity-40',
-        isDragOverlay && 'shadow-2xl rotate-2 scale-105 border-[#e6ab35]',
+        isDragOverlay && 'shadow-2xl rotate-1 scale-105',
       )}
       onClick={() => onClick(lead)}
+      {...attributes}
+      {...listeners}
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium text-[#efeae2] group-hover:text-[#e6ab35] transition-colors line-clamp-2 flex-1">
-          {lead.title}
+      {/* Row 1: Source badge + Value */}
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <span style={{
+          backgroundColor: srcStyle.bg,
+          color: srcStyle.text,
+          fontSize: 10,
+          fontWeight: 700,
+          padding: '2px 7px',
+          borderRadius: 4,
+          lineHeight: '16px',
+          whiteSpace: 'nowrap',
+        }}>
+          {lead.source}
+        </span>
+        {(lead.estimated_value ?? 0) > 0 ? (
+          <span style={{ color: '#e6ab35', fontWeight: 700, fontSize: 13 }}>
+            {formatCurrency(lead.estimated_value ?? 0)}
+          </span>
+        ) : (
+          <span style={{ color: '#9a9585', fontSize: 11 }}>No estimate</span>
+        )}
+      </div>
+
+      {/* Row 2: Customer name */}
+      {customer?.name && (
+        <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 700, marginBottom: 2, lineHeight: '1.2' }}>
+          {customer.name}
         </p>
-        <div
-          {...attributes}
-          {...listeners}
-          className="text-[#2e2d26] hover:text-[#9a9585] cursor-grab active:cursor-grabbing p-0.5 -mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+      )}
+
+      {/* Row 3: Job title */}
+      <p style={{ color: '#9a9585', fontSize: 12, marginBottom: 4 }} className="truncate">
+        {lead.title}
+      </p>
+
+      {/* Row 4: Phone */}
+      {customer?.phone && (
+        <a
+          href={`tel:${customer.phone}`}
           onClick={e => e.stopPropagation()}
+          style={{ color: '#efeae2', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}
         >
-          <GripVertical className="h-4 w-4" />
-        </div>
+          <span>📞</span>
+          <span>{customer.phone}</span>
+        </a>
+      )}
+
+      {/* Row 5: Job type + Days in stage */}
+      <div className="flex items-center justify-between mt-1">
+        <span style={{
+          fontSize: 10,
+          fontWeight: 600,
+          padding: '2px 6px',
+          borderRadius: 4,
+          backgroundColor: lead.stage === 'Won' ? '#10b981' : '#3583b3',
+          color: '#fff',
+        }}>
+          {(lead as any).customer?.type ?? 'Residential'}
+        </span>
+        <DaysInStageBadge updatedAt={lead.updated_at} />
       </div>
 
-      <div className="mt-2 space-y-1.5">
-        {customer?.name && (
-          <div className="flex items-center gap-1">
-            <User className="h-3 w-3 text-[#9a9585]" />
-            <span className="text-xs text-[#9a9585]">{customer.name}</span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between">
-          <SourceBadge source={lead.source} />
-          {(lead.estimated_value ?? 0) > 0 && (
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-3 w-3 text-[#e6ab35]" />
-              <span className="text-xs font-medium text-[#e6ab35]">{formatCurrency(lead.estimated_value ?? 0)}</span>
-            </div>
-          )}
+      {/* Row 6: Follow-up date */}
+      {lead.follow_up_date && (
+        <div className="mt-1.5">
+          <FollowUpRow date={lead.follow_up_date} stage={lead.stage} />
         </div>
-
-        {lead.follow_up_date && (
-          <div className={cn(
-            'flex items-center gap-1',
-            isOverdue ? 'text-[#ef4444]' : isDueToday ? 'text-[#e6ab35]' : 'text-[#9a9585]',
-          )}>
-            <Calendar className="h-3 w-3" />
-            <span className="text-xs">
-              {isOverdue ? 'Overdue: ' : isDueToday ? 'Today: ' : ''}
-              {formatDate(lead.follow_up_date)}
-            </span>
-          </div>
-        )}
-
-        <div className="text-xs text-[#9a9585]">
-          {Math.floor((Date.now() - new Date(lead.updated_at).getTime()) / 86400000)}d in stage
-        </div>
-      </div>
+      )}
     </div>
   )
 }

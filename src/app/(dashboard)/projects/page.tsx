@@ -9,7 +9,8 @@ import { StatusBadge, PaymentBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { NewProjectModal } from '@/components/projects/NewProjectModal'
-import { Briefcase, Plus } from 'lucide-react'
+import { DirectionsButton } from '@/components/ui/MapsLink'
+import { Briefcase, Plus, List, MapPin, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useDebounce } from '@/lib/hooks/useDebounce'
@@ -19,6 +20,38 @@ import { ChevronUp, ChevronDown } from 'lucide-react'
 type SortField = 'title' | 'status' | 'start_date' | 'end_date' | 'contract_value' | 'payment_status'
 type ProjectWithCustomer = Project & { customers: { name: string; id: string } | null }
 
+function MapViewCard({ p, onClick }: { p: ProjectWithCustomer; onClick: () => void }) {
+  return (
+    <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4 flex flex-col gap-3">
+      <div>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold text-[#efeae2] leading-tight">{p.title}</p>
+          <StatusBadge status={p.status} />
+        </div>
+        {p.customers && (
+          <p className="text-xs text-[#9a9585] mt-0.5">{p.customers.name}</p>
+        )}
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge>
+        </div>
+      </div>
+      {p.address && (
+        <div className="flex items-start gap-1.5 text-xs text-[#9a9585]">
+          <MapPin className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-[#3583b3]" />
+          <span className="break-words">{p.address}</span>
+        </div>
+      )}
+      <div className="flex items-center gap-2 flex-wrap mt-auto pt-1">
+        {p.address && <DirectionsButton address={p.address} />}
+        <button onClick={onClick}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] hover:bg-[#2e2d26] transition-colors">
+          <ExternalLink className="h-3.5 w-3.5" /> Open Project
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function ProjectsPage() {
   const router = useRouter()
   const [search, setSearch] = useState('')
@@ -27,6 +60,7 @@ export default function ProjectsPage() {
   const [sortField, setSortField] = useState<SortField>('start_date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [newProjectOpen, setNewProjectOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
   const debouncedSearch = useDebounce(search, 300)
 
   const { data: projects = [], isLoading } = useQuery({
@@ -72,6 +106,19 @@ export default function ProjectsPage() {
     p.end_date && p.end_date < new Date().toISOString().split('T')[0]
   ).length
 
+  const mapProjects = filtered
+    .filter(p => ['Scheduled', 'In Progress', 'On Hold'].includes(p.status))
+    .sort((a, b) => {
+      const order = { 'In Progress': 0, 'Scheduled': 1, 'On Hold': 2 }
+      return (order[a.status as keyof typeof order] ?? 9) - (order[b.status as keyof typeof order] ?? 9)
+    })
+
+  const viewAllOnMapUrl = mapProjects
+    .filter(p => p.address)
+    .slice(0, 5)
+    .map(p => encodeURIComponent(p.address!))
+    .join('+OR+')
+
   const SortIcon = ({ field }: { field: SortField }) => (
     <span className="ml-1 inline-flex flex-col">
       <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
@@ -86,7 +133,22 @@ export default function ProjectsPage() {
           <h1 className="text-2xl font-bold text-white">Projects</h1>
           <p className="text-[#9a9585] text-sm">{projects.length} total projects</p>
         </div>
-        <Button onClick={() => setNewProjectOpen(true)}><Plus className="h-4 w-4" /> New Project</Button>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex items-center bg-[#252419] border border-[#2e2d26] rounded-lg p-1 gap-1">
+            <button onClick={() => setViewMode('list')}
+              className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors',
+                viewMode === 'list' ? 'bg-[#e6ab35] text-[#1d1c17]' : 'text-[#9a9585] hover:text-[#efeae2]')}>
+              <List className="h-3.5 w-3.5" /> List
+            </button>
+            <button onClick={() => setViewMode('map')}
+              className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors',
+                viewMode === 'map' ? 'bg-[#e6ab35] text-[#1d1c17]' : 'text-[#9a9585] hover:text-[#efeae2]')}>
+              <MapPin className="h-3.5 w-3.5" /> Map
+            </button>
+          </div>
+          <Button onClick={() => setNewProjectOpen(true)}><Plus className="h-4 w-4" /> New Project</Button>
+        </div>
       </div>
 
       {/* Summary bar */}
@@ -96,11 +158,11 @@ export default function ProjectsPage() {
           <p className="text-2xl font-bold text-[#e6ab35]">{activeCount}</p>
         </div>
         <div className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-4">
-          <p className="text-xs text-[#9a9585]">Total Contract Value</p>
+          <p className="text-xs text-[#9a9585]">Contract Value</p>
           <p className="text-2xl font-bold text-[#e6ab35]">{formatCurrency(totalContractValue)}</p>
         </div>
         <div className="bg-[#252419] border-l-4 border-l-[#ef4444] border border-[#2e2d26] rounded-xl p-4">
-          <p className="text-xs text-[#9a9585]">Overdue Payments</p>
+          <p className="text-xs text-[#9a9585]">Overdue</p>
           <p className="text-2xl font-bold text-[#ef4444]">{overdueCount}</p>
         </div>
       </div>
@@ -126,11 +188,33 @@ export default function ProjectsPage() {
       </div>
 
       {isLoading ? <TableSkeleton rows={8} /> : filtered.length === 0 ? (
-        <EmptyState icon={Briefcase} title="No projects found" description="Projects are created when a lead is marked as Won." />
+        <EmptyState icon={Briefcase} title="No projects found" description="Projects are created from the New Project button or when a lead is marked Won." />
+      ) : viewMode === 'map' ? (
+        <div>
+          {viewAllOnMapUrl && (
+            <div className="mb-4">
+              <a
+                href={`https://www.google.com/maps/search/${viewAllOnMapUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#3583b3] hover:bg-[#2a6d96] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                🗺️ View All on Map
+              </a>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {mapProjects.length > 0 ? mapProjects.map(p => (
+              <MapViewCard key={p.id} p={p} onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)} />
+            )) : (
+              <p className="text-[#9a9585] text-sm col-span-2 py-8 text-center">No active projects with addresses</p>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full" style={{ minWidth: 700 }}>
               <thead>
                 <tr className="border-b-2 border-b-[#e6ab35]">
                   {[
