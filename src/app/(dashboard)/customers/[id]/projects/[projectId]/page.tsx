@@ -27,30 +27,48 @@ const DownloadEstimateButton = dynamic(
   { ssr: false, loading: () => <span className="text-xs text-[#9a9585]">Loading PDF...</span> }
 )
 
+const ProposalModal = dynamic(
+  () => import('@/components/pdf/ProposalModal').then(m => m.ProposalModal),
+  { ssr: false }
+)
+
 const DownloadProjectReportButton = dynamic(
   () => import('@/components/pdf/ProjectReportPDF').then(m => m.DownloadProjectReportButton),
   { ssr: false, loading: () => <span className="text-xs text-[#9a9585]">Loading…</span> }
 )
 
-function PDFButtons({ project, lineItems, projectId }: { project: any; lineItems: any[]; projectId: string }) {
+function PDFButtons({ project, lineItems, projectId, onOpenProposal }: { project: any; lineItems: any[]; projectId: string; onOpenProposal: () => void }) {
   if (!project) return null
   const customer = project.customers ?? {}
+
   return (
-    <div className="flex gap-2 flex-wrap">
-      <DownloadEstimateButton
-        type="estimate"
-        project={project}
-        customer={customer}
-        lineItems={lineItems}
-        projectId={projectId}
-      />
-      <DownloadEstimateButton
-        type="invoice"
-        project={project}
-        customer={customer}
-        lineItems={lineItems}
-        projectId={projectId}
-      />
+    <div className="flex flex-col gap-2">
+      {/* Proposal row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={onOpenProposal}
+          className="inline-flex items-center gap-2 bg-[#252419] border border-[#2e2d26] text-[#efeae2] hover:bg-[#2e2d26] text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+        >
+          🗂 Proposal
+        </button>
+      </div>
+      {/* Estimate & Invoice row */}
+      <div className="flex gap-2 flex-wrap">
+        <DownloadEstimateButton
+          type="estimate"
+          project={project}
+          customer={customer}
+          lineItems={lineItems}
+          projectId={projectId}
+        />
+        <DownloadEstimateButton
+          type="invoice"
+          project={project}
+          customer={customer}
+          lineItems={lineItems}
+          projectId={projectId}
+        />
+      </div>
     </div>
   )
 }
@@ -91,6 +109,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [addActivityOpen, setAddActivityOpen] = useState(false)
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false)
   const [lightboxPhoto, setLightboxPhoto] = useState<any>(null)
   const [showCompletedTasks, setShowCompletedTasks] = useState(false)
 
@@ -743,7 +762,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       {activeTab === 'scope' && (
         <div className="space-y-4">
           {/* PDF Buttons */}
-          <PDFButtons project={project} lineItems={lineItems} projectId={projectId} />
+          <PDFButtons project={project} lineItems={lineItems} projectId={projectId} onOpenProposal={() => setIsProposalModalOpen(true)} />
           <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
             {lineItems.length === 0 ? (
               <div className="p-8 text-center text-[#9a9585] text-sm">No line items yet. Add scope of work below.</div>
@@ -1227,6 +1246,15 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
         title="Delete Project"
         description={`Delete "${project.title}"? This cannot be undone.`}
       />
+      {isProposalModalOpen && (
+        <ProposalModal
+          isOpen={isProposalModalOpen}
+          onClose={() => setIsProposalModalOpen(false)}
+          project={project}
+          customer={project.customers ?? {}}
+          lineItems={lineItems}
+        />
+      )}
     </div>
   )
 }

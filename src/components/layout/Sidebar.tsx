@@ -76,17 +76,17 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
       borderRight: '1px solid var(--border-subtle)',
     }}>
       {/* Logo */}
-      <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d1c17" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
-          </div>
+      <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="SkyGlobal"
+            width={36}
+            height={36}
+            style={{ objectFit: 'contain', flexShrink: 0 }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
           <div>
             <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>SkyGlobal</p>
             <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1 }}>CRM</p>

@@ -30,6 +30,7 @@ export async function GET() {
     scope: [
       'https://www.googleapis.com/auth/calendar',
       'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/gmail.compose',
     ].join(' '),
     access_type: 'offline',
     prompt: 'consent',
