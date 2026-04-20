@@ -17,8 +17,10 @@ import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink'
 import { TextTemplatesModal } from '@/components/ui/TextTemplatesModal'
 import {
   ArrowLeft, Phone, Mail, MapPin, Building2, Edit2, Trash2, Plus,
-  Briefcase, Target, Activity, User, DollarSign, MessageSquare
+  Briefcase, Target, Activity, User, DollarSign, MessageSquare, FileText
 } from 'lucide-react'
+import { TemplateSelector } from '@/components/proposals/TemplateSelector'
+import { ProposalTemplate } from '@/types'
 
 const TABS = ['projects', 'leads', 'activity', 'info'] as const
 type Tab = typeof TABS[number]
@@ -47,6 +49,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   const [addActivityOpen, setAddActivityOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [textTemplatesOpen, setTextTemplatesOpen] = useState(false)
+  const [proposalSelectorOpen, setProposalSelectorOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -175,7 +178,20 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            {proposalSelectorOpen && (
+              <TemplateSelector
+                onSelect={(template: ProposalTemplate) => {
+                  setProposalSelectorOpen(false)
+                  router.push(`/proposals/new?template=${template}&customer=${customerId}`)
+                }}
+                onClose={() => setProposalSelectorOpen(false)}
+                customerId={customerId}
+              />
+            )}
             {customer.address && <DirectionsButton address={[customer.address, customer.city, customer.state].filter(Boolean).join(', ')} />}
+            <Button size="sm" variant="secondary" onClick={() => setProposalSelectorOpen(true)}>
+              <FileText className="h-4 w-4" /> Proposal
+            </Button>
             <Button size="sm" variant="secondary" onClick={() => setTextTemplatesOpen(true)}>
               <MessageSquare className="h-4 w-4" /> Text
             </Button>

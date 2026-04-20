@@ -129,3 +129,42 @@ export interface Notification {
   description: string
   href: string
 }
+
+export type ProposalTemplate = 'interior' | 'exterior' | 'cabinet' | 'custom'
+export type ProposalStatus = 'Draft' | 'Sent' | 'Accepted' | 'Invoiced'
+
+export interface Proposal {
+  id: string
+  user_id: string
+  customer_id: string | null
+  template: ProposalTemplate
+  status: ProposalStatus
+  project_name: string | null
+  client_name: string | null
+  client_contact: string | null
+  client_address: string | null
+  project_scope: string | null
+  total_investment: number | null
+  issue_date: string | null
+  valid_until: string | null
+  deposit_pct: number
+  progress_pct: number
+  final_pct: number
+  template_data: Record<string, any>
+  show_insurance_page: boolean
+  deleted_at: string | null
+  created_at: string
+  updated_at: string
+  customer?: Customer
+}
+
+export interface ProposalLineItem {
+  id: string
+  proposal_id: string
+  description: string
+  quantity: number | null
+  unit_price: number | null
+  total: number | null
+  sort_order: number
+  created_at: string
+}
