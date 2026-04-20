@@ -49,7 +49,6 @@ function KanbanColumn({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const totalValue = leads.reduce((sum, l) => sum + (l.estimated_value ?? 0), 0)
-  const cfg = STAGE_CONFIG[stage]
   const isWon = stage === 'Won'
   const isLost = stage === 'Lost'
 
@@ -60,46 +59,42 @@ function KanbanColumn({
         width: 280,
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 400,
-        background: isOver
-          ? `rgba(14,20,32,0.8)`
-          : 'rgba(14,20,32,0.55)',
-        backdropFilter: 'blur(12px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-        border: `1px solid ${isOver ? cfg.border : 'var(--sg-border)'}`,
-        borderTop: `2px solid ${cfg.border}`,
+        minHeight: 200,
+        background: isOver ? 'var(--c-sidebar-hover)' : 'var(--c-nested)',
+        border: '1px solid var(--c-border)',
         borderRadius: 12,
-        padding: 12,
+        overflow: 'hidden',
         transition: 'border-color 150ms, background 150ms, box-shadow 150ms',
-        boxShadow: isWon
-          ? `0 0 24px rgba(74,103,65,0.15), 0 4px 24px rgba(0,0,0,0.4)`
-          : `0 4px 24px rgba(0,0,0,0.4)`,
+        boxShadow: isWon ? '0 0 0 1.5px var(--c-sage), var(--s-card)' : 'var(--s-card)',
         opacity: isLost ? 0.75 : 1,
       }}
     >
       {/* Column header */}
-      <div style={{ marginBottom: 8, flexShrink: 0 }}>
+      <div style={{
+        padding: '10px 12px 8px',
+        background: 'var(--c-sidebar)',
+        borderBottom: '1px solid var(--c-border)',
+        borderTop: isWon ? '3px solid var(--c-sage)' : isLost ? '3px solid var(--c-danger)' : '3px solid transparent',
+        flexShrink: 0,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
           <h3 style={{
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 700,
-            color: cfg.headerColor,
-            fontFamily: 'var(--font-rajdhani)',
-            letterSpacing: '0.08em',
+            color: isWon ? 'var(--c-sage)' : isLost ? 'var(--c-danger)' : 'var(--c-text-1)',
+            letterSpacing: '0.06em',
             textTransform: 'uppercase',
             margin: 0,
           }}>
             {stage}
           </h3>
           <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            padding: '2px 7px',
-            borderRadius: 10,
-            background: 'rgba(14,20,32,0.7)',
-            border: `1px solid ${cfg.border}`,
-            color: cfg.headerColor,
-            fontFamily: 'var(--font-jetbrains)',
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '2px 8px',
+            borderRadius: 99,
+            background: 'var(--c-sidebar-active)',
+            color: 'var(--c-text-2)',
           }}>
             {leads.length}
           </span>
@@ -107,9 +102,8 @@ function KanbanColumn({
         {totalValue > 0 && (
           <p style={{
             fontSize: 11,
-            color: 'var(--sg-gold)',
-            fontFamily: 'var(--font-jetbrains)',
-            letterSpacing: '0.02em',
+            color: 'var(--c-gold)',
+            fontFamily: "'DM Mono', monospace",
             margin: 0,
           }}>
             {formatCurrency(totalValue)}
@@ -118,27 +112,10 @@ function KanbanColumn({
       </div>
 
       {/* Drop zone */}
-      <div ref={setNodeRef} style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-        {leads.length === 0 ? (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: 80,
-            border: `2px dashed ${isOver ? cfg.border : 'var(--sg-border)'}`,
-            borderRadius: 8,
-            background: isOver ? `${cfg.glow}` : 'transparent',
-            transition: 'border-color 150ms, background 150ms',
-          }}>
-            <p style={{ fontSize: 11, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-jetbrains)' }}>
-              Drop here
-            </p>
-          </div>
-        ) : (
-          leads.map(lead => (
-            <LeadCard key={lead.id} lead={lead} onClick={onCardClick} />
-          ))
-        )}
+      <div ref={setNodeRef} style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, padding: 10 }}>
+        {leads.map(lead => (
+          <LeadCard key={lead.id} lead={lead} onClick={onCardClick} />
+        ))}
       </div>
     </div>
   )
@@ -285,7 +262,6 @@ export default function LeadsPage() {
 
       {/* Header bar */}
       <div
-        className="glass"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -295,23 +271,23 @@ export default function LeadsPage() {
           padding: '14px 20px',
           marginBottom: 20,
           borderRadius: 12,
+          background: 'var(--c-card)',
+          border: '1px solid var(--c-border)',
+          boxShadow: 'var(--s-card)',
         }}
       >
         <div>
           <h1 style={{
-            fontSize: 26,
+            fontSize: 22,
             fontWeight: 700,
-            color: 'var(--sg-text-primary)',
+            color: 'var(--c-text-1)',
             margin: 0,
-            fontFamily: 'var(--font-rajdhani)',
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
           }}>
             Pipeline
           </h1>
-          <p style={{ fontSize: 12, color: 'var(--sg-gold)', margin: '2px 0 0', fontFamily: 'var(--font-jetbrains)', fontWeight: 600 }}>
-            {formatCurrency(totalPipelineValue)} active
-            <span style={{ color: 'var(--sg-text-muted)', fontWeight: 400 }}> &middot; {leads.length} leads</span>
+          <p style={{ fontSize: 12, color: 'var(--c-text-3)', margin: '2px 0 0' }}>
+            <span style={{ color: 'var(--c-gold)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{formatCurrency(totalPipelineValue)}</span>
+            {' '}active &middot; {leads.length} leads
           </p>
         </div>
 
@@ -324,14 +300,11 @@ export default function LeadsPage() {
               style={{
                 padding: '5px 12px',
                 borderRadius: 20,
-                border: `1px solid ${filterMode === mode ? 'var(--sg-border-bright)' : 'var(--sg-border)'}`,
-                background: filterMode === mode ? 'rgba(139,105,20,0.15)' : 'transparent',
-                color: filterMode === mode ? 'var(--sg-accent)' : 'var(--sg-text-muted)',
+                border: `1px solid ${filterMode === mode ? 'var(--c-gold-border)' : 'var(--c-border)'}`,
+                background: filterMode === mode ? 'var(--c-gold-bg)' : 'var(--c-sidebar)',
+                color: filterMode === mode ? 'var(--c-gold)' : 'var(--c-text-3)',
                 fontSize: 11,
-                fontWeight: 700,
-                fontFamily: 'var(--font-jetbrains)',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
+                fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'background 150ms, color 150ms, border-color 150ms',
               }}
@@ -351,7 +324,7 @@ export default function LeadsPage() {
                 left: 10,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: 'var(--sg-text-muted)',
+                color: 'var(--c-text-4)',
                 pointerEvents: 'none',
               }}
               aria-hidden="true"
@@ -362,9 +335,9 @@ export default function LeadsPage() {
               placeholder="Search leads..."
               aria-label="Search leads"
               style={{
-                background: 'rgba(8,12,20,0.6)',
-                border: '1px solid var(--sg-border)',
-                color: 'var(--sg-text-primary)',
+                background: 'var(--c-nested)',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-text-1)',
                 borderRadius: 8,
                 paddingLeft: 30,
                 paddingRight: 12,
@@ -372,12 +345,11 @@ export default function LeadsPage() {
                 paddingBottom: 7,
                 fontSize: 13,
                 width: 200,
-                fontFamily: 'var(--font-ui)',
                 outline: 'none',
                 transition: 'border-color 150ms',
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = 'var(--sg-border-bright)' }}
-              onBlur={e => { e.currentTarget.style.borderColor = 'var(--sg-border)' }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }}
             />
           </div>
           <select
@@ -385,13 +357,12 @@ export default function LeadsPage() {
             onChange={e => setFilterSource(e.target.value)}
             aria-label="Filter by source"
             style={{
-              background: 'rgba(8,12,20,0.6)',
-              border: '1px solid var(--sg-border)',
-              color: filterSource ? 'var(--sg-text-primary)' : 'var(--sg-text-muted)',
+              background: 'var(--c-nested)',
+              border: '1px solid var(--c-border)',
+              color: filterSource ? 'var(--c-text-1)' : 'var(--c-text-3)',
               borderRadius: 8,
               padding: '7px 10px',
               fontSize: 13,
-              fontFamily: 'var(--font-ui)',
               outline: 'none',
               cursor: 'pointer',
             }}
@@ -402,15 +373,10 @@ export default function LeadsPage() {
           <Button
             onClick={() => setAddLeadOpen(true)}
             style={{
-              background: 'var(--sg-accent)',
-              border: '1px solid var(--sg-border-bright)',
-              color: '#fff',
-              boxShadow: '0 0 16px rgba(139,105,20,0.3)',
-              fontFamily: 'var(--font-rajdhani)',
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              fontSize: 12,
+              background: 'var(--c-sage)',
+              border: 'none',
+              color: '#FEFCF8',
+              fontSize: 13,
             }}
           >
             <Plus size={14} aria-hidden="true" /> Add Lead
@@ -434,7 +400,10 @@ export default function LeadsPage() {
             minHeight: 600,
           }}
         >
-          {STAGES.map(stage => (
+          {STAGES.filter(stage => {
+            const stageLeads = filteredLeads.filter(l => l.stage === stage)
+            return stage === 'New Lead' || stageLeads.length > 0
+          }).map(stage => (
             <KanbanColumn
               key={stage}
               stage={stage}
