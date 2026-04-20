@@ -47,6 +47,25 @@ export default function CustomersPage() {
     },
   })
 
+  const { data: lifetimeValues = {} } = useQuery({
+    queryKey: ['customer-lifetime-values'],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return {}
+      const { data } = await supabase.from('projects')
+        .select('customer_id, contract_value')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .not('contract_value', 'is', null)
+      const map: Record<string, number> = {}
+      for (const p of data ?? []) {
+        if (p.customer_id) map[p.customer_id] = (map[p.customer_id] ?? 0) + (p.contract_value ?? 0)
+      }
+      return map
+    },
+  })
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const supabase = createClient()
@@ -141,6 +160,7 @@ export default function CustomersPage() {
                     { label: 'Email', field: null },
                     { label: 'City', field: 'city' as SortField },
                     { label: 'Tags', field: null },
+                    { label: 'Lifetime Value', field: null },
                     { label: 'Added', field: 'created_at' as SortField },
                     { label: '', field: null },
                   ].map(({ label, field }) => (
@@ -188,6 +208,13 @@ export default function CustomersPage() {
                           <span key={tag} className="text-xs px-1.5 py-0.5 bg-[var(--sg-elevated)] text-[var(--sg-text-2)] rounded">{tag}</span>
                         ))}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {lifetimeValues[customer.id] ? (
+                        <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 13, color: 'var(--c-gold)' }}>
+                          {formatCurrency(lifetimeValues[customer.id])}
+                        </span>
+                      ) : <span className="text-[var(--sg-text-2)]">—</span>}
                     </td>
                     <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(customer.created_at)}</td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>

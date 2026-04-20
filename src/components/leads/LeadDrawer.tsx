@@ -16,7 +16,8 @@ import { toast } from 'sonner'
 import { useLocalStorageDraft } from '@/lib/hooks/useLocalStorageDraft'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
-import { Phone, Mail } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Phone, Mail, FileText } from 'lucide-react'
 
 const schema = z.object({
   title: z.string().min(1, 'Required'),
@@ -40,6 +41,7 @@ interface LeadDrawerProps {
 
 export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
   const queryClient = useQueryClient()
+  const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const getDefaults = (l: Lead | null): FormData => ({
@@ -189,6 +191,27 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
           <div className="flex gap-3">
             <Button type="submit" loading={mutation.isPending} className="flex-1">Save Changes</Button>
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+          </div>
+
+          <div className="pt-2 border-t border-[var(--sg-border)]">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                const params = new URLSearchParams({
+                  ...(customer?.name ? { client: customer.name } : {}),
+                  ...(customer?.phone ? { phone: customer.phone } : {}),
+                  ...(customer?.email ? { email: customer.email } : {}),
+                  ...(lead.estimated_value ? { value: String(lead.estimated_value) } : {}),
+                  lead_id: lead.id,
+                })
+                router.push(`/proposals/new?${params.toString()}`)
+                onClose()
+              }}
+            >
+              <FileText className="h-4 w-4" /> Create Proposal
+            </Button>
           </div>
 
           <div className="pt-2 border-t border-[var(--sg-border)]">
