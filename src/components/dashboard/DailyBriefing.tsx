@@ -62,7 +62,7 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
         supabase.from('leads')
           .select('id, title, customers(name)')
           .eq('user_id', user.id).is('deleted_at', null)
-          .eq('follow_up_date', today)
+          .lte('follow_up_date', today)
           .not('stage', 'in', '("Won","Lost")'),
         supabase.from('projects')
           .select('id, title, contract_value, amount_paid, customer_id')
@@ -181,8 +181,8 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
           display: 'flex',
           flexDirection: 'column',
         }}>
-          <p style={LABEL}>Follow-ups Due Today</p>
-          <p style={COUNT((data?.followUps.length ?? 0) > 0 ? 'var(--c-gold-warm)' : 'var(--c-text-1)')}>{data?.followUps.length ?? '—'}</p>
+          <p style={LABEL}>Follow-ups Due</p>
+          <p style={COUNT((data?.followUps.length ?? 0) > 0 ? 'var(--c-danger)' : 'var(--c-text-1)')}>{data?.followUps.length ?? '—'}</p>
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
             {(data?.followUps ?? []).slice(0, 2).map(f => (
               <Link key={f.id} href="/leads" style={{ ...ITEM, textDecoration: 'none', display: 'block' }}>

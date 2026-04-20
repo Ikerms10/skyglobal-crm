@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -364,6 +364,8 @@ export default function SchedulePage() {
   const gridEnd    = endOfWeek(monthEnd, { weekStartsOn: 1 })
   const monthGrid  = eachDayOfInterval({ start: gridStart, end: gridEnd })
 
+  const [tooltip, setTooltip] = useState<{ id: string; title: string; customer: string } | null>(null)
+
   const closeModals = () => {
     setAssignModalOpen(false)
     setEditAssignment(null)
@@ -378,6 +380,8 @@ export default function SchedulePage() {
         @keyframes scaleIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
         @keyframes border-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
         @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+        @keyframes tooltipIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+        .crew-tooltip { animation: tooltipIn 150ms ease both; }
       `}</style>
 
       {/* Page header */}
@@ -622,7 +626,6 @@ export default function SchedulePage() {
                             return (
                               <div
                                 key={a.id}
-                                title={`${a.project?.title ?? 'Unlinked'} — ${a.project?.customers?.name ?? ''}`}
                                 onClick={e => { e.stopPropagation(); setEditAssignment(a) }}
                                 style={{
                                   margin: 2, padding: '3px 6px', borderRadius: 4,
@@ -632,8 +635,14 @@ export default function SchedulePage() {
                                   animation: 'scaleIn 0.25s ease both',
                                   cursor: 'pointer', position: 'relative',
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(122,158,126,0.12)' }}
-                                onMouseLeave={e => { e.currentTarget.style.background = sc.bg }}
+                                onMouseEnter={e => {
+                                  e.currentTarget.style.background = 'rgba(122,158,126,0.12)'
+                                  setTooltip({ id: a.id, title: a.project?.title ?? 'Unlinked', customer: a.project?.customers?.name ?? '' })
+                                }}
+                                onMouseLeave={e => {
+                                  e.currentTarget.style.background = sc.bg
+                                  setTooltip(null)
+                                }}
                               >
                                 <p style={{
                                   fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-rajdhani)',
@@ -648,6 +657,17 @@ export default function SchedulePage() {
                                     style={{ color: 'var(--sg-danger)', position: 'absolute', top: 2, right: 2 }}
                                     aria-label="Scheduling conflict"
                                   />
+                                )}
+                                {tooltip?.id === a.id && (
+                                  <div className="crew-tooltip" style={{
+                                    position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 100,
+                                    background: 'var(--c-text-1)', color: 'var(--c-text-on-dark)',
+                                    fontSize: 12, padding: '6px 10px', borderRadius: 6,
+                                    boxShadow: 'var(--s-modal)', whiteSpace: 'nowrap', pointerEvents: 'none',
+                                  }}>
+                                    <p style={{ margin: 0, fontWeight: 600 }}>{tooltip.title}</p>
+                                    {tooltip.customer && <p style={{ margin: '2px 0 0', opacity: 0.75 }}>{tooltip.customer}</p>}
+                                  </div>
                                 )}
                               </div>
                             )
@@ -715,7 +735,10 @@ export default function SchedulePage() {
                       background: sc.bg, borderLeft: `2px solid ${sc.border}`,
                       color: 'var(--sg-text-primary)', fontFamily: 'var(--font-ui)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
+                      position: 'relative', cursor: 'pointer',
+                    }}
+                    title={`${a.project?.title ?? '—'} · ${a.project?.customers?.name ?? ''}`}
+                    >
                       {a.crew_member_name.split(' ')[0]}: {a.project?.title ?? '—'}
                     </div>
                   )

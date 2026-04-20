@@ -221,9 +221,13 @@ export default function ExpensesPage() {
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)}
-              className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]" />
+              style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', color: filterFrom ? 'var(--c-text-1)' : 'var(--c-text-4)', borderRadius: 8, padding: '0 12px', height: 40, fontSize: 13, outline: 'none', cursor: 'pointer', colorScheme: 'light' }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
             <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)}
-              className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]" />
+              style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', color: filterTo ? 'var(--c-text-1)' : 'var(--c-text-4)', borderRadius: 8, padding: '0 12px', height: 40, fontSize: 13, outline: 'none', cursor: 'pointer', colorScheme: 'light' }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
             {(filterCategory || filterFrom || filterTo) && (
               <Button variant="ghost" size="sm" onClick={() => { setFilterCategory(''); setFilterFrom(''); setFilterTo('') }}>Clear</Button>
             )}
@@ -335,7 +339,14 @@ export default function ExpensesPage() {
             options={CATEGORIES.map(c => ({ value: c, label: c }))} />
           <Textarea label="Description" rows={2} {...register('description')} placeholder="What was this expense for?" />
           <Input label="Amount ($)" type="number" step="0.01" {...register('amount')} error={errors.amount?.message} required />
-          <Input label="Date" type="date" {...register('date')} error={errors.date?.message} required />
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--c-text-3)', display: 'block', marginBottom: 6 }}>Date</label>
+            <input type="date" {...register('date')} required
+              style={{ width: '100%', background: 'var(--c-card)', border: '1px solid var(--c-border)', color: 'var(--c-text-1)', borderRadius: 8, padding: '0 12px', height: 40, fontSize: 13, outline: 'none', colorScheme: 'light' }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+            {errors.date && <p style={{ fontSize: 12, color: 'var(--c-danger)', marginTop: 4 }}>{errors.date.message}</p>}
+          </div>
           <label className="flex items-center gap-2 text-sm text-[var(--sg-text-1)]">
             <input type="checkbox" {...register('recurring')} className="rounded" />
             Recurring monthly expense
@@ -354,7 +365,14 @@ export default function ExpensesPage() {
             options={CATEGORIES.map(c => ({ value: c, label: c }))} />
           <Textarea label="Description" rows={2} {...editReg('description')} placeholder="What was this expense for?" />
           <Input label="Amount ($)" type="number" step="0.01" {...editReg('amount')} error={editErrors.amount?.message} required />
-          <Input label="Date" type="date" {...editReg('date')} error={editErrors.date?.message} required />
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--c-text-3)', display: 'block', marginBottom: 6 }}>Date</label>
+            <input type="date" {...editReg('date')} required
+              style={{ width: '100%', background: 'var(--c-card)', border: '1px solid var(--c-border)', color: 'var(--c-text-1)', borderRadius: 8, padding: '0 12px', height: 40, fontSize: 13, outline: 'none', colorScheme: 'light' }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+            {editErrors.date && <p style={{ fontSize: 12, color: 'var(--c-danger)', marginTop: 4 }}>{editErrors.date.message}</p>}
+          </div>
           <label className="flex items-center gap-2 text-sm text-[var(--sg-text-1)]">
             <input type="checkbox" {...editReg('recurring')} className="rounded" />
             Recurring monthly expense

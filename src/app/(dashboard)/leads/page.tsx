@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, LeadStage, LeadSource } from '@/types'
@@ -242,11 +242,28 @@ export default function LeadsPage() {
     return matchSearch && matchSource && matchMode
   })
 
-  const totalPipelineValue = leads
+  const totalOpenValue = leads
     .filter(l => !['Won', 'Lost'].includes(l.stage))
     .reduce((s, l) => s + (l.estimated_value ?? 0), 0)
 
+  const totalWonValue = leads
+    .filter(l => l.stage === 'Won')
+    .reduce((s, l) => s + (l.estimated_value ?? 0), 0)
+
   const activeDragLead = activeDragId ? leads.find(l => l.id === activeDragId) : null
+
+  const boardRef = useRef<HTMLDivElement>(null)
+  const [scrolledRight, setScrolledRight] = useState(false)
+
+  useEffect(() => {
+    const el = boardRef.current
+    if (!el) return
+    const onScroll = () => {
+      setScrolledRight(el.scrollLeft + el.clientWidth >= el.scrollWidth - 8)
+    }
+    el.addEventListener('scroll', onScroll)
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
 
   if (isLoading) {
     return (
@@ -286,8 +303,12 @@ export default function LeadsPage() {
             Pipeline
           </h1>
           <p style={{ fontSize: 12, color: 'var(--c-text-3)', margin: '2px 0 0' }}>
-            <span style={{ color: 'var(--c-gold)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{formatCurrency(totalPipelineValue)}</span>
-            {' '}active &middot; {leads.length} leads
+            <span style={{ color: 'var(--c-gold)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{formatCurrency(totalOpenValue)}</span>
+            {' '}open
+            {totalWonValue > 0 && (
+              <> &middot; <span style={{ color: 'var(--c-sage)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{formatCurrency(totalWonValue)}</span> won</>
+            )}
+            {' '}&middot; {leads.length} leads
           </p>
         </div>
 
@@ -391,7 +412,17 @@ export default function LeadsPage() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
+        <div style={{ position: 'relative' }}>
+          {/* Right-edge scroll fade */}
+          {!scrolledRight && (
+            <div style={{
+              position: 'absolute', right: 0, top: 0, bottom: 24, width: 60, zIndex: 10,
+              background: 'linear-gradient(to right, transparent, var(--c-canvas))',
+              pointerEvents: 'none',
+            }} aria-hidden="true" />
+          )}
         <div
+          ref={boardRef}
           style={{
             display: 'flex',
             gap: 16,
@@ -421,6 +452,7 @@ export default function LeadsPage() {
             <LeadCard lead={activeDragLead} onClick={() => {}} isDragOverlay />
           ) : null}
         </DragOverlay>
+        </div>{/* end relative wrapper */}
       </DndContext>
 
       {/* Drawers & Modals */}
