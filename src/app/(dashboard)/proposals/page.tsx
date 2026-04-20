@@ -13,10 +13,10 @@ import { downloadProposalPDF } from '@/components/proposals/ProposalPDF'
 import { format } from 'date-fns'
 
 const STATUS_COLORS: Record<ProposalStatus, { bg: string; text: string }> = {
-  Draft:    { bg: '#2e2d26', text: '#9a9585' },
-  Sent:     { bg: '#1e3a5f', text: '#3583b3' },
-  Accepted: { bg: '#14532d', text: '#22c55e' },
-  Invoiced: { bg: '#1c1917', text: '#e6ab35' },
+  Draft:    { bg: 'var(--c-nested)', text: 'var(--c-text-4)' },
+  Sent:     { bg: 'rgba(122,158,126,0.10)', text: 'var(--c-sage-soft)' },
+  Accepted: { bg: 'var(--c-sage-bg)', text: 'var(--c-sage)' },
+  Invoiced: { bg: 'var(--c-gold-bg)', text: 'var(--c-gold)' },
 }
 
 const TEMPLATE_LABELS: Record<ProposalTemplate, string> = {
@@ -78,7 +78,6 @@ export default function ProposalsPage() {
       customer: undefined,
     }).select('id').single()
     if (error) { toast.error('Failed to duplicate'); return }
-    // Duplicate line items
     const { data: items } = await supabase.from('proposal_line_items').select('*').eq('proposal_id', proposal.id)
     if (items?.length) {
       await supabase.from('proposal_line_items').insert(items.map(({ id, created_at, proposal_id, ...rest }: any) => ({ ...rest, proposal_id: newP.id })))
@@ -128,8 +127,8 @@ export default function ProposalsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#efeae2' }}>Proposals</h1>
-          <p style={{ fontSize: 14, color: '#9a9585', marginTop: 2 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--sg-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.02em' }}>Proposals</h1>
+          <p style={{ fontSize: 14, color: 'var(--sg-text-2)', marginTop: 2 }}>
             {proposals.length} proposal{proposals.length !== 1 ? 's' : ''} total
           </p>
         </div>
@@ -146,10 +145,10 @@ export default function ProposalsPage() {
             const total = proposals.filter(p => p.status === s).reduce((sum: number, p: any) => sum + (p.total_investment ?? 0), 0)
             const col = STATUS_COLORS[s]
             return (
-              <div key={s} style={{ background: '#252419', border: '1px solid #2e2d26', borderRadius: 12, padding: '16px 20px' }}>
-                <div style={{ fontSize: 12, color: '#9a9585', marginBottom: 4 }}>{s}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: '#efeae2' }}>{count}</div>
-                {total > 0 && <div style={{ fontSize: 11, color: col.text }}>${total.toLocaleString()}</div>}
+              <div key={s} style={{ background: 'var(--sg-surface)', border: '1px solid var(--sg-border)', borderRadius: 12, padding: '16px 20px' }}>
+                <div style={{ fontSize: 12, color: 'var(--sg-text-3)', marginBottom: 4, fontFamily: "'DM Mono', monospace", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--sg-text-1)', fontFamily: "'DM Mono', monospace" }}>{count}</div>
+                {total > 0 && <div style={{ fontSize: 11, color: col.text, fontFamily: "'DM Mono', monospace" }}>${total.toLocaleString()}</div>}
               </div>
             )
           })}
@@ -157,26 +156,26 @@ export default function ProposalsPage() {
       )}
 
       {/* Table */}
-      <div style={{ background: '#252419', border: '1px solid #2e2d26', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--sg-surface)', border: '1px solid var(--sg-border)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
-            <Loader2 size={24} className="animate-spin" style={{ color: '#e6ab35' }} />
+            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--sg-gold)' }} />
           </div>
         ) : proposals.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 240, gap: 16 }}>
-            <FileText size={40} style={{ color: '#4b5563' }} />
+            <FileText size={40} style={{ color: 'var(--sg-text-3)' }} />
             <div style={{ textAlign: 'center' }}>
-              <p style={{ color: '#9a9585', marginBottom: 4 }}>No proposals yet</p>
-              <p style={{ color: '#4b5563', fontSize: 13 }}>Create your first proposal to get started</p>
+              <p style={{ color: 'var(--sg-text-2)', marginBottom: 4 }}>No proposals yet</p>
+              <p style={{ color: 'var(--sg-text-3)', fontSize: 13 }}>Create your first proposal to get started</p>
             </div>
             <Button onClick={() => setShowSelector(true)}><Plus size={15} /> Create Proposal</Button>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #2e2d26' }}>
+              <tr style={{ background: 'var(--sg-elevated)', borderBottom: '1px solid var(--sg-border-md)' }}>
                 {['Client', 'Project', 'Template', 'Total', 'Status', 'Date', ''].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9a9585', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
+                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'var(--sg-text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'DM Mono', monospace" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -184,19 +183,19 @@ export default function ProposalsPage() {
               {proposals.map((p, idx) => {
                 const col = STATUS_COLORS[p.status as ProposalStatus] ?? STATUS_COLORS.Draft
                 return (
-                  <tr key={p.id} style={{ borderBottom: idx < proposals.length - 1 ? '1px solid #2e2d26' : 'none' }}
-                    className="hover:bg-[#2e2d26] transition-colors">
-                    <td style={{ padding: '12px 16px', color: '#efeae2', fontWeight: 500 }}>
-                      {p.client_name || p.customer?.name || <span style={{ color: '#4b5563' }}>—</span>}
+                  <tr key={p.id} style={{ borderBottom: idx < proposals.length - 1 ? '1px solid var(--sg-border)' : 'none' }}
+                    className="hover:bg-[var(--sg-elevated)] transition-colors">
+                    <td style={{ padding: '12px 16px', color: 'var(--sg-text-1)', fontWeight: 500 }}>
+                      {p.client_name || p.customer?.name || <span style={{ color: 'var(--sg-text-3)' }}>—</span>}
                     </td>
-                    <td style={{ padding: '12px 16px', color: '#9a9585', fontSize: 13 }}>
-                      {p.project_name || <span style={{ color: '#4b5563' }}>Untitled</span>}
+                    <td style={{ padding: '12px 16px', color: 'var(--sg-text-2)', fontSize: 13 }}>
+                      {p.project_name || <span style={{ color: 'var(--sg-text-3)' }}>Untitled</span>}
                     </td>
-                    <td style={{ padding: '12px 16px', color: '#9a9585', fontSize: 13 }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--sg-text-2)', fontSize: 13 }}>
                       {TEMPLATE_LABELS[p.template as ProposalTemplate] ?? p.template}
                     </td>
-                    <td style={{ padding: '12px 16px', color: '#efeae2', fontWeight: 500 }}>
-                      {p.total_investment != null ? formatCurrency(p.total_investment) : <span style={{ color: '#4b5563' }}>—</span>}
+                    <td style={{ padding: '12px 16px', color: 'var(--sg-text-1)', fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
+                      {p.total_investment != null ? formatCurrency(p.total_investment) : <span style={{ color: 'var(--sg-text-3)' }}>—</span>}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       <select
@@ -207,39 +206,40 @@ export default function ProposalsPage() {
                           border: 'none', borderRadius: 20,
                           fontSize: 11, fontWeight: 600, padding: '3px 10px',
                           cursor: 'pointer', outline: 'none',
+                          fontFamily: "'DM Mono', monospace",
                         }}
                       >
-                        {STATUSES.map(s => <option key={s} value={s} style={{ background: '#252419', color: '#efeae2' }}>{s}</option>)}
+                        {STATUSES.map(s => <option key={s} value={s} style={{ background: 'var(--sg-surface)', color: 'var(--sg-text-1)' }}>{s}</option>)}
                       </select>
                     </td>
-                    <td style={{ padding: '12px 16px', color: '#9a9585', fontSize: 12 }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--sg-text-2)', fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
                       {formatDate(p.created_at)}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', gap: 4 }}>
                         <Link href={`/proposals/new?template=${p.template}&id=${p.id}`}
-                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, color: '#9a9585', textDecoration: 'none' }}
-                          className="hover:bg-[#3a3930] hover:text-white transition-colors"
+                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, color: 'var(--sg-text-3)', textDecoration: 'none' }}
+                          className="hover:bg-[var(--sg-elevated)] hover:text-[var(--sg-text-1)] transition-colors"
                           title="Edit">
                           <Edit2 size={14} />
                         </Link>
                         <button onClick={() => handleDownload(p)}
-                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, background: 'none', border: 'none', color: '#9a9585', cursor: 'pointer' }}
-                          className="hover:bg-[#3a3930] hover:text-[#e6ab35] transition-colors"
+                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, background: 'none', border: 'none', color: 'var(--sg-text-3)', cursor: 'pointer' }}
+                          className="hover:bg-[var(--sg-elevated)] hover:text-[var(--sg-gold)] transition-colors"
                           title="Download PDF">
                           <Download size={14} />
                         </button>
                         <button onClick={() => handleDuplicate(p)}
-                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, background: 'none', border: 'none', color: '#9a9585', cursor: 'pointer' }}
-                          className="hover:bg-[#3a3930] hover:text-white transition-colors"
+                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, background: 'none', border: 'none', color: 'var(--sg-text-3)', cursor: 'pointer' }}
+                          className="hover:bg-[var(--sg-elevated)] hover:text-[var(--sg-text-1)] transition-colors"
                           title="Duplicate">
                           <Copy size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(p.id)}
                           disabled={deletingId === p.id}
-                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, background: 'none', border: 'none', color: '#9a9585', cursor: 'pointer' }}
-                          className="hover:bg-[#3a3930] hover:text-[#ef4444] transition-colors"
+                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, background: 'none', border: 'none', color: 'var(--sg-text-3)', cursor: 'pointer' }}
+                          className="hover:bg-[var(--sg-elevated)] hover:text-[var(--sg-danger)] transition-colors"
                           title="Delete">
                           {deletingId === p.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                         </button>

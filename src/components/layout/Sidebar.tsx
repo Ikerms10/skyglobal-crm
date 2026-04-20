@@ -1,54 +1,121 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import {
-  LayoutDashboard, Users, Briefcase, DollarSign, BarChart3,
-  Settings, LogOut, Target, CalendarDays, FileText,
+  LayoutDashboard, Users, Briefcase, BarChart2,
+  Settings, LogOut, Target, CalendarCheck, FileText, Receipt,
+  Calendar, TrendingUp,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
 const mainNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/daily', label: 'Daily', icon: CalendarDays },
-  { href: '/leads', label: 'Leads', icon: Target },
+  { href: '/leads',     label: 'Leads',     icon: Target },
   { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/projects', label: 'Projects', icon: Briefcase },
+  { href: '/projects',  label: 'Projects',  icon: Briefcase },
   { href: '/proposals', label: 'Proposals', icon: FileText },
+  { href: '/daily',     label: 'Daily',     icon: CalendarCheck },
 ]
 const businessNav = [
-  { href: '/expenses', label: 'Expenses', icon: DollarSign },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/expenses',  label: 'Expenses',  icon: Receipt },
+  { href: '/reports',   label: 'Reports',   icon: BarChart2 },
+  { href: '/schedule',  label: 'Schedule',  icon: Calendar },
+  { href: '/analytics', label: 'Analytics', icon: TrendingUp },
 ]
 const accountNav = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
+function NavItem({ href, label, icon: Icon, pathname }: {
+  href: string
+  label: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: React.ComponentType<any>
+  pathname: string
+}) {
+  const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href + '/'))
+
+  return (
+    <Link
+      href={href}
+      aria-current={isActive ? 'page' : undefined}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        height: 38,
+        padding: isActive ? '0 12px 0 9.5px' : '0 12px',
+        margin: '1px 8px',
+        borderRadius: 7,
+        fontSize: 13.5,
+        fontWeight: isActive ? 600 : 500,
+        color: isActive ? 'var(--c-text-1)' : 'var(--c-text-sidebar)',
+        textDecoration: 'none',
+        overflow: 'hidden',
+        transition: 'color 150ms',
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        borderLeft: isActive ? '2.5px solid var(--c-sage)' : 'none',
+      }}
+      onMouseEnter={e => {
+        if (!isActive) {
+          e.currentTarget.style.background = 'var(--c-sidebar-hover)'
+          e.currentTarget.style.color = 'var(--c-text-1)'
+        }
+      }}
+      onMouseLeave={e => {
+        if (!isActive) {
+          e.currentTarget.style.background = 'transparent'
+          e.currentTarget.style.color = 'var(--c-text-sidebar)'
+        }
+      }}
+    >
+      {/* Framer Motion animated active background */}
+      {isActive && (
+        <motion.div
+          layoutId="nav-active-bg"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 7,
+            background: 'var(--c-sidebar-active)',
+          }}
+          transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+        />
+      )}
+
+      <Icon
+        size={17}
+        strokeWidth={isActive ? 2 : 1.5}
+        style={{ color: isActive ? 'var(--c-sage)' : 'var(--c-text-4)', flexShrink: 0, position: 'relative', zIndex: 1 }}
+      />
+      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', position: 'relative', zIndex: 1 }}>
+        {label}
+      </span>
+    </Link>
+  )
+}
+
 function NavSection({ label, items, pathname }: { label: string; items: typeof mainNav; pathname: string }) {
   return (
-    <div>
-      <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '12px 12px 4px' }}>
+    <div style={{ marginBottom: 4 }}>
+      <p style={{
+        fontSize: 9,
+        fontWeight: 600,
+        color: 'var(--c-text-4)',
+        letterSpacing: '0.10em',
+        textTransform: 'uppercase',
+        padding: '10px 20px 4px',
+        fontFamily: "'DM Mono', monospace",
+        margin: 0,
+      }}>
         {label}
       </p>
-      {items.map(({ href, label: itemLabel, icon: Icon }) => {
-        const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href + '/'))
-        return (
-          <Link key={href} href={href}
-            className={cn('flex items-center gap-2.5 mx-1 rounded-xl transition-all duration-100', isActive ? '' : 'hover:bg-[var(--bg-elevated)]')}
-            style={{
-              padding: '8px 12px',
-              fontSize: 14,
-              fontWeight: isActive ? 600 : 450,
-              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-              background: isActive ? 'var(--bg-surface)' : 'transparent',
-              marginBottom: 1,
-            }}>
-            <Icon size={16} strokeWidth={isActive ? 2 : 1.5} style={{ color: isActive ? 'var(--gold)' : 'var(--text-tertiary)', flexShrink: 0 }} />
-            {itemLabel}
-          </Link>
-        )
-      })}
+      {items.map(item => (
+        <NavItem key={item.href} {...item} pathname={pathname} />
+      ))}
     </div>
   )
 }
@@ -73,60 +140,155 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      background: 'var(--bg-card)',
-      borderRight: '1px solid var(--border-subtle)',
+      background: 'var(--c-sidebar)',
+      borderRight: '1px solid var(--c-border)',
+      boxShadow: '1px 0 0 var(--c-border-light)',
+      position: 'relative',
     }}>
       {/* Logo */}
-      <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div style={{
+        padding: '18px 16px 14px',
+        borderBottom: '1px solid var(--c-border)',
+        flexShrink: 0,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* SG logomark — espresso dark background */}
           <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            width: 34,
+            height: 34,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            background: '#1C1209',
+            borderRadius: 8,
+            boxShadow: 'var(--s-sidebar-logo)',
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d1c17" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--c-text-on-dark)" strokeWidth="1.5" fill="none"/>
+              <polyline points="9,22 9,12 15,12 15,22" stroke="var(--c-text-on-dark)" strokeWidth="1.5" fill="none"/>
             </svg>
           </div>
           <div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>SkyGlobal</p>
-            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1 }}>CRM</p>
+            <p style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: 'var(--c-text-1)',
+              lineHeight: 1.1,
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              letterSpacing: '-0.03em',
+              margin: 0,
+            }}>
+              SkyGlobal
+            </p>
+            <p style={{
+              fontSize: 9,
+              color: 'var(--c-text-4)',
+              lineHeight: 1,
+              fontFamily: "'DM Mono', monospace",
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              margin: 0,
+            }}>
+              CRM
+            </p>
           </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-        <NavSection label="Main" items={mainNav} pathname={pathname} />
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }} aria-label="Main navigation">
+        <NavSection label="Main"     items={mainNav}     pathname={pathname} />
         <NavSection label="Business" items={businessNav} pathname={pathname} />
-        <NavSection label="Account" items={accountNav} pathname={pathname} />
+        <NavSection label="Account"  items={accountNav}  pathname={pathname} />
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: '12px', borderTop: '1px solid var(--border-subtle)' }}>
-        {/* User */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px', marginBottom: 4 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: '50%',
-            background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 700, color: '#1d1c17', flexShrink: 0,
-          }}>
-            {initials}
+      <div style={{
+        padding: '12px',
+        borderTop: '1px solid var(--c-border)',
+        flexShrink: 0,
+      }}>
+        {/* User row */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '8px 10px',
+          marginBottom: 4,
+          borderRadius: 8,
+          background: 'var(--c-sidebar-active)',
+          border: '1px solid var(--c-border)',
+        }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--c-gold), var(--c-gold-mid))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--c-text-on-gold)',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              boxShadow: '0 2px 8px var(--c-gold-shadow)',
+            }}>
+              {initials}
+            </div>
+            {/* Online indicator */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: 'var(--c-sage)',
+                border: '1.5px solid var(--c-sidebar)',
+              }}
+              aria-label="Online"
+            />
           </div>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <p style={{
+            fontSize: 11,
+            color: 'var(--c-text-4)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flex: 1,
+            margin: 0,
+            fontFamily: "'DM Mono', monospace",
+          }}>
             {userEmail}
           </p>
         </div>
 
-        <button onClick={handleSignOut}
+        <button
+          onClick={handleSignOut}
           style={{
-            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 6, padding: '7px', borderRadius: 10,
-            background: 'transparent', border: 'none', cursor: 'pointer',
-            color: 'var(--error)', fontSize: 12,
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '7px',
+            borderRadius: 8,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--c-danger)',
+            fontSize: 11,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            transition: 'color 150ms',
           }}
-          className="hover:bg-[var(--error-light)] transition-colors">
-          <LogOut size={14} />
+          onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
+          onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
+          aria-label="Sign out"
+        >
+          <LogOut size={12} aria-hidden="true" />
           <span>Sign out</span>
         </button>
       </div>

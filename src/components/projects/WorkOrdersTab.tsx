@@ -16,12 +16,12 @@ const STATUSES = ['Draft', 'Sent', 'Accepted', 'In Progress', 'Completed', 'Canc
 type WOStatus = typeof STATUSES[number]
 
 const STATUS_COLORS: Record<WOStatus, { bg: string; color: string }> = {
-  Draft:       { bg: 'rgba(239,234,226,0.08)', color: 'var(--text-tertiary)' },
-  Sent:        { bg: 'rgba(53,131,179,0.15)',  color: '#3583b3' },
-  Accepted:    { bg: 'rgba(191,90,242,0.15)',  color: '#bf5af2' },
-  'In Progress': { bg: 'rgba(230,171,53,0.15)', color: '#e6ab35' },
-  Completed:   { bg: 'rgba(48,209,88,0.15)',   color: '#30d158' },
-  Cancelled:   { bg: 'rgba(255,69,58,0.15)',   color: '#ff453a' },
+  Draft:       { bg: 'var(--c-nested)',           color: 'var(--c-text-4)' },
+  Sent:        { bg: 'rgba(122,158,126,0.10)',    color: 'var(--c-sage-soft)' },
+  Accepted:    { bg: 'rgba(160,120,80,0.12)',     color: '#A07850' },
+  'In Progress': { bg: 'var(--c-gold-bg)',        color: 'var(--c-gold)' },
+  Completed:   { bg: 'var(--c-sage-bg)',          color: 'var(--c-sage)' },
+  Cancelled:   { bg: 'var(--c-danger-bg)',        color: 'var(--c-danger)' },
 }
 
 interface WorkOrder {
@@ -279,7 +279,7 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '8px 16px', borderRadius: 10, border: 'none',
-            background: 'var(--gold)', color: '#1d1c17', fontSize: 13,
+            background: 'var(--sg-gold)', color: '#000', fontSize: 13,
             fontWeight: 600, cursor: 'pointer',
           }}
         >
@@ -401,7 +401,7 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
             </div>
             <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
               <button onClick={() => setShowCreate(false)} style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border-card)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={createWorkOrder} disabled={creating} style={{ padding: '8px 20px', borderRadius: 10, border: 'none', background: 'var(--gold)', color: '#1d1c17', fontSize: 13, fontWeight: 600, cursor: creating ? 'wait' : 'pointer' }}>
+              <button onClick={createWorkOrder} disabled={creating} style={{ padding: '8px 20px', borderRadius: 10, border: 'none', background: 'var(--sg-gold)', color: '#000', fontSize: 13, fontWeight: 600, cursor: creating ? 'wait' : 'pointer' }}>
                 {creating ? 'Creating…' : 'Create Work Order'}
               </button>
             </div>
@@ -482,7 +482,7 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
                     placeholder="0.00"
                     style={{ ...inputStyle, flex: 1 }}
                   />
-                  <button onClick={saveActualCost} disabled={savingActual} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--gold)', color: '#1d1c17', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  <button onClick={saveActualCost} disabled={savingActual} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--sg-gold)', color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     {savingActual ? '…' : 'Save'}
                   </button>
                 </div>
@@ -534,7 +534,7 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
                   <input value={liQty} onChange={e => setLiQty(e.target.value)} type="number" placeholder="Qty" style={{ ...inputStyle, fontSize: 12 }} />
                   <input value={liUnit} onChange={e => setLiUnit(e.target.value)} placeholder="Unit" style={{ ...inputStyle, fontSize: 12 }} />
                   <input value={liPrice} onChange={e => setLiPrice(e.target.value)} type="number" placeholder="Price" style={{ ...inputStyle, fontSize: 12 }} />
-                  <button onClick={addItem} disabled={addingItem || !liDesc.trim()} style={{ padding: '8px 10px', borderRadius: 8, border: 'none', background: 'var(--gold)', color: '#1d1c17', cursor: 'pointer' }}>
+                  <button onClick={addItem} disabled={addingItem || !liDesc.trim()} style={{ padding: '8px 10px', borderRadius: 8, border: 'none', background: 'var(--sg-gold)', color: '#000', cursor: 'pointer' }}>
                     <Plus size={14} />
                   </button>
                 </div>
@@ -550,7 +550,7 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
                   <button
                     onClick={() => updateStatus(selectedWO.id, 'Completed')}
                     disabled={updatingStatus}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 8, border: 'none', background: 'rgba(48,209,88,0.15)', color: '#30d158', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 8, border: 'none', background: 'rgba(74,103,65,0.15)', color: '#4A6741', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                   >
                     <Check size={13} /> Mark Complete
                   </button>

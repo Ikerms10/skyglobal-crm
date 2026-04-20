@@ -246,24 +246,24 @@ export default function ProposalNewPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#1d1c17', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--sg-base)', display: 'flex', flexDirection: 'column' }}>
       {/* Toolbar */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: '#252419', borderBottom: '1px solid #2e2d26',
+        background: 'var(--sg-surface)', borderBottom: '1px solid var(--sg-border)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 20px', height: 52,
         boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
       }}>
         {/* Left */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Link href="/proposals" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#9a9585', fontSize: 13, textDecoration: 'none', padding: '4px 8px', borderRadius: 6 }}
-            className="hover:text-white hover:bg-[#2e2d26] transition-colors">
+          <Link href="/proposals" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--sg-text-2)', fontSize: 13, textDecoration: 'none', padding: '4px 8px', borderRadius: 6 }}
+            className="hover:text-white hover:bg-[var(--sg-elevated)] transition-colors">
             <ArrowLeft size={15} /> Back
           </Link>
-          <div style={{ width: 1, height: 24, background: '#2e2d26' }} />
+          <div style={{ width: 1, height: 24, background: 'var(--sg-border)' }} />
           <span style={{
-            background: '#e6ab35', color: '#1d1c17',
+            background: 'var(--sg-gold)', color: '#000',
             fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase',
           }}>
             {TEMPLATE_LABELS[template]}
@@ -271,10 +271,10 @@ export default function ProposalNewPage() {
         </div>
 
         {/* Center */}
-        <div style={{ fontSize: 12, color: '#9a9585', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {saveStatus === 'saving' && <><Loader2 size={13} className="animate-spin" style={{ color: '#e6ab35' }} /> Saving...</>}
-          {saveStatus === 'saved' && <><CheckCircle size={13} style={{ color: '#22c55e' }} /> Saved</>}
-          {saveStatus === 'idle' && proposalDbId && <><CheckCircle size={13} style={{ color: '#4b5563' }} /> Auto-save on</>}
+        <div style={{ fontSize: 12, color: 'var(--sg-text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {saveStatus === 'saving' && <><Loader2 size={13} className="animate-spin" style={{ color: 'var(--sg-gold)' }} /> Saving...</>}
+          {saveStatus === 'saved' && <><CheckCircle size={13} style={{ color: 'var(--c-sage)' }} /> Saved</>}
+          {saveStatus === 'idle' && proposalDbId && <><CheckCircle size={13} style={{ color: 'var(--sg-text-3)' }} /> Auto-save on</>}
         </div>
 
         {/* Right */}
@@ -285,10 +285,10 @@ export default function ProposalNewPage() {
               onClick={() => handleChange({ showInsurancePage: !data.showInsurancePage })}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
-                background: data.showInsurancePage ? 'rgba(53,131,179,0.15)' : 'transparent',
-                border: `1px solid ${data.showInsurancePage ? '#3583b3' : '#2e2d26'}`,
+                background: data.showInsurancePage ? 'rgba(122,158,126,0.12)' : 'transparent',
+                border: `1px solid ${data.showInsurancePage ? 'var(--sg-sky)' : 'var(--sg-border)'}`,
                 borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
-                color: data.showInsurancePage ? '#3583b3' : '#9a9585', fontSize: 12,
+                color: data.showInsurancePage ? 'var(--sg-sky)' : 'var(--sg-text-2)', fontSize: 12,
               }}
             >
               {data.showInsurancePage ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -300,11 +300,11 @@ export default function ProposalNewPage() {
             disabled={saveStatus === 'saving'}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              background: 'transparent', border: '1px solid #2e2d26',
+              background: 'transparent', border: '1px solid var(--sg-border)',
               borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-              color: '#efeae2', fontSize: 13, fontWeight: 500,
+              color: 'var(--sg-text-1)', fontSize: 13, fontWeight: 500,
             }}
-            className="hover:border-[#9a9585] transition-colors"
+            className="hover:border-[var(--sg-text-3)] transition-colors"
           >
             <Save size={14} /> Save Draft
           </button>
@@ -313,9 +313,9 @@ export default function ProposalNewPage() {
             disabled={pdfLoading}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              background: '#e6ab35', border: 'none',
+              background: 'var(--sg-gold)', border: 'none',
               borderRadius: 8, padding: '6px 16px', cursor: pdfLoading ? 'not-allowed' : 'pointer',
-              color: '#1d1c17', fontSize: 13, fontWeight: 700,
+              color: '#000', fontSize: 13, fontWeight: 700,
               opacity: pdfLoading ? 0.7 : 1,
             }}
           >
@@ -333,7 +333,7 @@ export default function ProposalNewPage() {
       }}>
         {!data ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
-            <Loader2 size={28} className="animate-spin" style={{ color: '#e6ab35' }} />
+            <Loader2 size={28} className="animate-spin" style={{ color: 'var(--sg-gold)' }} />
           </div>
         ) : (
           <div style={{
@@ -348,12 +348,12 @@ export default function ProposalNewPage() {
             {/* Editable field hover hint */}
             <div style={{
               marginBottom: 16, padding: '6px 12px',
-              background: 'rgba(230,171,53,0.08)', border: '1px solid rgba(230,171,53,0.2)',
-              borderRadius: 4, fontSize: 11, color: '#9a9585', fontFamily: 'sans-serif',
+              background: 'rgba(139,105,20,0.06)', border: '1px solid rgba(139,105,20,0.15)',
+              borderRadius: 4, fontSize: 11, color: 'var(--sg-text-2)', fontFamily: 'sans-serif',
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              <span style={{ color: '#e6ab35', fontWeight: 600 }}>✦</span>
-              Fields with <span style={{ borderBottom: '1.5px dashed #e6ab35', padding: '0 4px', color: '#e6ab35' }}>gold underline</span> are editable — click to type
+              <span style={{ color: 'var(--sg-gold)', fontWeight: 600 }}>✦</span>
+              Fields with <span style={{ borderBottom: '1.5px dashed var(--sg-gold)', padding: '0 4px', color: 'var(--sg-gold)' }}>gold underline</span> are editable — click to type
             </div>
             {renderTemplate()}
           </div>

@@ -69,16 +69,16 @@ export function EditableField({
 
   const hoverStyle: React.CSSProperties = {
     cursor: 'text',
-    borderBottom: '1.5px dashed #e6ab35',
+    borderBottom: '1.5px dashed var(--sg-gold)',
     paddingBottom: 1,
     transition: 'border-color 0.15s',
   }
 
   const activeStyle: React.CSSProperties = {
     outline: 'none',
-    border: '1.5px solid #e6ab35',
+    border: '1.5px solid var(--sg-gold)',
     borderRadius: 3,
-    background: 'rgba(230,171,53,0.07)',
+    background: 'rgba(139,105,20,0.06)',
     padding: '1px 4px',
     width: '100%',
     fontFamily: 'inherit',
@@ -130,7 +130,7 @@ export function EditableField({
       title="Click to edit"
     >
       {prefix}
-      <span style={value ? {} : { color: '#9a9585', fontStyle: 'italic' }}>
+      <span style={value ? {} : { color: 'var(--sg-text-2)', fontStyle: 'italic' }}>
         <span style={hoverStyle} className="hover-underline">
           {value || placeholder}
         </span>
@@ -157,7 +157,7 @@ export function EditableSelect({ value, onChange, options, className = '', style
       style={{
         background: 'transparent',
         border: 'none',
-        borderBottom: '1.5px dashed #e6ab35',
+        borderBottom: '1.5px dashed var(--sg-gold)',
         color: 'inherit',
         fontSize: 'inherit',
         fontFamily: 'inherit',
@@ -168,7 +168,7 @@ export function EditableSelect({ value, onChange, options, className = '', style
       }}
     >
       {options.map(opt => (
-        <option key={opt} value={opt} style={{ background: '#252419', color: '#efeae2' }}>{opt}</option>
+        <option key={opt} value={opt} style={{ background: 'var(--sg-surface)', color: 'var(--sg-text-1)' }}>{opt}</option>
       ))}
     </select>
   )

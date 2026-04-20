@@ -10,7 +10,7 @@ export const colors = {
   bgCard: '#ffffff',
   bgInput: '#f5f5f7',
   borderSubtle: '#d2d2d7',
-  borderFocus: '#e6ab35',
+  borderFocus: '#8B6914',
   textPrimary: '#1d1d1f',
   textSecondary: '#6e6e73',
   textTertiary: '#aeaeb2',
@@ -30,13 +30,13 @@ export const colors = {
   },
 
   // Brand accents
-  gold: '#e6ab35',
-  goldHover: '#d4941f',
-  goldLight: '#fdf3dc',
-  goldLightDark: 'rgba(230,171,53,0.15)',
-  blue: '#3583b3',
-  blueLight: '#e8f4fb',
-  blueLightDark: 'rgba(53,131,179,0.15)',
+  gold: '#8B6914',
+  goldHover: '#7A5C10',
+  goldLight: '#FAF3E0',
+  goldLightDark: 'rgba(139,105,20,0.12)',
+  blue: '#4A6741',
+  blueLight: '#EAF0E7',
+  blueLightDark: 'rgba(74,103,65,0.12)',
 
   // Semantic
   success: '#34c759',

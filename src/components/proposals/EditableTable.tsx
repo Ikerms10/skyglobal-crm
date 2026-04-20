@@ -63,7 +63,7 @@ export function EditableTable({ items, onChange }: EditableTableProps) {
     <div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
-          <tr style={{ background: '#3583b3', color: '#fff' }}>
+          <tr style={{ background: 'var(--sg-sky)', color: '#fff' }}>
             <th style={{ ...cellStyle, border: '1px solid #2a6a99', textAlign: 'left', width: '50%' }}>Material / Description</th>
             <th style={{ ...cellStyle, border: '1px solid #2a6a99', textAlign: 'center', width: '10%' }}>Qty</th>
             <th style={{ ...cellStyle, border: '1px solid #2a6a99', textAlign: 'right', width: '20%' }}>Unit Price</th>
@@ -112,7 +112,7 @@ export function EditableTable({ items, onChange }: EditableTableProps) {
               <td style={{ ...cellStyle, textAlign: 'center' }}>
                 <button
                   onClick={() => removeRow(item.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 2, lineHeight: 1 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sg-danger)', padding: 2, lineHeight: 1 }}
                   title="Remove row"
                 >
                   <X size={13} />
@@ -128,8 +128,8 @@ export function EditableTable({ items, onChange }: EditableTableProps) {
           onClick={addRow}
           style={{
             display: 'flex', alignItems: 'center', gap: 4,
-            background: 'none', border: '1px dashed #3583b3', borderRadius: 4,
-            color: '#3583b3', fontSize: 11, padding: '4px 10px', cursor: 'pointer',
+            background: 'none', border: '1px dashed var(--sg-sky)', borderRadius: 4,
+            color: 'var(--sg-sky)', fontSize: 11, padding: '4px 10px', cursor: 'pointer',
           }}
         >
           <Plus size={12} /> Add Row

@@ -101,17 +101,17 @@ export function CreateProjectModal({ lead, open, onClose, onCreated }: CreatePro
   return (
     <Modal open={open} onClose={onClose} title="Create Project from Lead" size="lg">
       <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-4">
-        <div className="bg-[#1d1c17] rounded-lg p-3 border border-[#2e2d26]">
-          <p className="text-xs text-[#9a9585] mb-1">Lead won</p>
-          <p className="text-sm font-medium text-[#efeae2]">{lead.title}</p>
+        <div className="bg-[var(--sg-base)] rounded-lg p-3 border border-[var(--sg-border)]">
+          <p className="text-xs text-[var(--sg-text-2)] mb-1">Lead won</p>
+          <p className="text-sm font-medium text-[var(--sg-text-1)]">{lead.title}</p>
           {lead.customer && (
-            <p className="text-xs text-[#9a9585]">
+            <p className="text-xs text-[var(--sg-text-2)]">
               {(lead.customer as { name?: string })?.name}
             </p>
           )}
         </div>
 
-        <p className="text-sm text-[#9a9585]">Create the project now to track progress and payments.</p>
+        <p className="text-sm text-[var(--sg-text-2)]">Create the project now to track progress and payments.</p>
 
         <Input label="Project Title" {...register('title')} error={errors.title?.message} required />
 

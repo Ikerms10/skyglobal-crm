@@ -177,7 +177,7 @@ function EditCell({ value, onChange, type = 'text', placeholder = '' }: { value:
         color: '#1a1a1a',
         padding: '2px 4px',
       }}
-      onFocus={e => { e.target.style.borderBottomColor = '#e6ab35'; e.target.style.background = 'rgba(230,171,53,0.08)' }}
+      onFocus={e => { e.target.style.borderBottomColor = 'var(--sg-gold)'; e.target.style.background = 'rgba(230,171,53,0.08)' }}
       onBlur={e => { e.target.style.borderBottomColor = 'rgba(230,171,53,0.4)'; e.target.style.background = 'rgba(230,171,53,0.04)' }}
     />
   )
@@ -219,7 +219,7 @@ export default function InvoiceNewPage() {
   const subtotal = items.reduce((s, i) => s + (i.amount ?? 0), 0)
   const taxAmt = parseFloat((subtotal * (taxPct / 100)).toFixed(2))
   const total = subtotal + taxAmt
-  const balanceDue = total - amountPaid
+  const balanceDue = Math.max(0, total - amountPaid)
 
   const handleDownload = async () => {
     setPdfLoading(true)
@@ -241,20 +241,20 @@ export default function InvoiceNewPage() {
   }
 
   const cellStyle: React.CSSProperties = { padding: '8px 10px', border: '1px solid #e5e7eb', verticalAlign: 'middle' }
-  const thStyle: React.CSSProperties = { padding: '8px 10px', background: '#1d1c17', color: '#e6ab35', fontSize: 11, fontWeight: 700, textAlign: 'left', letterSpacing: '0.04em' }
+  const thStyle: React.CSSProperties = { padding: '8px 10px', background: 'var(--sg-base)', color: 'var(--sg-gold)', fontSize: 11, fontWeight: 700, textAlign: 'left', letterSpacing: '0.04em' }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#1d1c17', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--sg-base)', display: 'flex', flexDirection: 'column' }}>
       {/* Toolbar */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 50, background: '#252419', borderBottom: '1px solid #2e2d26', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 52 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'var(--sg-surface)', borderBottom: '1px solid var(--sg-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 52 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Link href="/proposals" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#9a9585', fontSize: 13, textDecoration: 'none' }}>
+          <Link href="/proposals" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--sg-text-2)', fontSize: 13, textDecoration: 'none' }}>
             <ArrowLeft size={15} /> Back
           </Link>
-          <div style={{ width: 1, height: 24, background: '#2e2d26' }} />
-          <span style={{ background: '#3583b3', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20 }}>Invoice</span>
+          <div style={{ width: 1, height: 24, background: 'var(--sg-border)' }} />
+          <span style={{ background: 'var(--sg-sky)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20 }}>Invoice</span>
         </div>
-        <button onClick={handleDownload} disabled={pdfLoading} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#e6ab35', border: 'none', borderRadius: 8, padding: '6px 16px', cursor: pdfLoading ? 'not-allowed' : 'pointer', color: '#1d1c17', fontSize: 13, fontWeight: 700, opacity: pdfLoading ? 0.7 : 1 }}>
+        <button onClick={handleDownload} disabled={pdfLoading} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--sg-gold)', border: 'none', borderRadius: 8, padding: '6px 16px', cursor: pdfLoading ? 'not-allowed' : 'pointer', color: '#000', fontSize: 13, fontWeight: 700, opacity: pdfLoading ? 0.7 : 1 }}>
           {pdfLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           {pdfLoading ? 'Generating...' : 'Download PDF'}
         </button>
@@ -264,20 +264,20 @@ export default function InvoiceNewPage() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '40px 20px 80px', display: 'flex', justifyContent: 'center' }}>
         <div style={{ background: '#fff', width: '100%', maxWidth: 794, borderRadius: 2, boxShadow: '0 4px 24px rgba(0,0,0,0.5)', overflow: 'hidden', fontFamily: 'Georgia, serif', color: '#1a1a1a' }}>
           {/* Dark header */}
-          <div style={{ background: '#1d1c17', padding: '28px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ background: 'var(--sg-base)', padding: '28px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: '#e6ab35', letterSpacing: '-0.02em' }}>SkyGlobal</div>
-              <div style={{ fontSize: 12, color: '#9a9585', marginTop: 2 }}>SkyGlobal Renovations LLC</div>
-              <div style={{ fontSize: 11, color: '#9a9585', marginTop: 10, lineHeight: 1.8 }}>
+              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--sg-gold)', letterSpacing: '-0.02em' }}>SkyGlobal</div>
+              <div style={{ fontSize: 12, color: 'var(--sg-text-2)', marginTop: 2 }}>SkyGlobal Renovations LLC</div>
+              <div style={{ fontSize: 11, color: 'var(--sg-text-2)', marginTop: 10, lineHeight: 1.8 }}>
                 <div>352-782-2460 | 470-469-9961</div>
                 <div>skyglobalsvcs@gmail.com</div>
                 <div>skyglobalsvcs.com</div>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 36, fontWeight: 700, color: '#e6ab35', letterSpacing: '-0.02em' }}>INVOICE</div>
+              <div style={{ fontSize: 36, fontWeight: 700, color: 'var(--sg-gold)', letterSpacing: '-0.02em' }}>INVOICE</div>
               <div>
-                <input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '1px dashed rgba(230,171,53,0.5)', color: '#9a9585', fontSize: 13, textAlign: 'right', outline: 'none', fontFamily: 'Georgia, serif', width: 180 }} />
+                <input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '1px dashed rgba(230,171,53,0.5)', color: 'var(--sg-text-2)', fontSize: 13, textAlign: 'right', outline: 'none', fontFamily: 'Georgia, serif', width: 180 }} />
               </div>
             </div>
           </div>
@@ -343,14 +343,14 @@ export default function InvoiceNewPage() {
                       {item.amount != null ? `$${fmt(item.amount)}` : '—'}
                     </td>
                     <td style={{ ...cellStyle, textAlign: 'center' }}>
-                      <button onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 2 }}><X size={13} /></button>
+                      <button onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sg-danger)', padding: 2 }}><X size={13} /></button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <button onClick={addItem} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1px dashed #3583b3', borderRadius: 4, color: '#3583b3', fontSize: 11, padding: '4px 12px', cursor: 'pointer', marginBottom: 32 }}>
+            <button onClick={addItem} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1px dashed var(--sg-sky)', borderRadius: 4, color: 'var(--sg-sky)', fontSize: 11, padding: '4px 12px', cursor: 'pointer', marginBottom: 32 }}>
               <Plus size={12} /> Add Line
             </button>
 
@@ -367,7 +367,7 @@ export default function InvoiceNewPage() {
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 13, borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
                   <span style={{ color: '#6b7280' }}>Tax{' '}
-                    <input type="number" value={taxPct} onChange={e => setTaxPct(parseFloat(e.target.value) || 0)} min={0} max={100} style={{ width: 36, background: 'rgba(230,171,53,0.07)', border: '1px solid #e6ab35', borderRadius: 3, fontSize: 11, textAlign: 'center', padding: '1px 3px', outline: 'none', fontFamily: 'Georgia, serif' }} />%
+                    <input type="number" value={taxPct} onChange={e => setTaxPct(parseFloat(e.target.value) || 0)} min={0} max={100} style={{ width: 36, background: 'rgba(230,171,53,0.07)', border: '1px solid var(--sg-gold)', borderRadius: 3, fontSize: 11, textAlign: 'center', padding: '1px 3px', outline: 'none', fontFamily: 'Georgia, serif' }} />%
                   </span>
                   <span>${fmt(taxAmt)}</span>
                 </div>
@@ -379,12 +379,12 @@ export default function InvoiceNewPage() {
                   <span style={{ color: '#6b7280' }}>Amount Paid</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <span style={{ color: '#6b7280', fontSize: 11 }}>$</span>
-                    <input type="number" value={amountPaid} onChange={e => setAmountPaid(parseFloat(e.target.value) || 0)} style={{ width: 90, background: 'rgba(230,171,53,0.07)', border: '1px solid #e6ab35', borderRadius: 3, fontSize: 13, textAlign: 'right', padding: '2px 4px', outline: 'none', fontFamily: 'Georgia, serif' }} />
+                    <input type="number" value={amountPaid} onChange={e => setAmountPaid(parseFloat(e.target.value) || 0)} style={{ width: 90, background: 'rgba(230,171,53,0.07)', border: '1px solid var(--sg-gold)', borderRadius: 3, fontSize: 13, textAlign: 'right', padding: '2px 4px', outline: 'none', fontFamily: 'Georgia, serif' }} />
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 5px', fontSize: 18, fontWeight: 700, borderTop: '2px solid #1d1c17', marginTop: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 5px', fontSize: 18, fontWeight: 700, borderTop: '2px solid var(--sg-base)', marginTop: 4 }}>
                   <span>BALANCE DUE</span>
-                  <span style={{ color: '#e6ab35' }}>${fmt(balanceDue)}</span>
+                  <span style={{ color: 'var(--sg-gold)' }}>${fmt(balanceDue)}</span>
                 </div>
               </div>
             </div>

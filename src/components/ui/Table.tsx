@@ -63,13 +63,13 @@ export function Table<T extends Record<string, any>>({
     <div className={cn('overflow-x-auto', className)}>
       <table className="w-full min-w-[600px]">
         <thead>
-          <tr className="border-b-2 border-b-[#e6ab35]">
+          <tr className="border-b-2 border-b-[var(--sg-gold)]">
             {columns.map(col => (
               <th
                 key={String(col.key)}
                 className={cn(
-                  'text-left text-xs font-medium text-[#efeae2] uppercase tracking-wider py-3 px-4',
-                  col.sortable && 'cursor-pointer select-none hover:text-[#e6ab35]',
+                  'text-left text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider py-3 px-4',
+                  col.sortable && 'cursor-pointer select-none hover:text-[var(--sg-gold)]',
                   col.className
                 )}
                 onClick={() => col.sortable && handleSort(String(col.key))}
@@ -99,7 +99,7 @@ export function Table<T extends Record<string, any>>({
             <tr>
               <td
                 colSpan={columns.length}
-                className="text-center text-[#9a9585] py-12 text-sm"
+                className="text-center text-[var(--sg-text-2)] py-12 text-sm"
               >
                 {emptyMessage}
               </td>
@@ -109,14 +109,14 @@ export function Table<T extends Record<string, any>>({
               <tr
                 key={i}
                 className={cn(
-                  'border-b border-[#2e2d26] transition-colors',
-                  i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]',
-                  onRowClick && 'cursor-pointer hover:bg-[#2e2d26]'
+                  'border-b border-[var(--sg-border)] transition-colors',
+                  i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]',
+                  onRowClick && 'cursor-pointer hover:bg-[var(--sg-elevated)]'
                 )}
                 onClick={() => onRowClick?.(row)}
               >
                 {columns.map(col => (
-                  <td key={String(col.key)} className={cn('py-3 px-4 text-sm text-[#efeae2]', col.className)}>
+                  <td key={String(col.key)} className={cn('py-3 px-4 text-sm text-[var(--sg-text-1)]', col.className)}>
                     {col.render ? col.render(row) : String(row[col.key] ?? '—')}
                   </td>
                 ))}

@@ -24,12 +24,12 @@ import {
 
 const DownloadEstimateButton = dynamic(
   () => import('@/components/pdf/EstimatePDFContent').then(m => m.DownloadEstimateButton),
-  { ssr: false, loading: () => <span className="text-xs text-[#9a9585]">Loading PDF...</span> }
+  { ssr: false, loading: () => <span className="text-xs text-[var(--sg-text-2)]">Loading PDF...</span> }
 )
 
 const DownloadProjectReportButton = dynamic(
   () => import('@/components/pdf/ProjectReportPDF').then(m => m.DownloadProjectReportButton),
-  { ssr: false, loading: () => <span className="text-xs text-[#9a9585]">Loading…</span> }
+  { ssr: false, loading: () => <span className="text-xs text-[var(--sg-text-2)]">Loading…</span> }
 )
 
 function PDFButtons({ project, lineItems, projectId }: { project: any; lineItems: any[]; projectId: string }) {
@@ -514,7 +514,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
   if (error) {
     return (
       <div className="p-4 md:p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <p className="text-[#ef4444]">{error}</p>
+        <p className="text-[var(--sg-danger)]">{error}</p>
         <Button onClick={loadData}>Try Again</Button>
       </div>
     )
@@ -523,8 +523,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
   if (!project) {
     return (
       <div className="p-4 md:p-6">
-        <p className="text-[#9a9585]">Project not found.</p>
-        <Link href={`/customers/${customerId}`} className="text-[#3583b3] hover:underline text-sm mt-2 inline-block">Back</Link>
+        <p className="text-[var(--sg-text-2)]">Project not found.</p>
+        <Link href={`/customers/${customerId}`} className="text-[var(--sg-sky)] hover:underline text-sm mt-2 inline-block">Back</Link>
       </div>
     )
   }
@@ -532,12 +532,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Back */}
-      <Link href={`/customers/${customerId}`} className="flex items-center gap-2 text-[#9a9585] hover:text-[#efeae2] transition-colors text-sm">
+      <Link href={`/customers/${customerId}`} className="flex items-center gap-2 text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)] transition-colors text-sm">
         <ArrowLeft className="h-4 w-4" /> Back to {project.customers?.name ?? 'Customer'}
       </Link>
 
       {/* Header */}
-      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+      <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-3">
@@ -550,17 +550,17 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
                   className="flex items-center gap-1 focus:outline-none"
                 >
                   <StatusBadge status={project.status} />
-                  <ChevronDown className="h-3 w-3 text-[#9a9585]" />
+                  <ChevronDown className="h-3 w-3 text-[var(--sg-text-2)]" />
                 </button>
                 {statusDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-1 z-50 bg-[#252419] border border-[#2e2d26] rounded-lg shadow-xl overflow-hidden min-w-[160px]">
+                  <div className="absolute top-full left-0 mt-1 z-50 bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg shadow-xl overflow-hidden min-w-[160px]">
                     {STATUS_OPTIONS.map(s => (
                       <button
                         key={s}
                         onClick={() => updateStatus(s)}
                         className={cn(
-                          'w-full text-left px-4 py-2 text-sm hover:bg-[#2e2d26] transition-colors',
-                          project.status === s ? 'text-[#e6ab35]' : 'text-[#efeae2]'
+                          'w-full text-left px-4 py-2 text-sm hover:bg-[var(--sg-elevated)] transition-colors',
+                          project.status === s ? 'text-[var(--sg-gold)]' : 'text-[var(--sg-text-1)]'
                         )}
                       >
                         {s}
@@ -572,18 +572,18 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               <Badge variant={project.type === 'Commercial' ? 'purple' : 'info'}>{project.type}</Badge>
             </div>
             <div>
-              <Link href={`/customers/${customerId}`} className="text-[#3583b3] hover:underline text-sm">
+              <Link href={`/customers/${customerId}`} className="text-[var(--sg-sky)] hover:underline text-sm">
                 {project.customers?.name}
               </Link>
             </div>
             {project.address && (
               <div className="flex items-center gap-2 text-sm flex-wrap">
-                <MapPin className="h-4 w-4 text-[#9a9585] flex-shrink-0" />
+                <MapPin className="h-4 w-4 text-[var(--sg-text-2)] flex-shrink-0" />
                 <MapsLink address={project.address} showIcon={false} />
                 <DirectionsButton address={project.address} />
               </div>
             )}
-            <div className="flex flex-wrap gap-4 text-sm text-[#9a9585]">
+            <div className="flex flex-wrap gap-4 text-sm text-[var(--sg-text-2)]">
               {project.start_date && <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />Start: {formatDate(project.start_date)}</span>}
               {project.end_date && <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />End: {formatDate(project.end_date)}</span>}
             </div>
@@ -609,22 +609,22 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       {/* Financial Bar */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[#e6ab35]' },
-          { label: 'Lead Cost', value: formatCurrency(leadCost), color: 'text-[#9a9585]' },
-          { label: 'Total Costs', value: formatCurrency(expensesTotal), color: 'text-[#ef4444]' },
-          { label: 'Gross Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]' },
-          { label: 'Margin %', value: `${margin}%`, color: margin >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]' },
-          { label: 'Balance Due', value: formatCurrency(balanceDue), color: balanceDue > 0 ? 'text-[#ef4444]' : 'text-[#9a9585]' },
+          { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[var(--sg-gold)]' },
+          { label: 'Lead Cost', value: formatCurrency(leadCost), color: 'text-[var(--sg-text-2)]' },
+          { label: 'Total Costs', value: formatCurrency(expensesTotal), color: 'text-[var(--sg-danger)]' },
+          { label: 'Gross Profit', value: formatCurrency(profit), color: profit >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]' },
+          { label: 'Margin %', value: `${margin}%`, color: margin >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]' },
+          { label: 'Balance Due', value: formatCurrency(balanceDue), color: balanceDue > 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-text-2)]' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-            <p className="text-xs text-[#9a9585] mb-1">{label}</p>
+          <div key={label} className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4">
+            <p className="text-xs text-[var(--sg-text-2)] mb-1">{label}</p>
             <p className={cn('text-lg font-bold', color)}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-[#2e2d26]">
+      <div className="border-b border-[var(--sg-border)]">
         <nav className="flex gap-0 overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview' },
@@ -640,8 +640,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               className={cn(
                 'px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                 activeTab === id
-                  ? 'border-[#e6ab35] text-[#e6ab35]'
-                  : 'border-transparent text-[#9a9585] hover:text-[#efeae2]'
+                  ? 'border-[var(--sg-gold)] text-[var(--sg-gold)]'
+                  : 'border-transparent text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]'
               )}
             >
               {label}
@@ -655,17 +655,17 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[#e6ab35]' },
-              { label: 'Amount Paid', value: formatCurrency(project.amount_paid), color: 'text-[#10b981]' },
-              { label: 'Balance Due', value: formatCurrency(balanceDue), color: balanceDue > 0 ? 'text-[#ef4444]' : 'text-[#9a9585]' },
+              { label: 'Contract Value', value: formatCurrency(contractValue), color: 'text-[var(--sg-gold)]' },
+              { label: 'Amount Paid', value: formatCurrency(project.amount_paid), color: 'text-[var(--c-sage)]' },
+              { label: 'Balance Due', value: formatCurrency(balanceDue), color: balanceDue > 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-text-2)]' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
-                <p className="text-xs text-[#9a9585] mb-1">{label}</p>
+              <div key={label} className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4">
+                <p className="text-xs text-[var(--sg-text-2)] mb-1">{label}</p>
                 <p className={cn('text-xl font-bold', color)}>{value}</p>
               </div>
             ))}
           </div>
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Project Details</h3>
               <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)}>
@@ -685,27 +685,27 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
                 { label: 'Address', value: project.address },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">{label}</p>
-                  <p className="text-sm text-[#efeae2]">{value ?? '—'}</p>
+                  <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">{label}</p>
+                  <p className="text-sm text-[var(--sg-text-1)]">{value ?? '—'}</p>
                 </div>
               ))}
             </div>
             {project.description && (
-              <div className="mt-6 pt-6 border-t border-[#2e2d26]">
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Description</p>
-                <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{project.description}</p>
+              <div className="mt-6 pt-6 border-t border-[var(--sg-border)]">
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-2">Description</p>
+                <p className="text-sm text-[var(--sg-text-1)] whitespace-pre-wrap">{project.description}</p>
               </div>
             )}
             {project.notes && (
               <div className="mt-4">
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Notes</p>
-                <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{project.notes}</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-2">Notes</p>
+                <p className="text-sm text-[var(--sg-text-1)] whitespace-pre-wrap">{project.notes}</p>
               </div>
             )}
           </div>
 
           {/* Activity feed */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Activity ({activities.length})</h3>
               <Button size="sm" variant="ghost" onClick={() => setAddActivityOpen(true)}>
@@ -713,23 +713,23 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               </Button>
             </div>
             {activities.length === 0 ? (
-              <p className="text-sm text-[#9a9585]">No activity logged yet.</p>
+              <p className="text-sm text-[var(--sg-text-2)]">No activity logged yet.</p>
             ) : (
               <div className="space-y-1">
                 {activities.slice(0, 5).map((a, i) => (
                   <div key={a.id} className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[var(--sg-elevated)] flex items-center justify-center text-sm flex-shrink-0">
                         {ACTIVITY_ICONS[a.type] ?? '📋'}
                       </div>
-                      {i < Math.min(activities.length, 5) - 1 && <div className="w-0.5 bg-[#2e2d26] flex-1 my-1" />}
+                      {i < Math.min(activities.length, 5) - 1 && <div className="w-0.5 bg-[var(--sg-elevated)] flex-1 my-1" />}
                     </div>
                     <div className="pb-4 flex-1">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-white">{a.type}</p>
-                        <span className="text-xs text-[#9a9585]">{formatRelativeTime(a.created_at)}</span>
+                        <span className="text-xs text-[var(--sg-text-2)]">{formatRelativeTime(a.created_at)}</span>
                       </div>
-                      {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
+                      {a.content && <p className="text-sm text-[var(--sg-text-2)] mt-0.5">{a.content}</p>}
                     </div>
                   </div>
                 ))}
@@ -744,52 +744,52 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
         <div className="space-y-4">
           {/* PDF Buttons */}
           <PDFButtons project={project} lineItems={lineItems} projectId={projectId} />
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
             {lineItems.length === 0 ? (
-              <div className="p-8 text-center text-[#9a9585] text-sm">No line items yet. Add scope of work below.</div>
+              <div className="p-8 text-center text-[var(--sg-text-2)] text-sm">No line items yet. Add scope of work below.</div>
             ) : (
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-2 border-b-[#e6ab35]">
+                  <tr className="border-b-2 border-b-[var(--sg-gold)]">
                     {['#', 'Description', 'Qty', 'Unit', 'Unit Price', 'Total', ''].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase whitespace-nowrap">{h}</th>
+                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-1)] uppercase whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {lineItems.map((item, i) => (
-                    <tr key={item.id} className={cn('border-b border-[#2e2d26] group', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}>
-                      <td className="px-4 py-3 text-sm text-[#9a9585]">{i + 1}</td>
-                      <td className="px-4 py-3 text-sm text-[#efeae2]">{item.description}</td>
-                      <td className="px-4 py-3 text-sm text-[#9a9585]">{item.quantity ?? '—'}</td>
-                      <td className="px-4 py-3 text-sm text-[#9a9585]">{item.unit ?? '—'}</td>
-                      <td className="px-4 py-3 text-sm text-[#9a9585]">{item.unit_price ? formatCurrency(item.unit_price) : '—'}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{item.total ? formatCurrency(item.total) : '—'}</td>
+                    <tr key={item.id} className={cn('border-b border-[var(--sg-border)] group', i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]', 'hover:bg-[var(--sg-elevated)]')}>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{i + 1}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-1)]">{item.description}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{item.quantity ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{item.unit ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{item.unit_price ? formatCurrency(item.unit_price) : '—'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">{item.total ? formatCurrency(item.total) : '—'}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => deleteLineItem(item.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all p-1">
+                        <button onClick={() => deleteLineItem(item.id)} className="opacity-0 group-hover:opacity-100 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-all p-1">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>
                   ))}
-                  <tr className="bg-[#1d1c17]">
-                    <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-[#efeae2] text-right">Subtotal</td>
-                    <td className="px-4 py-3 text-lg font-bold text-[#e6ab35]">{formatCurrency(lineItemsTotal)}</td>
+                  <tr className="bg-[var(--sg-base)]">
+                    <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-[var(--sg-text-1)] text-right">Subtotal</td>
+                    <td className="px-4 py-3 text-lg font-bold text-[var(--sg-gold)]">{formatCurrency(lineItemsTotal)}</td>
                     <td />
                   </tr>
                 </tbody>
               </table>
             )}
           </div>
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4">
             <h3 className="text-sm font-semibold text-white mb-3">Add Line Item</h3>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
               <div className="col-span-2">
-                <input value={liDesc} onChange={e => setLiDesc(e.target.value)} placeholder="Description" className="w-full bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+                <input value={liDesc} onChange={e => setLiDesc(e.target.value)} placeholder="Description" className="w-full bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" />
               </div>
-              <input value={liQty} onChange={e => setLiQty(e.target.value)} placeholder="Qty" type="number" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
-              <input value={liUnit} onChange={e => setLiUnit(e.target.value)} placeholder="Unit" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
-              <input value={liPrice} onChange={e => setLiPrice(e.target.value)} placeholder="Unit Price" type="number" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <input value={liQty} onChange={e => setLiQty(e.target.value)} placeholder="Qty" type="number" className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" />
+              <input value={liUnit} onChange={e => setLiUnit(e.target.value)} placeholder="Unit" className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" />
+              <input value={liPrice} onChange={e => setLiPrice(e.target.value)} placeholder="Unit Price" type="number" className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" />
               <Button onClick={addLineItem} loading={liAdding} size="sm">Add</Button>
             </div>
           </div>
@@ -800,117 +800,117 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       {activeTab === 'costs' && (
         <div className="space-y-4">
           {/* Lead Cost */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">Lead Acquisition Cost</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">Lead Acquisition Cost</p>
                 {editingLeadCost ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-[#9a9585] text-sm">$</span>
+                    <span className="text-[var(--sg-text-2)] text-sm">$</span>
                     <input
                       type="number" step="0.01" min="0" autoFocus
                       value={leadCostInput}
                       onChange={e => setLeadCostInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveLeadCost(); if (e.key === 'Escape') setEditingLeadCost(false) }}
-                      className="w-32 bg-[#1d1c17] border border-[#3583b3] rounded-lg px-3 py-1 text-sm text-[#efeae2] focus:outline-none"
+                      className="w-32 bg-[var(--sg-base)] border border-[var(--sg-sky)] rounded-lg px-3 py-1 text-sm text-[var(--sg-text-1)] focus:outline-none"
                     />
-                    <button onClick={saveLeadCost} className="text-xs text-[#3583b3] hover:text-[#efeae2]">Save</button>
-                    <button onClick={() => setEditingLeadCost(false)} className="text-xs text-[#9a9585] hover:text-[#efeae2]">Cancel</button>
+                    <button onClick={saveLeadCost} className="text-xs text-[var(--sg-sky)] hover:text-[var(--sg-text-1)]">Save</button>
+                    <button onClick={() => setEditingLeadCost(false)} className="text-xs text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]">Cancel</button>
                   </div>
                 ) : (
                   <button
                     onClick={() => { setLeadCostInput(String(leadCost)); setEditingLeadCost(true) }}
-                    className="text-lg font-bold text-[#9a9585] hover:text-[#efeae2] transition-colors flex items-center gap-2"
+                    className="text-lg font-bold text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)] transition-colors flex items-center gap-2"
                   >
                     {formatCurrency(leadCost)}<Edit2 className="h-3 w-3 opacity-50" />
                   </button>
                 )}
               </div>
-              <p className="text-xs text-[#9a9585] max-w-xs text-right hidden md:block">Cost to acquire this lead (ads, referral fees, etc.)</p>
+              <p className="text-xs text-[var(--sg-text-2)] max-w-xs text-right hidden md:block">Cost to acquire this lead (ads, referral fees, etc.)</p>
             </div>
           </div>
 
           {/* Profit Breakdown */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Profit Breakdown</h3>
             <div className="space-y-2">
               <div>
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Revenue</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-2">Revenue</p>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#9a9585]">Contract Value</span>
-                  <span className="font-medium text-[#e6ab35]">{formatCurrency(contractValue)}</span>
+                  <span className="text-[var(--sg-text-2)]">Contract Value</span>
+                  <span className="font-medium text-[var(--sg-gold)]">{formatCurrency(contractValue)}</span>
                 </div>
               </div>
-              <div className="border-t border-[#2e2d26] pt-2">
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Costs</p>
+              <div className="border-t border-[var(--sg-border)] pt-2">
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-2">Costs</p>
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#9a9585]">Lead Cost</span>
-                    <span className="text-[#efeae2]">−{formatCurrency(leadCost)}</span>
+                    <span className="text-[var(--sg-text-2)]">Lead Cost</span>
+                    <span className="text-[var(--sg-text-1)]">−{formatCurrency(leadCost)}</span>
                   </div>
                   {EXPENSE_CATEGORIES.map(cat => {
                     const catTotal = expenses.filter(e => e.category === cat).reduce((s, e) => s + (e.amount ?? 0), 0)
                     if (catTotal === 0) return null
                     return (
                       <div key={cat} className="flex justify-between text-sm">
-                        <span className="text-[#9a9585]">{cat}</span>
-                        <span className="text-[#efeae2]">−{formatCurrency(catTotal)}</span>
+                        <span className="text-[var(--sg-text-2)]">{cat}</span>
+                        <span className="text-[var(--sg-text-1)]">−{formatCurrency(catTotal)}</span>
                       </div>
                     )
                   })}
                 </div>
               </div>
-              <div className="border-t border-[#2e2d26] pt-2 flex justify-between text-sm font-medium">
-                <span className="text-[#9a9585]">Total Costs</span>
-                <span className="text-[#ef4444]">−{formatCurrency(totalCosts)}</span>
+              <div className="border-t border-[var(--sg-border)] pt-2 flex justify-between text-sm font-medium">
+                <span className="text-[var(--sg-text-2)]">Total Costs</span>
+                <span className="text-[var(--sg-danger)]">−{formatCurrency(totalCosts)}</span>
               </div>
-              <div className="border-t border-[#2e2d26] pt-2 space-y-1">
+              <div className="border-t border-[var(--sg-border)] pt-2 space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-sm text-[#9a9585]">Gross Profit</span>
-                  <span className={cn('text-lg font-bold', profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]')}>{formatCurrency(profit)}</span>
+                  <span className="text-sm text-[var(--sg-text-2)]">Gross Profit</span>
+                  <span className={cn('text-lg font-bold', profit >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]')}>{formatCurrency(profit)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#9a9585]">Profit Margin</span>
-                  <span className={cn('font-medium', margin >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]')}>{margin}%</span>
+                  <span className="text-[var(--sg-text-2)]">Profit Margin</span>
+                  <span className={cn('font-medium', margin >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]')}>{margin}%</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Add Expense */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4">
             <h3 className="text-sm font-semibold text-white mb-3">Add Expense</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <select value={expCategory} onChange={e => setExpCategory(e.target.value)} className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]">
+              <select value={expCategory} onChange={e => setExpCategory(e.target.value)} className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]">
                 {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <input value={expDesc} onChange={e => setExpDesc(e.target.value)} placeholder="Description" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
-              <input value={expAmount} onChange={e => setExpAmount(e.target.value)} placeholder="Amount" type="number" step="0.01" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
-              <input value={expDate} onChange={e => setExpDate(e.target.value)} type="date" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <input value={expDesc} onChange={e => setExpDesc(e.target.value)} placeholder="Description" className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" />
+              <input value={expAmount} onChange={e => setExpAmount(e.target.value)} placeholder="Amount" type="number" step="0.01" className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" />
+              <input value={expDate} onChange={e => setExpDate(e.target.value)} type="date" className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" />
               <Button onClick={addExpense} loading={expAdding}>Add</Button>
             </div>
           </div>
 
           {/* Expenses Table */}
           {expenses.length > 0 && (
-            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+            <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-2 border-b-[#e6ab35]">
+                  <tr className="border-b-2 border-b-[var(--sg-gold)]">
                     {['Date', 'Category', 'Description', 'Amount', ''].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase whitespace-nowrap">{h}</th>
+                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-1)] uppercase whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {expenses.map((exp, i) => (
-                    <tr key={exp.id} className={cn('border-b border-[#2e2d26] group', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}>
-                      <td className="px-4 py-3 text-sm text-[#9a9585]">{formatDate(exp.date)}</td>
-                      <td className="px-4 py-3 text-sm text-[#efeae2]">{exp.category}</td>
-                      <td className="px-4 py-3 text-sm text-[#efeae2]">{exp.description ?? '—'}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-[#ef4444]">{formatCurrency(exp.amount)}</td>
+                    <tr key={exp.id} className={cn('border-b border-[var(--sg-border)] group', i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]', 'hover:bg-[var(--sg-elevated)]')}>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{formatDate(exp.date)}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-1)]">{exp.category}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-1)]">{exp.description ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[var(--sg-danger)]">{formatCurrency(exp.amount)}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => deleteExpense(exp.id)} className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all p-1">
+                        <button onClick={() => deleteExpense(exp.id)} className="opacity-0 group-hover:opacity-100 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-all p-1">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
@@ -939,27 +939,27 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       {activeTab === 'management' && (
         <div className="space-y-6">
           {/* Schedule */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Schedule</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-xs text-[#9a9585] mb-1">Start Date</p>
-                <p className="text-sm text-[#efeae2]">{formatDate(project.start_date)}</p>
+                <p className="text-xs text-[var(--sg-text-2)] mb-1">Start Date</p>
+                <p className="text-sm text-[var(--sg-text-1)]">{formatDate(project.start_date)}</p>
               </div>
               <div>
-                <p className="text-xs text-[#9a9585] mb-1">End Date</p>
-                <p className="text-sm text-[#efeae2]">{formatDate(project.end_date)}</p>
+                <p className="text-xs text-[var(--sg-text-2)] mb-1">End Date</p>
+                <p className="text-sm text-[var(--sg-text-1)]">{formatDate(project.end_date)}</p>
               </div>
               {project.start_date && (
                 <div>
-                  <p className="text-xs text-[#9a9585] mb-1">Days Elapsed</p>
-                  <p className="text-sm text-[#efeae2]">{Math.max(0, Math.floor((Date.now() - new Date(project.start_date).getTime()) / 86400000))} days</p>
+                  <p className="text-xs text-[var(--sg-text-2)] mb-1">Days Elapsed</p>
+                  <p className="text-sm text-[var(--sg-text-1)]">{Math.max(0, Math.floor((Date.now() - new Date(project.start_date).getTime()) / 86400000))} days</p>
                 </div>
               )}
               {project.end_date && (
                 <div>
-                  <p className="text-xs text-[#9a9585] mb-1">Days Remaining</p>
-                  <p className={cn('text-sm font-medium', new Date(project.end_date) < new Date() ? 'text-[#ef4444]' : 'text-[#efeae2]')}>
+                  <p className="text-xs text-[var(--sg-text-2)] mb-1">Days Remaining</p>
+                  <p className={cn('text-sm font-medium', new Date(project.end_date) < new Date() ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-text-1)]')}>
                     {Math.ceil((new Date(project.end_date).getTime() - Date.now()) / 86400000)} days
                     {new Date(project.end_date) < new Date() ? ' (OVERDUE)' : ''}
                   </p>
@@ -969,7 +969,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
           </div>
 
           {/* Paint & Materials */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Paint & Materials</h3>
             <div className="grid grid-cols-2 gap-4">
               <Input label="Paint Brand" value={mgmt.paint_brand} onChange={e => setMgmt(m => ({ ...m, paint_brand: e.target.value }))} placeholder="e.g. Sherwin Williams" />
@@ -986,15 +986,15 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
                   id="primer"
                   checked={mgmt.primer_used}
                   onChange={e => setMgmt(m => ({ ...m, primer_used: e.target.checked }))}
-                  className="rounded border-[#2e2d26]"
+                  className="rounded border-[var(--sg-border)]"
                 />
-                <label htmlFor="primer" className="text-sm text-[#efeae2]">Primer used</label>
+                <label htmlFor="primer" className="text-sm text-[var(--sg-text-1)]">Primer used</label>
               </div>
             </div>
           </div>
 
           {/* Crew & Site */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Crew & Site</h3>
             <Textarea label="Crew Notes" rows={3} value={mgmt.crew_notes} onChange={e => setMgmt(m => ({ ...m, crew_notes: e.target.value }))} placeholder="Notes for the crew..." />
             <Textarea label="Site Conditions" rows={3} value={mgmt.site_conditions} onChange={e => setMgmt(m => ({ ...m, site_conditions: e.target.value }))} placeholder="Site condition notes..." />
@@ -1003,34 +1003,34 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
           </div>
 
           {/* Tasks */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-4">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Task Checklist</h3>
 
             {/* Add task */}
             <div className="flex gap-3">
-              <input value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder="Task description..." className="flex-1 bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" onKeyDown={e => { if (e.key === 'Enter') addTask() }} />
-              <input value={taskDue} onChange={e => setTaskDue(e.target.value)} type="date" className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]" />
+              <input value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder="Task description..." className="flex-1 bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" onKeyDown={e => { if (e.key === 'Enter') addTask() }} />
+              <input value={taskDue} onChange={e => setTaskDue(e.target.value)} type="date" className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]" />
               <Button onClick={addTask} loading={taskAdding} size="sm">Add</Button>
             </div>
 
             {/* Open tasks */}
             {openTasks.length === 0 ? (
-              <p className="text-sm text-[#9a9585]">No open tasks.</p>
+              <p className="text-sm text-[var(--sg-text-2)]">No open tasks.</p>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider">{openTasks.length} open</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider">{openTasks.length} open</p>
                 {openTasks.map(task => (
-                  <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group">
+                  <div key={task.id} className="flex items-center gap-3 p-3 bg-[var(--sg-base)] rounded-lg group">
                     <button type="button" onClick={() => toggleTask(task.id, true)}
-                      className="flex-shrink-0 w-5 h-5 rounded border border-[#2e2d26] hover:border-[#e6ab35] flex items-center justify-center transition-colors" />
-                    <span className="flex-1 text-sm text-[#efeae2]">{task.description}</span>
+                      className="flex-shrink-0 w-5 h-5 rounded border border-[var(--sg-border)] hover:border-[var(--sg-gold)] flex items-center justify-center transition-colors" />
+                    <span className="flex-1 text-sm text-[var(--sg-text-1)]">{task.description}</span>
                     {task.due_date && (
-                      <span className={cn('text-xs', new Date(task.due_date) < new Date() ? 'text-[#ef4444] font-medium' : 'text-[#9a9585]')}>
+                      <span className={cn('text-xs', new Date(task.due_date) < new Date() ? 'text-[var(--sg-danger)] font-medium' : 'text-[var(--sg-text-2)]')}>
                         {new Date(task.due_date).toLocaleDateString()}
                       </span>
                     )}
                     <button type="button" onClick={() => deleteTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all">
+                      className="opacity-0 group-hover:opacity-100 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-all">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -1041,21 +1041,21 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
             {/* Completed tasks */}
             {completedTasks.length > 0 && (
               <div>
-                <button onClick={() => setShowCompletedTasks(v => !v)} className="flex items-center gap-2 text-sm text-[#9a9585] hover:text-[#efeae2] transition-colors mb-2">
+                <button onClick={() => setShowCompletedTasks(v => !v)} className="flex items-center gap-2 text-sm text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)] transition-colors mb-2">
                   <ChevronDown className={cn('h-4 w-4 transition-transform', showCompletedTasks && 'rotate-180')} />
                   {completedTasks.length} completed
                 </button>
                 {showCompletedTasks && (
                   <div className="space-y-2">
                     {completedTasks.map(task => (
-                      <div key={task.id} className="flex items-center gap-3 p-3 bg-[#1d1c17] rounded-lg group opacity-60">
+                      <div key={task.id} className="flex items-center gap-3 p-3 bg-[var(--sg-base)] rounded-lg group opacity-60">
                         <button type="button" onClick={() => toggleTask(task.id, false)}
-                          className="flex-shrink-0 w-5 h-5 rounded border border-[#e6ab35] bg-[#e6ab35] flex items-center justify-center">
-                          <Check className="h-3 w-3 text-[#1d1c17]" />
+                          className="flex-shrink-0 w-5 h-5 rounded border border-[var(--sg-gold)] bg-[var(--sg-gold)] flex items-center justify-center">
+                          <Check className="h-3 w-3 text-[#000]" />
                         </button>
-                        <span className="flex-1 text-sm text-[#9a9585] line-through">{task.description}</span>
+                        <span className="flex-1 text-sm text-[var(--sg-text-2)] line-through">{task.description}</span>
                         <button type="button" onClick={() => deleteTask(task.id)}
-                          className="opacity-0 group-hover:opacity-100 text-[#9a9585] hover:text-[#ef4444] transition-all">
+                          className="opacity-0 group-hover:opacity-100 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-all">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -1074,11 +1074,11 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       {activeTab === 'photos' && (
         <div className="space-y-4">
           {/* Upload */}
-          <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4">
+          <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4">
             <h3 className="text-sm font-semibold text-white mb-3">Upload Photos</h3>
             <div className="flex flex-wrap items-center gap-3">
               <select value={photoLabel} onChange={e => setPhotoLabel(e.target.value as 'Before' | 'During' | 'After')}
-                className="bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3]">
+                className="bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)]">
                 <option value="Before">Before</option>
                 <option value="During">During</option>
                 <option value="After">After</option>
@@ -1104,7 +1104,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
 
             {/* Drop zone */}
             <div
-              className="mt-3 border-2 border-dashed border-[#2e2d26] rounded-lg p-8 text-center cursor-pointer hover:border-[#3583b3] transition-colors"
+              className="mt-3 border-2 border-dashed border-[var(--sg-border)] rounded-lg p-8 text-center cursor-pointer hover:border-[var(--sg-sky)] transition-colors"
               onClick={() => fileInputRef.current?.click()}
               onDrop={async (e) => {
                 e.preventDefault()
@@ -1113,9 +1113,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               }}
               onDragOver={e => e.preventDefault()}
             >
-              <ImageIcon className="h-8 w-8 text-[#9a9585] mx-auto mb-2" />
-              <p className="text-sm text-[#9a9585]">Drag photos here or click to browse</p>
-              <p className="text-xs text-[#9a9585] mt-1">JPG, PNG, WebP, HEIC accepted</p>
+              <ImageIcon className="h-8 w-8 text-[var(--sg-text-2)] mx-auto mb-2" />
+              <p className="text-sm text-[var(--sg-text-2)]">Drag photos here or click to browse</p>
+              <p className="text-xs text-[var(--sg-text-2)] mt-1">JPG, PNG, WebP, HEIC accepted</p>
             </div>
           </div>
 
@@ -1128,7 +1128,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               if (!labelPhotos.length) return null
               return (
                 <div key={label}>
-                  <h3 className="text-sm font-semibold text-[#9a9585] mb-2 uppercase tracking-wider">{label} Photos ({labelPhotos.length})</h3>
+                  <h3 className="text-sm font-semibold text-[var(--sg-text-2)] mb-2 uppercase tracking-wider">{label} Photos ({labelPhotos.length})</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {labelPhotos.map(photo => (
                       <div key={photo.id} className="relative group rounded-lg overflow-hidden bg-[#2a2920]"
@@ -1144,16 +1144,16 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
                             onClick={(e) => { e.stopPropagation(); deletePhoto(photo.id) }}
-                            className="absolute top-2 right-2 bg-[#ef4444] text-white rounded-full p-1 hover:bg-[#dc2626] transition-colors"
+                            className="absolute top-2 right-2 bg-[var(--sg-danger)] text-white rounded-full p-1 hover:bg-[#dc2626] transition-colors"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); setLightboxPhoto(photo) }} className="text-white text-xs bg-[#1d1c17]/80 px-3 py-1.5 rounded-lg">
+                          <button onClick={(e) => { e.stopPropagation(); setLightboxPhoto(photo) }} className="text-white text-xs bg-[var(--sg-base)]/80 px-3 py-1.5 rounded-lg">
                             View
                           </button>
                         </div>
                         {photo.caption && (
-                          <p className="text-xs text-[#9a9585] p-2 bg-[#1d1c17] truncate">{photo.caption}</p>
+                          <p className="text-xs text-[var(--sg-text-2)] p-2 bg-[var(--sg-base)] truncate">{photo.caption}</p>
                         )}
                       </div>
                     ))}
@@ -1168,7 +1168,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
       {/* Lightbox */}
       {lightboxPhoto && (
         <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" onClick={() => setLightboxPhoto(null)}>
-          <button onClick={() => setLightboxPhoto(null)} className="absolute top-4 right-4 text-white hover:text-[#9a9585] z-10 p-2">
+          <button onClick={() => setLightboxPhoto(null)} className="absolute top-4 right-4 text-white hover:text-[var(--sg-text-2)] z-10 p-2">
             <X className="h-8 w-8" />
           </button>
           {(() => {
@@ -1177,13 +1177,13 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               <>
                 {idx > 0 && (
                   <button onClick={e => { e.stopPropagation(); setLightboxPhoto(photos[idx - 1]) }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-[#9a9585] z-10 p-2 bg-black/40 rounded-full">
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-[var(--sg-text-2)] z-10 p-2 bg-black/40 rounded-full">
                     <ChevronLeft className="h-8 w-8" />
                   </button>
                 )}
                 {idx < photos.length - 1 && (
                   <button onClick={e => { e.stopPropagation(); setLightboxPhoto(photos[idx + 1]) }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-[#9a9585] z-10 p-2 bg-black/40 rounded-full">
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-[var(--sg-text-2)] z-10 p-2 bg-black/40 rounded-full">
                     <ChevronRight className="h-8 w-8" />
                   </button>
                 )}
@@ -1198,9 +1198,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               onError={e => handlePhotoError(e, lightboxPhoto.id, lightboxPhoto.url)}
             />
             <div className="flex items-center gap-3">
-              {lightboxPhoto.label && <span className="text-xs px-2 py-1 bg-[#252419] text-[#efeae2] rounded">{lightboxPhoto.label}</span>}
-              {lightboxPhoto.caption && <span className="text-sm text-[#9a9585]">{lightboxPhoto.caption}</span>}
-              <span className="text-xs text-[#9a9585]">{photos.indexOf(lightboxPhoto) + 1} / {photos.length}</span>
+              {lightboxPhoto.label && <span className="text-xs px-2 py-1 bg-[var(--sg-surface)] text-[var(--sg-text-1)] rounded">{lightboxPhoto.label}</span>}
+              {lightboxPhoto.caption && <span className="text-sm text-[var(--sg-text-2)]">{lightboxPhoto.caption}</span>}
+              <span className="text-xs text-[var(--sg-text-2)]">{photos.indexOf(lightboxPhoto) + 1} / {photos.length}</span>
             </div>
           </div>
         </div>

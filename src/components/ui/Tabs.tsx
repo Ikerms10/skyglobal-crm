@@ -19,7 +19,7 @@ export function Tabs({ defaultValue, children, className }: { defaultValue: stri
 
 export function TabsList({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('flex gap-1 bg-[#252419] border border-[#2e2d26] rounded-lg p-1', className)}>
+    <div className={cn('flex gap-1 bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg p-1', className)}>
       {children}
     </div>
   )
@@ -33,8 +33,8 @@ export function TabsTrigger({ value, children }: { value: string; children: Reac
       className={cn(
         'px-4 py-2 text-sm font-medium rounded-md transition-colors',
         active === value
-          ? 'border-b-2 border-[#e6ab35] text-[#e6ab35] bg-[#1d1c17]'
-          : 'text-[#9a9585] hover:text-[#efeae2] hover:bg-[#2e2d26]'
+          ? 'border-b-2 border-[var(--sg-gold)] text-[var(--sg-gold)] bg-[var(--sg-base)]'
+          : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)] hover:bg-[var(--sg-elevated)]'
       )}
     >
       {children}

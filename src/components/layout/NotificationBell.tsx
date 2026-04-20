@@ -9,17 +9,29 @@ import { differenceInDays, parseISO } from 'date-fns'
 const SEEN_KEY = 'sg_seen_notifications'
 
 function getSeenIds(): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]')) } catch { return new Set() }
+  try { return new Set<string>(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]')) } catch { return new Set<string>() }
 }
 
 function saveSeenIds(ids: Set<string>) {
-  try { localStorage.setItem(SEEN_KEY, JSON.stringify([...ids])) } catch {}
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(ids))) } catch {}
 }
 
 interface NotifData {
   followUps: { id: string; title: string; follow_up_date: string; customerName: string }[]
   payments: { id: string; title: string; balance: number; payment_status: string; customer_id: string }[]
   pastDue: { id: string; title: string; end_date: string; customer_id: string; customerName: string }[]
+}
+
+const sectionHeader: React.CSSProperties = {
+  display: 'block',
+  fontSize: 9,
+  fontWeight: 700,
+  color: 'var(--c-text-3)',
+  padding: '8px 16px 4px',
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  fontFamily: "'DM Mono', monospace",
+  background: 'var(--c-nested)',
 }
 
 export function NotificationBell() {
@@ -85,7 +97,6 @@ export function NotificationBell() {
     return () => clearInterval(interval)
   }, [])
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
@@ -102,13 +113,13 @@ export function NotificationBell() {
   const unseenCount = allIds.filter(id => !seen.has(id)).length
 
   const markAllRead = () => {
-    const next = new Set([...seen, ...allIds])
+    const next = new Set<string>(Array.from(seen).concat(allIds))
     setSeen(next)
     saveSeenIds(next)
   }
 
   const handleNavigate = (href: string, id: string) => {
-    const next = new Set([...seen, id])
+    const next = new Set<string>(Array.from(seen).concat([id]))
     setSeen(next)
     saveSeenIds(next)
     router.push(href)
@@ -118,76 +129,179 @@ export function NotificationBell() {
   const isEmpty = allIds.length === 0
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="relative p-2 text-[#9a9585] hover:text-[#efeae2] transition-colors rounded-lg hover:bg-[#2e2d26]"
+        style={{
+          position: 'relative',
+          padding: 8,
+          color: 'var(--c-text-3)',
+          background: 'var(--c-nested)',
+          border: '1px solid var(--c-border)',
+          cursor: 'pointer',
+          borderRadius: 'var(--r-sm)',
+          transition: 'background 150ms, border-color 150ms, color 150ms',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-sidebar-hover)'; e.currentTarget.style.borderColor = 'var(--c-border-mid)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--c-nested)'; e.currentTarget.style.borderColor = 'var(--c-border)' }}
+        aria-label={`Notifications${unseenCount > 0 ? `, ${unseenCount} unread` : ''}`}
+        aria-expanded={open}
       >
-        <Bell className="h-5 w-5" />
+        <Bell size={18} aria-hidden="true" />
         {unseenCount > 0 && (
           <span
-            className="absolute top-1 right-1 h-4 w-4 bg-[#ef4444] rounded-full text-[10px] font-bold text-white flex items-center justify-center"
-            style={{ animation: 'notif-pulse 2s ease-in-out infinite' }}
+            style={{
+              position: 'absolute',
+              top: 4,
+              right: 4,
+              height: 16,
+              width: 16,
+              background: 'var(--c-danger)',
+              borderRadius: '50%',
+              fontSize: 9,
+              fontWeight: 700,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: "'DM Mono', monospace",
+              animation: 'notif-pulse 2s ease-in-out infinite',
+              border: '2px solid var(--c-card)',
+            }}
+            aria-hidden="true"
           >
             {unseenCount > 9 ? '9+' : unseenCount}
           </span>
         )}
       </button>
 
-      <style>{`
-        @keyframes notif-pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.2); }
-        }
-      `}</style>
-
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 bg-[#1d1c17] border border-[#2e2d26] rounded-xl z-50 overflow-hidden"
-          style={{ width: 360, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
+          role="dialog"
+          aria-label="Notifications"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 'calc(100% + 8px)',
+            width: 360,
+            background: 'var(--c-card)',
+            border: '1px solid var(--c-border)',
+            borderRadius: 'var(--r-md)',
+            zIndex: 50,
+            overflow: 'hidden',
+            boxShadow: 'var(--s-modal)',
+          }}
         >
+          {/* Top accent */}
+          <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, var(--c-sage-soft), transparent)' }} aria-hidden="true" />
+
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#2e2d26]">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-white">Notifications</h3>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            borderBottom: '1px solid var(--c-border)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: 'var(--c-text-1)',
+                margin: 0,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                letterSpacing: '-0.01em',
+              }}>
+                Notifications
+              </h3>
               {unseenCount > 0 && (
-                <span className="bg-[#ef4444] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unseenCount}</span>
+                <span style={{
+                  background: 'var(--c-danger)',
+                  color: '#fff',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  padding: '1px 5px',
+                  borderRadius: 10,
+                  fontFamily: "'DM Mono', monospace",
+                }}>
+                  {unseenCount}
+                </span>
               )}
             </div>
             {allIds.length > 0 && (
-              <button onClick={markAllRead} className="text-xs text-[#9a9585] hover:text-[#efeae2] transition-colors">
+              <button
+                onClick={markAllRead}
+                style={{
+                  fontSize: 11,
+                  color: 'var(--c-sage)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: "'DM Mono', monospace",
+                  letterSpacing: '0.04em',
+                }}
+              >
                 Mark all read
               </button>
             )}
           </div>
 
-          <div className="max-h-[440px] overflow-y-auto">
+          <div style={{ maxHeight: 440, overflowY: 'auto' }}>
             {isEmpty ? (
-              <div className="flex flex-col items-center justify-center py-10 gap-2">
-                <div className="h-12 w-12 rounded-full bg-[#10b981]/15 flex items-center justify-center">
-                  <Check className="h-6 w-6 text-[#10b981]" />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8 }}>
+                <div style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  background: 'rgba(74,103,65,0.12)',
+                  border: '1px solid rgba(74,103,65,0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Check size={22} style={{ color: 'var(--c-sage)' }} aria-hidden="true" />
                 </div>
-                <p className="text-sm font-semibold text-[#efeae2]">You&apos;re all caught up!</p>
-                <p className="text-xs text-[#9a9585]">No overdue items right now</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  All clear
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0, fontFamily: "'DM Mono', monospace" }}>No overdue items</p>
               </div>
             ) : (
               <>
-                {/* Overdue follow-ups */}
                 {data.followUps.length > 0 && (
                   <div>
-                    <p className="text-[10px] text-[#9a9585] font-semibold px-4 py-2 uppercase tracking-wider bg-[#252419]">
-                      📅 Overdue Follow-ups
-                    </p>
+                    <span style={sectionHeader}>Overdue Follow-ups</span>
                     {data.followUps.map(item => {
                       const days = differenceInDays(new Date(), parseISO(item.follow_up_date))
                       const isSeen = seen.has(item.id)
                       return (
-                        <button key={item.id} onClick={() => handleNavigate('/leads', item.id)}
-                          className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#252419] transition-colors border-b border-[#2e2d26] last:border-0 ${isSeen ? 'opacity-50' : ''}`}>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-[#efeae2] truncate">{item.title}</p>
-                            <p className="text-xs text-[#9a9585] truncate">{item.customerName}</p>
-                            <p className="text-xs text-[#ef4444] mt-0.5">{days}d overdue</p>
+                        <button
+                          key={item.id}
+                          onClick={() => handleNavigate('/leads', item.id)}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            padding: '10px 16px',
+                            textAlign: 'left',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--c-border)',
+                            cursor: 'pointer',
+                            opacity: isSeen ? 0.45 : 1,
+                            transition: 'background 100ms, opacity 100ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-nested)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{item.title}</p>
+                            <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: '1px 0 0', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{item.customerName}</p>
+                            <p style={{ fontSize: 10, color: 'var(--c-danger)', marginTop: 2, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{days}d overdue</p>
                           </div>
                         </button>
                       )
@@ -195,21 +309,50 @@ export function NotificationBell() {
                   </div>
                 )}
 
-                {/* Payment issues */}
                 {data.payments.length > 0 && (
                   <div>
-                    <p className="text-[10px] text-[#9a9585] font-semibold px-4 py-2 uppercase tracking-wider bg-[#252419]">
-                      💰 Payment Due
-                    </p>
+                    <span style={sectionHeader}>Payment Due</span>
                     {data.payments.map(item => {
                       const isSeen = seen.has(item.id)
                       return (
-                        <button key={item.id} onClick={() => handleNavigate(`/customers/${item.customer_id}`, item.id)}
-                          className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#252419] transition-colors border-b border-[#2e2d26] last:border-0 ${isSeen ? 'opacity-50' : ''}`}>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-[#efeae2] truncate">{item.title}</p>
-                            <p className="text-xs text-[#e6ab35] mt-0.5">Balance: {formatCurrency(item.balance)}</p>
-                            <span className="text-[10px] bg-[#ef4444]/15 text-[#ef4444] px-1.5 py-0.5 rounded font-medium">{item.payment_status}</span>
+                        <button
+                          key={item.id}
+                          onClick={() => handleNavigate(`/customers/${item.customer_id}`, item.id)}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            padding: '10px 16px',
+                            textAlign: 'left',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--c-border)',
+                            cursor: 'pointer',
+                            opacity: isSeen ? 0.45 : 1,
+                            transition: 'background 100ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-nested)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{item.title}</p>
+                            <p style={{ fontSize: 11, color: 'var(--c-gold)', marginTop: 1, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                              Balance: {formatCurrency(item.balance)}
+                            </p>
+                            <span style={{
+                              fontSize: 9,
+                              fontWeight: 700,
+                              padding: '1px 5px',
+                              borderRadius: 4,
+                              background: 'rgba(185,74,58,0.12)',
+                              color: 'var(--c-danger)',
+                              fontFamily: "'DM Mono', monospace",
+                              letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
+                            }}>
+                              {item.payment_status}
+                            </span>
                           </div>
                         </button>
                       )
@@ -217,22 +360,37 @@ export function NotificationBell() {
                   </div>
                 )}
 
-                {/* Past due projects */}
                 {data.pastDue.length > 0 && (
                   <div>
-                    <p className="text-[10px] text-[#9a9585] font-semibold px-4 py-2 uppercase tracking-wider bg-[#252419]">
-                      ⚠️ Past End Date
-                    </p>
+                    <span style={sectionHeader}>Past End Date</span>
                     {data.pastDue.map(item => {
                       const days = differenceInDays(new Date(), parseISO(item.end_date))
                       const isSeen = seen.has(item.id)
                       return (
-                        <button key={item.id} onClick={() => handleNavigate(`/customers/${item.customer_id}`, item.id)}
-                          className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#252419] transition-colors border-b border-[#2e2d26] last:border-0 ${isSeen ? 'opacity-50' : ''}`}>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-[#efeae2] truncate">{item.title}</p>
-                            <p className="text-xs text-[#9a9585] truncate">{item.customerName}</p>
-                            <p className="text-xs text-[#ef4444] mt-0.5">{days}d past due</p>
+                        <button
+                          key={item.id}
+                          onClick={() => handleNavigate(`/customers/${item.customer_id}`, item.id)}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            padding: '10px 16px',
+                            textAlign: 'left',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--c-border)',
+                            cursor: 'pointer',
+                            opacity: isSeen ? 0.45 : 1,
+                            transition: 'background 100ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-nested)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{item.title}</p>
+                            <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: '1px 0 0', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{item.customerName}</p>
+                            <p style={{ fontSize: 10, color: 'var(--c-danger)', marginTop: 2, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{days}d past due</p>
                           </div>
                         </button>
                       )

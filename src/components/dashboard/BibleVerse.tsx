@@ -46,8 +46,9 @@ export function BibleVerse() {
     <div
       className="animate-fade-in"
       style={{
-        background: 'linear-gradient(135deg, rgba(230,171,53,0.08) 0%, rgba(230,171,53,0.04) 50%, rgba(53,131,179,0.04) 100%)',
-        border: '1px solid rgba(230,171,53,0.2)',
+        background: 'var(--c-card)',
+        border: '1px solid var(--c-border-light)',
+        borderLeft: '3px solid var(--c-gold-warm)',
         borderRadius: 'var(--radius-xl)',
         padding: '24px 32px',
       }}
@@ -56,7 +57,7 @@ export function BibleVerse() {
         {/* Decorative quote mark */}
         <span style={{
           fontSize: 72,
-          color: 'rgba(230,171,53,0.2)',
+          color: 'rgba(139,105,20,0.2)',
           fontFamily: 'Georgia, serif',
           lineHeight: 1,
           flexShrink: 0,
@@ -71,7 +72,7 @@ export function BibleVerse() {
           <p style={{
             fontSize: 16,
             fontStyle: 'italic',
-            color: 'var(--text-primary)',
+            color: 'var(--c-text-2)',
             lineHeight: 1.7,
             fontWeight: 400,
             margin: 0,
@@ -82,7 +83,7 @@ export function BibleVerse() {
             marginTop: 10,
             fontSize: 13,
             fontWeight: 600,
-            color: 'var(--gold)',
+            color: 'var(--c-gold)',
             letterSpacing: '0.02em',
           }}>
             — {verse.ref}
@@ -91,12 +92,12 @@ export function BibleVerse() {
 
         {/* Right decoration */}
         <div style={{ flexShrink: 0, textAlign: 'center', paddingLeft: 8 }}>
-          <div style={{ fontSize: 28, opacity: 0.4, color: 'var(--gold)', lineHeight: 1 }}>✝</div>
+          <div style={{ fontSize: 28, opacity: 0.4, color: 'var(--c-gold-warm)', lineHeight: 1 }}>✝</div>
           <p style={{
             fontSize: 9,
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
-            color: 'var(--text-tertiary)',
+            color: 'var(--c-text-4)',
             marginTop: 6,
             whiteSpace: 'nowrap',
           }}>

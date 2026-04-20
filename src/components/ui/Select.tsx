@@ -13,15 +13,30 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
     return (
       <div className="space-y-1">
-        {label && <label htmlFor={inputId} className="block text-sm font-medium text-[#efeae2]">{label}</label>}
+        {label && <label htmlFor={inputId} className="block text-sm font-medium" style={{ color: 'var(--c-text-3)' }}>{label}</label>}
         <select
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] transition-colors',
-            error && 'border-[#ef4444]',
+            'w-full border rounded-[var(--r-sm)] px-3 py-2 text-sm focus:outline-none transition-colors',
+            error && 'border-[var(--c-danger)]',
             className
           )}
+          style={{
+            background: 'var(--c-card)',
+            borderColor: error ? 'var(--c-danger)' : 'var(--c-border)',
+            color: 'var(--sg-text-1)',
+          }}
+          onFocus={e => {
+            if (!error) {
+              e.currentTarget.style.borderColor = 'var(--c-sage-soft)'
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(122,158,126,0.18)'
+            }
+          }}
+          onBlur={e => {
+            e.currentTarget.style.borderColor = error ? 'var(--c-danger)' : 'var(--c-border)'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
           {...props}
         >
           {placeholder && <option value="">{placeholder}</option>}
@@ -29,7 +44,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
-        {error && <p className="text-xs text-[#ef4444]">{error}</p>}
+        {error && <p className="text-xs" style={{ color: 'var(--c-danger)' }}>{error}</p>}
       </div>
     )
   }

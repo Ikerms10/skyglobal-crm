@@ -37,30 +37,30 @@ export function TemplateSelector({ onSelect, onClose, customerId }: TemplateSele
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
-        background: '#1e1d18',
-        border: '1px solid #2e2d26',
+        background: 'var(--sg-surface)',
+        border: '1px solid var(--sg-border-bright)',
         borderRadius: 16,
         width: '100%',
         maxWidth: 540,
         padding: 32,
         position: 'relative',
-        boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+        boxShadow: 'var(--shadow-xl)',
       }}>
         <button
           onClick={onClose}
           style={{
             position: 'absolute', top: 16, right: 16,
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#9a9585', padding: 4,
+            color: 'var(--sg-text-3)', padding: 4,
           }}
         >
           <X size={20} />
         </button>
 
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#efeae2', marginBottom: 6 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--sg-text-1)', marginBottom: 6, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.02em' }}>
           Choose a Proposal Template
         </h2>
-        <p style={{ fontSize: 13, color: '#9a9585', marginBottom: 28 }}>
+        <p style={{ fontSize: 13, color: 'var(--sg-text-2)', marginBottom: 28 }}>
           Select a service type to open the visual editor
         </p>
 
@@ -72,8 +72,8 @@ export function TemplateSelector({ onSelect, onClose, customerId }: TemplateSele
               onMouseEnter={() => setHoveredId(t.id)}
               onMouseLeave={() => setHoveredId(null)}
               style={{
-                background: hoveredId === t.id ? '#252419' : '#16150f',
-                border: `2px solid ${hoveredId === t.id ? '#e6ab35' : '#2e2d26'}`,
+                background: hoveredId === t.id ? 'var(--sg-elevated)' : 'var(--sg-base)',
+                border: `2px solid ${hoveredId === t.id ? 'var(--sg-sky)' : 'var(--sg-border)'}`,
                 borderRadius: 12,
                 padding: '20px 18px',
                 cursor: 'pointer',
@@ -83,8 +83,8 @@ export function TemplateSelector({ onSelect, onClose, customerId }: TemplateSele
               }}
             >
               <div style={{ fontSize: 28, marginBottom: 10 }}>{t.icon}</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#efeae2', marginBottom: 4 }}>{t.name}</div>
-              <div style={{ fontSize: 12, color: '#9a9585', lineHeight: 1.4 }}>{t.description}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--sg-text-1)', marginBottom: 4 }}>{t.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--sg-text-2)', lineHeight: 1.4 }}>{t.description}</div>
             </button>
           ))}
         </div>

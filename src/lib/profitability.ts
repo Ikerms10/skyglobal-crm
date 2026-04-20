@@ -16,9 +16,9 @@ export function getProfitScore(
   const profit = contractValue - totalCosts - leadCost
   const margin = (profit / contractValue) * 100
 
-  if (margin >= 40) return { grade: 'A', label: 'Excellent',    color: '#30d158', bg: 'rgba(48,209,88,0.15)',   margin: margin.toFixed(1) }
-  if (margin >= 25) return { grade: 'B', label: 'Good',         color: '#3583b3', bg: 'rgba(53,131,179,0.15)',  margin: margin.toFixed(1) }
-  if (margin >= 10) return { grade: 'C', label: 'Average',      color: '#e6ab35', bg: 'rgba(230,171,53,0.15)',  margin: margin.toFixed(1) }
-  if (margin >= 0)  return { grade: 'D', label: 'Low Margin',   color: '#ff9f0a', bg: 'rgba(255,159,10,0.15)',  margin: margin.toFixed(1) }
-  return              { grade: 'F', label: 'Losing Money',  color: '#ff453a', bg: 'rgba(255,69,58,0.15)',   margin: margin.toFixed(1) }
+  if (margin >= 40) return { grade: 'A', label: 'Excellent',    color: '#4A6741', bg: 'rgba(74,103,65,0.12)',   margin: margin.toFixed(1) }
+  if (margin >= 25) return { grade: 'B', label: 'Good',         color: '#7A9E7E', bg: 'rgba(122,158,126,0.10)', margin: margin.toFixed(1) }
+  if (margin >= 10) return { grade: 'C', label: 'Average',      color: '#8B6914', bg: 'rgba(139,105,20,0.12)',  margin: margin.toFixed(1) }
+  if (margin >= 0)  return { grade: 'D', label: 'Low Margin',   color: '#D4A853', bg: 'rgba(212,168,83,0.12)',  margin: margin.toFixed(1) }
+  return              { grade: 'F', label: 'Losing Money',  color: '#B94A3A', bg: 'rgba(185,74,58,0.12)',  margin: margin.toFixed(1) }
 }

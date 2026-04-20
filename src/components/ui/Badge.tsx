@@ -1,92 +1,119 @@
 import { cn } from '@/lib/utils'
 import { LeadStage, LeadSource, ProjectStatus, PaymentStatus } from '@/types'
 
+const variantStyles: Record<string, string> = {
+  success: 'bg-[var(--c-sage-bg)] text-[var(--c-sage)] border border-[var(--c-sage-border)]',
+  info:    'bg-[rgba(122,158,126,0.10)] text-[var(--c-sage-soft)] border border-[rgba(122,158,126,0.20)]',
+  warning: 'bg-[var(--c-warning-bg)] text-[var(--c-gold)] border border-[var(--c-warning-border)]',
+  error:   'bg-[var(--c-danger-bg)] text-[var(--c-danger)] border border-[var(--c-danger-border)]',
+  danger:  'bg-[var(--c-danger-bg)] text-[var(--c-danger)] border border-[var(--c-danger-border)]',
+  purple:  'bg-[rgba(160,120,80,0.12)] text-[var(--c-text-4)] border border-[rgba(160,120,80,0.20)]',
+  muted:   'bg-[var(--c-nested)] text-[var(--c-text-4)] border border-[var(--c-border)]',
+  gold:    'bg-[var(--c-gold-bg)] text-[var(--c-gold)] border border-[var(--c-gold-border)]',
+  // Legacy alias
+  default: 'bg-[var(--c-nested)] text-[var(--c-text-4)] border border-[var(--c-border)]',
+}
+
+function statusToVariant(status: string): string {
+  const s = status.toLowerCase()
+  if (['completed', 'won', 'paid', 'active'].some(x => s.includes(x)))              return 'success'
+  if (['in progress', 'scheduled', 'partial', 'estimate sent'].some(x => s.includes(x))) return 'warning'
+  if (['overdue', 'lost', 'cancelled', 'failed'].some(x => s.includes(x)))          return 'error'
+  if (['on hold', 'inactive'].some(x => s.includes(x)))                              return 'muted'
+  if (['new lead', 'follow-up', 'unpaid'].some(x => s.includes(x)))                 return 'info'
+  return 'muted'
+}
+
 interface BadgeProps {
+  variant?: keyof typeof variantStyles
   children: React.ReactNode
   className?: string
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'gold'
 }
 
-const variantStyles: Record<NonNullable<BadgeProps['variant']>, React.CSSProperties> = {
-  default:  { background: 'var(--bg-elevated, #3a3a3c)', color: 'var(--text-secondary)' },
-  success:  { background: 'var(--success-light)', color: 'var(--success)' },
-  warning:  { background: 'var(--warning-light)', color: 'var(--warning)' },
-  danger:   { background: 'var(--error-light)', color: 'var(--error)' },
-  info:     { background: 'var(--blue-light)', color: 'var(--blue)' },
-  gold:     { background: 'var(--gold-light)', color: 'var(--gold)' },
-}
-
-export function Badge({ children, className, variant = 'default' }: BadgeProps) {
+export function Badge({ variant = 'muted', children, className }: BadgeProps) {
   return (
     <span
-      className={cn('inline-flex items-center', className)}
-      style={{
-        ...variantStyles[variant],
-        borderRadius: 6,
-        padding: '3px 8px',
-        fontSize: 12,
-        fontWeight: 500,
-        letterSpacing: '0.01em',
-        whiteSpace: 'nowrap',
-      }}
+      className={cn(
+        'inline-flex items-center whitespace-nowrap rounded-full px-[10px] py-[3px] text-[11px]',
+        variantStyles[variant] ?? variantStyles.muted,
+        className,
+      )}
+      style={{ fontFamily: "'DM Mono', monospace" }}
     >
       {children}
     </span>
   )
 }
 
-export function StageBadge({ stage }: { stage: LeadStage }) {
-  const stageStyles: Record<LeadStage, React.CSSProperties> = {
-    'New Lead':      { background: 'rgba(53,131,179,0.15)',  color: '#3583b3' },
-    'Estimate Sent': { background: 'rgba(230,171,53,0.15)',  color: '#e6ab35' },
-    'Follow-up':     { background: 'rgba(191,90,242,0.15)',  color: '#bf5af2' },
-    'Won':           { background: 'rgba(48,209,88,0.15)',   color: '#30d158' },
-    'Lost':          { background: 'rgba(255,69,58,0.15)',   color: '#ff453a' },
-    'On Hold':       { background: 'rgba(239,234,226,0.10)', color: '#9a9585' },
-  }
-  const style = stageStyles[stage] ?? stageStyles['On Hold']
+export function StatusBadge({ status, className }: { status: string; className?: string }) {
   return (
-    <span style={{ ...style, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
-      {stage}
-    </span>
+    <Badge variant={statusToVariant(status) as keyof typeof variantStyles} className={className}>
+      {status}
+    </Badge>
   )
+}
+
+export function PaymentBadge({ status, className }: { status: string; className?: string }) {
+  return (
+    <Badge variant={statusToVariant(status) as keyof typeof variantStyles} className={className}>
+      {status}
+    </Badge>
+  )
+}
+
+// ── Preserved specialized badges — callers import these directly ──────────
+
+export function StageBadge({ stage }: { stage: LeadStage }) {
+  const stageVariant: Record<LeadStage, keyof typeof variantStyles> = {
+    'New Lead':      'info',
+    'Estimate Sent': 'warning',
+    'Follow-up':     'purple',
+    'Won':           'success',
+    'Lost':          'error',
+    'On Hold':       'muted',
+  }
+  return <Badge variant={stageVariant[stage] ?? 'muted'}>{stage}</Badge>
 }
 
 export function SourceBadge({ source }: { source: LeadSource }) {
-  const styles: Record<LeadSource, React.CSSProperties> = {
-    Thumbtack:   { background: 'rgba(234,88,12,0.12)', color: '#ea580c' },
-    Referral:    { background: 'var(--gold-light)', color: 'var(--gold)' },
-    Google:      { background: 'var(--blue-light)', color: 'var(--blue)' },
-    Instagram:   { background: 'rgba(219,39,119,0.10)', color: '#db2777' },
-    'Door Knock':{ background: 'var(--bg-elevated, #3a3a3c)', color: 'var(--text-secondary)' },
-    Facebook:    { background: 'rgba(59,130,246,0.12)', color: '#3b82f6' },
-    Yelp:        { background: 'var(--error-light)', color: 'var(--error)' },
-    Other:       { background: 'var(--bg-elevated, #3a3a3c)', color: 'var(--text-secondary)' },
+  const sourceVariant: Record<LeadSource, keyof typeof variantStyles> = {
+    Thumbtack:    'warning',
+    Referral:     'success',
+    Google:       'info',
+    Instagram:    'purple',
+    'Door Knock': 'gold',
+    Facebook:     'info',
+    Yelp:         'error',
+    Other:        'muted',
   }
-  return (
-    <span style={{ ...styles[source] ?? styles.Other, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
-      {source}
-    </span>
-  )
+  return <Badge variant={sourceVariant[source] ?? 'muted'}>{source}</Badge>
 }
 
-export function StatusBadge({ status }: { status: ProjectStatus }) {
-  const config: Record<ProjectStatus, BadgeProps['variant']> = {
-    Scheduled:    'info',
+function projectStatusVariant(s: ProjectStatus): keyof typeof variantStyles {
+  const map: Record<ProjectStatus, keyof typeof variantStyles> = {
+    Scheduled:     'info',
     'In Progress': 'warning',
-    'On Hold':    'default',
-    Completed:    'success',
-    Cancelled:    'danger',
+    'On Hold':     'muted',
+    Completed:     'success',
+    Cancelled:     'error',
   }
-  return <Badge variant={config[status]}>{status}</Badge>
+  return map[s] ?? 'muted'
 }
 
-export function PaymentBadge({ status }: { status: PaymentStatus }) {
-  const config: Record<PaymentStatus, BadgeProps['variant']> = {
-    Unpaid:  'danger',
+function paymentStatusVariant(s: PaymentStatus): keyof typeof variantStyles {
+  const map: Record<PaymentStatus, keyof typeof variantStyles> = {
+    Unpaid:  'error',
     Partial: 'warning',
     Paid:    'success',
-    Overdue: 'danger',
+    Overdue: 'error',
   }
-  return <Badge variant={config[status]}>{status}</Badge>
+  return map[s] ?? 'muted'
+}
+
+export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
+  return <Badge variant={projectStatusVariant(status)}>{status}</Badge>
+}
+
+export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  return <Badge variant={paymentStatusVariant(status)}>{status}</Badge>
 }

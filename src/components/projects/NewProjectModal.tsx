@@ -163,12 +163,12 @@ export function NewProjectModal({ open, onClose, preselectedCustomerId }: NewPro
         {/* Customer selector */}
         {!preselectedCustomerId && (
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[#efeae2] block">Customer <span className="text-[#ef4444]">*</span></label>
+            <label className="text-sm font-medium text-[var(--sg-text-1)] block">Customer <span className="text-[var(--sg-danger)]">*</span></label>
             {selectedCustomer ? (
-              <div className="flex items-center justify-between bg-[#1d1c17] border border-[#2e2d26] rounded-lg p-3">
+              <div className="flex items-center justify-between bg-[var(--sg-base)] border border-[var(--sg-border)] rounded-lg p-3">
                 <div>
-                  <p className="text-sm font-medium text-[#efeae2]">{selectedCustomer.name}</p>
-                  <p className="text-xs text-[#9a9585]">{selectedCustomer.phone || selectedCustomer.email}</p>
+                  <p className="text-sm font-medium text-[var(--sg-text-1)]">{selectedCustomer.name}</p>
+                  <p className="text-xs text-[var(--sg-text-2)]">{selectedCustomer.phone || selectedCustomer.email}</p>
                 </div>
                 <Button type="button" variant="ghost" size="sm" onClick={() => { setSelectedCustomer(null); setValue('customer_id', '') }}>
                   Change
@@ -176,17 +176,17 @@ export function NewProjectModal({ open, onClose, preselectedCustomerId }: NewPro
               </div>
             ) : (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9a9585]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--sg-text-2)]" />
                 <input
                   value={customerSearch}
                   onChange={e => setCustomerSearch(e.target.value)}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                   placeholder="Search customers..."
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#2e2d26] bg-[#1d1c17] text-sm text-[#efeae2] placeholder-[#9a9585] focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--sg-border)] bg-[var(--sg-base)] text-sm text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]"
                 />
                 {showDropdown && customerResults.length > 0 && (
-                  <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-[#252419] border border-[#2e2d26] rounded-lg shadow-xl overflow-hidden">
+                  <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg shadow-xl overflow-hidden">
                     {customerResults.map(c => (
                       <button
                         key={c.id}
@@ -197,24 +197,24 @@ export function NewProjectModal({ open, onClose, preselectedCustomerId }: NewPro
                           setCustomerSearch('')
                           setShowDropdown(false)
                         }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-[#2e2d26] transition-colors"
+                        className="w-full text-left px-4 py-2.5 hover:bg-[var(--sg-elevated)] transition-colors"
                       >
-                        <p className="text-sm font-medium text-[#efeae2]">{c.name}</p>
-                        <p className="text-xs text-[#9a9585]">{c.email || c.phone}</p>
+                        <p className="text-sm font-medium text-[var(--sg-text-1)]">{c.name}</p>
+                        <p className="text-xs text-[var(--sg-text-2)]">{c.email || c.phone}</p>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
             )}
-            {errors.customer_id && <p className="text-xs text-[#ef4444]">{errors.customer_id.message}</p>}
+            {errors.customer_id && <p className="text-xs text-[var(--sg-danger)]">{errors.customer_id.message}</p>}
           </div>
         )}
 
         {preselectedCustomerId && selectedCustomer && (
-          <div className="bg-[#1d1c17] border border-[#2e2d26] rounded-lg p-3">
-            <p className="text-xs text-[#9a9585] mb-0.5">Customer</p>
-            <p className="text-sm font-medium text-[#efeae2]">{selectedCustomer.name}</p>
+          <div className="bg-[var(--sg-base)] border border-[var(--sg-border)] rounded-lg p-3">
+            <p className="text-xs text-[var(--sg-text-2)] mb-0.5">Customer</p>
+            <p className="text-sm font-medium text-[var(--sg-text-1)]">{selectedCustomer.name}</p>
           </div>
         )}
 

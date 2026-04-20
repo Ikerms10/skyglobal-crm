@@ -10,7 +10,7 @@ import { LeadDrawer } from '@/components/leads/LeadDrawer'
 import { AddLeadDrawer } from '@/components/leads/AddLeadDrawer'
 import { CreateProjectModal } from '@/components/leads/CreateProjectModal'
 import { LostReasonModal } from '@/components/leads/LostReasonModal'
-import { Plus } from 'lucide-react'
+import { Plus, Search, Filter } from 'lucide-react'
 import { toast } from 'sonner'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import {
@@ -27,66 +27,112 @@ import {
 import { formatCurrency, cn } from '@/lib/utils'
 
 const STAGES: LeadStage[] = ['New Lead', 'Estimate Sent', 'Follow-up', 'Won', 'Lost', 'On Hold']
-
-const STAGE_BORDER_COLORS: Record<LeadStage, string> = {
-  'New Lead':      'border-t-[#3583b3]',
-  'Estimate Sent': 'border-t-[#e6ab35]',
-  'Follow-up':     'border-t-[#bf5af2]',
-  'Won':           'border-t-[#30d158]',
-  'Lost':          'border-t-[#ff453a]',
-  'On Hold':       'border-t-[#9a9585]',
-}
-
-const STAGE_HEADER_COLORS: Record<LeadStage, string> = {
-  'New Lead':      'text-[#3583b3]',
-  'Estimate Sent': 'text-[#e6ab35]',
-  'Follow-up':     'text-[#bf5af2]',
-  'Won':           'text-[#30d158]',
-  'Lost':          'text-[#ff453a]',
-  'On Hold':       'text-[#9a9585]',
-}
-
 const SOURCES: LeadSource[] = ['Thumbtack', 'Referral', 'Google', 'Instagram', 'Door Knock', 'Facebook', 'Yelp', 'Other']
+
+const STAGE_CONFIG: Record<LeadStage, { border: string; headerColor: string; glow: string }> = {
+  'New Lead':      { border: 'rgba(122,158,126,0.4)', headerColor: '#7A9E7E', glow: 'rgba(122,158,126,0.10)' },
+  'Estimate Sent': { border: 'rgba(139,105,20,0.4)',  headerColor: '#8B6914', glow: 'rgba(139,105,20,0.08)' },
+  'Follow-up':     { border: 'rgba(160,120,80,0.4)',  headerColor: '#A07850', glow: 'rgba(160,120,80,0.08)' },
+  'Won':           { border: 'rgba(74,103,65,0.5)',   headerColor: '#4A6741', glow: 'rgba(74,103,65,0.12)' },
+  'Lost':          { border: 'rgba(185,74,58,0.3)',   headerColor: '#B94A3A', glow: 'rgba(185,74,58,0.04)' },
+  'On Hold':       { border: 'rgba(207,196,180,0.4)', headerColor: '#CFC4B4', glow: 'rgba(207,196,180,0.06)' },
+}
 
 function KanbanColumn({
   stage,
   leads,
-  borderColor,
-  headerColor,
   onCardClick,
 }: {
   stage: LeadStage
   leads: Lead[]
-  borderColor: string
-  headerColor: string
   onCardClick: (lead: Lead) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const totalValue = leads.reduce((sum, l) => sum + (l.estimated_value ?? 0), 0)
+  const cfg = STAGE_CONFIG[stage]
+  const isWon = stage === 'Won'
+  const isLost = stage === 'Lost'
 
   return (
-    <div className={cn(
-      'flex-shrink-0 w-72 bg-[#252419] rounded-xl border border-t-2 border-[#2e2d26] p-3 flex flex-col min-h-[400px] transition-colors',
-      borderColor,
-      isOver && 'bg-[#2e2d26]',
-    )}>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className={`text-sm font-semibold ${headerColor}`}>{stage}</h3>
-        <span className="text-xs text-[#9a9585] bg-[#2e2d26] px-2 py-0.5 rounded-full">{leads.length}</span>
+    <div
+      style={{
+        flexShrink: 0,
+        width: 280,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 400,
+        background: isOver
+          ? `rgba(14,20,32,0.8)`
+          : 'rgba(14,20,32,0.55)',
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        border: `1px solid ${isOver ? cfg.border : 'var(--sg-border)'}`,
+        borderTop: `2px solid ${cfg.border}`,
+        borderRadius: 12,
+        padding: 12,
+        transition: 'border-color 150ms, background 150ms, box-shadow 150ms',
+        boxShadow: isWon
+          ? `0 0 24px rgba(74,103,65,0.15), 0 4px 24px rgba(0,0,0,0.4)`
+          : `0 4px 24px rgba(0,0,0,0.4)`,
+        opacity: isLost ? 0.75 : 1,
+      }}
+    >
+      {/* Column header */}
+      <div style={{ marginBottom: 8, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+          <h3 style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: cfg.headerColor,
+            fontFamily: 'var(--font-rajdhani)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}>
+            {stage}
+          </h3>
+          <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '2px 7px',
+            borderRadius: 10,
+            background: 'rgba(14,20,32,0.7)',
+            border: `1px solid ${cfg.border}`,
+            color: cfg.headerColor,
+            fontFamily: 'var(--font-jetbrains)',
+          }}>
+            {leads.length}
+          </span>
+        </div>
+        {totalValue > 0 && (
+          <p style={{
+            fontSize: 11,
+            color: 'var(--sg-gold)',
+            fontFamily: 'var(--font-jetbrains)',
+            letterSpacing: '0.02em',
+            margin: 0,
+          }}>
+            {formatCurrency(totalValue)}
+          </p>
+        )}
       </div>
-      {totalValue > 0 && (
-        <p className="text-xs text-[#9a9585] mb-2">{formatCurrency(totalValue)} total</p>
-      )}
-      <div
-        ref={setNodeRef}
-        className="flex flex-col gap-2 flex-1"
-      >
+
+      {/* Drop zone */}
+      <div ref={setNodeRef} style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
         {leads.length === 0 ? (
-          <div className={cn(
-            'flex items-center justify-center h-24 border-2 border-dashed rounded-lg transition-colors',
-            isOver ? 'border-[#e6ab35]/50 bg-[#e6ab35]/5' : 'border-[#2e2d26]',
-          )}>
-            <p className="text-[#9a9585] text-xs">Drop here</p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 80,
+            border: `2px dashed ${isOver ? cfg.border : 'var(--sg-border)'}`,
+            borderRadius: 8,
+            background: isOver ? `${cfg.glow}` : 'transparent',
+            transition: 'border-color 150ms, background 150ms',
+          }}>
+            <p style={{ fontSize: 11, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-jetbrains)' }}>
+              Drop here
+            </p>
           </div>
         ) : (
           leads.map(lead => (
@@ -98,9 +144,12 @@ function KanbanColumn({
   )
 }
 
+type FilterMode = 'all' | 'overdue' | 'high-value'
+
 export default function LeadsPage() {
   const [search, setSearch] = useState('')
   const [filterSource, setFilterSource] = useState('')
+  const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [addLeadOpen, setAddLeadOpen] = useState(false)
@@ -146,7 +195,7 @@ export default function LeadsPage() {
         content: `Lead moved to ${stage}`,
       })
     },
-    onError: (_err, vars) => {
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       toast.error('Failed to update stage')
     },
@@ -169,7 +218,6 @@ export default function LeadsPage() {
     const lead = leads.find(l => l.id === leadId)
     if (!lead || lead.stage === newStage || !STAGES.includes(newStage)) return
 
-    // Optimistic update
     queryClient.setQueryData<Lead[]>(['leads'], old =>
       (old ?? []).map(l => l.id === leadId ? { ...l, stage: newStage } : l)
     )
@@ -194,7 +242,6 @@ export default function LeadsPage() {
 
   const handleLostCancel = () => {
     if (lostLead) {
-      // Revert optimistic update
       queryClient.setQueryData<Lead[]>(['leads'], old =>
         (old ?? []).map(l => l.id === lostLead.lead.id ? { ...l, stage: lostLead.prevStage } : l)
       )
@@ -202,55 +249,173 @@ export default function LeadsPage() {
     setLostLead(null)
   }
 
+  const today = new Date().toISOString().split('T')[0]
+
   const filteredLeads = leads.filter(l => {
     const customer = l.customer as { name?: string } | null
     const matchSearch = !debouncedSearch ||
       l.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       customer?.name?.toLowerCase().includes(debouncedSearch.toLowerCase())
     const matchSource = !filterSource || l.source === filterSource
-    return matchSearch && matchSource
+    const matchMode =
+      filterMode === 'all' ? true
+      : filterMode === 'overdue' ? (l.follow_up_date != null && l.follow_up_date < today && !['Won', 'Lost'].includes(l.stage))
+      : filterMode === 'high-value' ? (l.estimated_value != null && l.estimated_value >= 5000)
+      : true
+    return matchSearch && matchSource && matchMode
   })
+
+  const totalPipelineValue = leads
+    .filter(l => !['Won', 'Lost'].includes(l.stage))
+    .reduce((s, l) => s + (l.estimated_value ?? 0), 0)
 
   const activeDragLead = activeDragId ? leads.find(l => l.id === activeDragId) : null
 
-  if (isLoading) return (
-    <div className="p-4 md:p-6">
-      <div className="h-8 mb-6 w-48 bg-[#252419] animate-pulse rounded" />
-      <KanbanSkeleton />
-    </div>
-  )
+  if (isLoading) {
+    return (
+      <div style={{ padding: '24px' }}>
+        <div style={{ height: 32, marginBottom: 24, width: 192, background: 'var(--sg-bg-elevated)', borderRadius: 6 }} className="animate-pulse" />
+        <KanbanSkeleton />
+      </div>
+    )
+  }
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Lead Pipeline</h1>
-          <p className="text-[#9a9585] text-sm">{leads.length} leads total</p>
-        </div>
-        <Button onClick={() => setAddLeadOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Add Lead
-        </Button>
-      </div>
+    <div style={{ padding: '24px', minHeight: '100%' }}>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search leads..."
-          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] w-64"
-        />
-        <select
-          value={filterSource}
-          onChange={e => setFilterSource(e.target.value)}
-          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
-        >
-          <option value="">All Sources</option>
-          {SOURCES.map(s => (
-            <option key={s} value={s}>{s}</option>
+      {/* Header bar */}
+      <div
+        className="glass"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '14px 20px',
+          marginBottom: 20,
+          borderRadius: 12,
+        }}
+      >
+        <div>
+          <h1 style={{
+            fontSize: 26,
+            fontWeight: 700,
+            color: 'var(--sg-text-primary)',
+            margin: 0,
+            fontFamily: 'var(--font-rajdhani)',
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+          }}>
+            Pipeline
+          </h1>
+          <p style={{ fontSize: 12, color: 'var(--sg-gold)', margin: '2px 0 0', fontFamily: 'var(--font-jetbrains)', fontWeight: 600 }}>
+            {formatCurrency(totalPipelineValue)} active
+            <span style={{ color: 'var(--sg-text-muted)', fontWeight: 400 }}> &middot; {leads.length} leads</span>
+          </p>
+        </div>
+
+        {/* Filter pills */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {(['all', 'overdue', 'high-value'] as FilterMode[]).map(mode => (
+            <button
+              key={mode}
+              onClick={() => setFilterMode(mode)}
+              style={{
+                padding: '5px 12px',
+                borderRadius: 20,
+                border: `1px solid ${filterMode === mode ? 'var(--sg-border-bright)' : 'var(--sg-border)'}`,
+                background: filterMode === mode ? 'rgba(139,105,20,0.15)' : 'transparent',
+                color: filterMode === mode ? 'var(--sg-accent)' : 'var(--sg-text-muted)',
+                fontSize: 11,
+                fontWeight: 700,
+                fontFamily: 'var(--font-jetbrains)',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'background 150ms, color 150ms, border-color 150ms',
+              }}
+            >
+              {mode === 'all' ? 'All' : mode === 'overdue' ? 'Overdue' : 'High Value'}
+            </button>
           ))}
-        </select>
+        </div>
+
+        {/* Search + Add */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative' }}>
+            <Search
+              size={13}
+              style={{
+                position: 'absolute',
+                left: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--sg-text-muted)',
+                pointerEvents: 'none',
+              }}
+              aria-hidden="true"
+            />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search leads..."
+              aria-label="Search leads"
+              style={{
+                background: 'rgba(8,12,20,0.6)',
+                border: '1px solid var(--sg-border)',
+                color: 'var(--sg-text-primary)',
+                borderRadius: 8,
+                paddingLeft: 30,
+                paddingRight: 12,
+                paddingTop: 7,
+                paddingBottom: 7,
+                fontSize: 13,
+                width: 200,
+                fontFamily: 'var(--font-ui)',
+                outline: 'none',
+                transition: 'border-color 150ms',
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--sg-border-bright)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--sg-border)' }}
+            />
+          </div>
+          <select
+            value={filterSource}
+            onChange={e => setFilterSource(e.target.value)}
+            aria-label="Filter by source"
+            style={{
+              background: 'rgba(8,12,20,0.6)',
+              border: '1px solid var(--sg-border)',
+              color: filterSource ? 'var(--sg-text-primary)' : 'var(--sg-text-muted)',
+              borderRadius: 8,
+              padding: '7px 10px',
+              fontSize: 13,
+              fontFamily: 'var(--font-ui)',
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="">All Sources</option>
+            {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <Button
+            onClick={() => setAddLeadOpen(true)}
+            style={{
+              background: 'var(--sg-accent)',
+              border: '1px solid var(--sg-border-bright)',
+              color: '#fff',
+              boxShadow: '0 0 16px rgba(139,105,20,0.3)',
+              fontFamily: 'var(--font-rajdhani)',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              fontSize: 12,
+            }}
+          >
+            <Plus size={14} aria-hidden="true" /> Add Lead
+          </Button>
+        </div>
       </div>
 
       {/* Kanban board */}
@@ -260,14 +425,20 @@ export default function LeadsPage() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 min-h-[600px]">
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            overflowX: 'auto',
+            paddingBottom: 24,
+            minHeight: 600,
+          }}
+        >
           {STAGES.map(stage => (
             <KanbanColumn
               key={stage}
               stage={stage}
               leads={filteredLeads.filter(l => l.stage === stage)}
-              borderColor={STAGE_BORDER_COLORS[stage]}
-              headerColor={STAGE_HEADER_COLORS[stage]}
               onCardClick={lead => {
                 setSelectedLead(lead)
                 setDrawerOpen(true)
@@ -278,9 +449,7 @@ export default function LeadsPage() {
 
         <DragOverlay>
           {activeDragLead ? (
-            <div className="opacity-80 rotate-2 scale-105">
-              <LeadCard lead={activeDragLead} onClick={() => {}} isDragOverlay />
-            </div>
+            <LeadCard lead={activeDragLead} onClick={() => {}} isDragOverlay />
           ) : null}
         </DragOverlay>
       </DndContext>

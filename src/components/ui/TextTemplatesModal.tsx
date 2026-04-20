@@ -62,16 +62,16 @@ export function TextTemplatesModal({ open, onClose, customerName = '', customerP
             ? `sms:${customerPhone}?body=${encodeURIComponent(filledBody)}`
             : null
           return (
-            <div key={t.name} className="bg-[#1d1c17] border border-[#2e2d26] rounded-xl p-4">
-              <p className="text-xs font-semibold text-[#e6ab35] uppercase tracking-wider mb-1">{t.name}</p>
-              <p className="text-sm text-[#9a9585] mb-3 leading-relaxed">{filledBody}</p>
+            <div key={t.name} className="bg-[var(--sg-base)] border border-[var(--sg-border)] rounded-xl p-4">
+              <p className="text-xs font-semibold text-[var(--sg-gold)] uppercase tracking-wider mb-1">{t.name}</p>
+              <p className="text-sm text-[var(--sg-text-2)] mb-3 leading-relaxed">{filledBody}</p>
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => handleCopy(t)}
                   className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
                     copied === t.name
-                      ? 'bg-[#10b981] text-white'
-                      : 'bg-[#252419] border border-[#2e2d26] text-[#efeae2] hover:bg-[#2e2d26]'
+                      ? 'bg-[var(--c-sage)] text-[var(--c-text-on-gold)]'
+                      : 'bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] hover:bg-[var(--sg-elevated)]'
                   }`}
                 >
                   {copied === t.name ? '✓ Copied!' : 'Copy'}
@@ -79,7 +79,7 @@ export function TextTemplatesModal({ open, onClose, customerName = '', customerP
                 {smsHref && (
                   <a
                     href={smsHref}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#3583b3] text-white hover:bg-[#2a6d96] transition-colors"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--sg-sky)] text-white hover:bg-[#2a6d96] transition-colors"
                   >
                     Open in Messages →
                   </a>
