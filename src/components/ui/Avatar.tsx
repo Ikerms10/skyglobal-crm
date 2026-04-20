@@ -1,12 +1,12 @@
 import { cn, getInitials } from '@/lib/utils'
 
 const COLORS = [
-  'bg-[#3583b3]', 'bg-[#e6ab35]', 'bg-emerald-700', 'bg-orange-700',
-  'bg-pink-700', 'bg-[#3583b3]', 'bg-teal-700', 'bg-red-700',
+  'bg-[var(--sg-sky)]', 'bg-[var(--sg-gold)]', 'bg-emerald-700', 'bg-orange-700',
+  'bg-pink-700', 'bg-[var(--sg-sky)]', 'bg-teal-700', 'bg-red-700',
 ]
 
 const TEXT_COLORS = [
-  'text-white', 'text-[#1d1c17]', 'text-white', 'text-white',
+  'text-white', 'text-[#000]', 'text-white', 'text-white',
   'text-white', 'text-white', 'text-white', 'text-white',
 ]
 

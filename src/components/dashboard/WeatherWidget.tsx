@@ -104,14 +104,14 @@ export function WeatherWidget() {
   if (error || !weather) {
     return (
       <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-card)',
-        borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+        background: 'var(--c-card)', border: '1px solid var(--c-border-light)',
+        borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--s-card), var(--s-card-inset)',
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
         <span style={{ fontSize: 32 }}>🌤️</span>
         <div>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Orlando, FL</p>
-          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>Orlando, FL</p>
+          <p style={{ fontSize: 12, color: 'var(--c-text-4)', margin: 0 }}>
             {error ? 'Weather unavailable' : 'Loading…'}
           </p>
         </div>
@@ -124,9 +124,9 @@ export function WeatherWidget() {
 
   const alertStyle: React.CSSProperties | null =
     rain > 80
-      ? { background: 'rgba(255,69,58,0.12)', border: '1px solid rgba(255,69,58,0.3)', color: 'var(--error)' }
+      ? { background: 'var(--c-danger-bg)', border: '1px solid var(--c-danger)', color: 'var(--c-danger)' }
       : rain > 50
-      ? { background: 'rgba(255,214,10,0.12)', border: '1px solid rgba(255,214,10,0.3)', color: 'var(--warning)' }
+      ? { background: 'var(--c-gold-bg)', border: '1px solid var(--c-gold-warm)', color: 'var(--c-gold)' }
       : null
 
   return (
@@ -144,29 +144,29 @@ export function WeatherWidget() {
       )}
 
       <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-card)',
-        borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
+        background: 'var(--c-card)', border: '1px solid var(--c-border-light)',
+        borderRadius: 'var(--radius-lg)', padding: '20px 24px', boxShadow: 'var(--s-card), var(--s-card-inset)',
         flex: 1, display: 'flex', flexDirection: 'column',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 44, lineHeight: 1 }}>{emoji}</span>
-            <span style={{ fontSize: 32, fontWeight: 700, color: 'var(--gold)', letterSpacing: '-0.02em' }}>
+            <span style={{ fontSize: 32, fontWeight: 700, fontFamily: "'DM Mono', monospace", color: 'var(--c-text-1)', letterSpacing: '-0.02em' }}>
               {weather.temp}°
             </span>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Orlando, FL</p>
-            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>for painting crews</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>Orlando, FL</p>
+            <p style={{ fontSize: 11, color: 'var(--c-text-4)', margin: 0 }}>for painting crews</p>
           </div>
         </div>
 
         {/* Details */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
-          <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>💨 {weather.windSpeed} mph</span>
-          <span style={{ fontSize: 13, color: rain > 50 ? 'var(--warning)' : 'var(--text-tertiary)' }}>
+          <span style={{ fontSize: 13, color: 'var(--c-text-3)' }}>{label}</span>
+          <span style={{ fontSize: 13, color: 'var(--c-text-4)' }}>💨 {weather.windSpeed} mph</span>
+          <span style={{ fontSize: 13, color: rain > 50 ? 'var(--c-gold)' : 'var(--c-text-4)' }}>
             🌧️ {rain}%
           </span>
         </div>
@@ -178,17 +178,17 @@ export function WeatherWidget() {
             return (
               <div key={i} style={{
                 flex: 1, textAlign: 'center', padding: '10px 8px',
-                background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)',
+                background: 'var(--c-nested)', borderRadius: 'var(--radius-md)',
               }}>
-                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 4px' }}>
+                <p style={{ fontSize: 9, color: 'var(--c-text-4)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 4px' }}>
                   {day.day}
                 </p>
                 <span style={{ fontSize: 20 }}>{info.emoji}</span>
-                <p style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 600, margin: '4px 0 0' }}>
-                  {day.high}° <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>{day.low}°</span>
+                <p style={{ fontSize: 12, color: 'var(--c-text-1)', fontWeight: 600, margin: '4px 0 0' }}>
+                  {day.high}° <span style={{ color: 'var(--c-text-4)', fontWeight: 400 }}>{day.low}°</span>
                 </p>
                 {day.rain > 30 && (
-                  <p style={{ fontSize: 10, color: 'var(--warning)', margin: '2px 0 0' }}>{day.rain}%</p>
+                  <p style={{ fontSize: 10, color: 'var(--c-gold)', margin: '2px 0 0' }}>{day.rain}%</p>
                 )}
               </div>
             )

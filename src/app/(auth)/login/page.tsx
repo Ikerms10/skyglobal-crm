@@ -60,10 +60,10 @@ function OTPInput({ onComplete }: { onComplete: (code: string) => void }) {
           style={{
             width: 44, height: 52, textAlign: 'center',
             fontSize: 20, fontWeight: 700,
-            background: 'var(--bg-input)',
-            border: `1px solid ${d ? 'var(--border-focus)' : 'var(--border-subtle)'}`,
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--text-primary)',
+            background: 'var(--c-card)',
+            border: `1px solid ${d ? 'var(--c-sage-soft)' : 'var(--c-border)'}`,
+            borderRadius: 'var(--r-sm)',
+            color: 'var(--c-text-1)',
             outline: 'none',
             transition: 'border-color 150ms',
           }}
@@ -175,12 +175,12 @@ export default function LoginPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: 'var(--bg-input)',
-    border: '1px solid var(--border-subtle)',
-    borderRadius: 'var(--radius-md)',
+    background: 'var(--c-card)',
+    border: '1px solid var(--c-border)',
+    borderRadius: 'var(--r-sm)',
     padding: '10px 14px',
     fontSize: 15,
-    color: 'var(--text-primary)',
+    color: 'var(--c-text-1)',
     outline: 'none',
     transition: 'border-color 150ms, box-shadow 150ms',
   }
@@ -189,15 +189,15 @@ export default function LoginPage() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Two-factor verification</h2>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 6 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--c-text-1)', margin: 0 }}>Two-factor verification</h2>
+          <p style={{ fontSize: 14, color: 'var(--c-text-3)', marginTop: 6 }}>
             Enter the 6-digit code sent to <strong>{pendingEmail}</strong>
           </p>
         </div>
 
         {otpLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
-            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--gold)' }} />
+            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--c-gold)' }} />
           </div>
         ) : (
           <OTPInput onComplete={verifyOTP} />
@@ -206,7 +206,7 @@ export default function LoginPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button
             onClick={() => setOtpScreen(false)}
-            style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            style={{ fontSize: 13, color: 'var(--c-text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
             ← Back to login
           </button>
@@ -214,7 +214,7 @@ export default function LoginPage() {
             onClick={resendOTP}
             disabled={resendCooldown > 0}
             style={{
-              fontSize: 13, color: resendCooldown > 0 ? 'var(--text-tertiary)' : 'var(--gold)',
+              fontSize: 13, color: resendCooldown > 0 ? 'var(--c-text-4)' : 'var(--c-gold)',
               background: 'none', border: 'none', cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer', padding: 0,
             }}
           >
@@ -228,34 +228,34 @@ export default function LoginPage() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Sign in</h2>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 4 }}>Access your CRM dashboard</p>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--c-text-1)', margin: 0 }}>Sign in</h2>
+        <p style={{ fontSize: 14, color: 'var(--c-text-3)', marginTop: 4 }}>Access your CRM dashboard</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Email</label>
+        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--c-text-3)' }}>Email</label>
         <input
           {...register('email')}
           type="email"
           placeholder="you@example.com"
           style={inputStyle}
-          onFocus={e => { e.currentTarget.style.borderColor = 'var(--border-focus)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--gold-light)' }}
-          onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.boxShadow = 'none' }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(122,158,126,0.18)' }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)'; e.currentTarget.style.boxShadow = 'none' }}
         />
-        {errors.email && <p style={{ fontSize: 12, color: 'var(--error)' }}>{errors.email.message}</p>}
+        {errors.email && <p style={{ fontSize: 12, color: 'var(--c-danger)' }}>{errors.email.message}</p>}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Password</label>
+        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--c-text-3)' }}>Password</label>
         <input
           {...register('password')}
           type="password"
           placeholder="••••••••"
           style={inputStyle}
-          onFocus={e => { e.currentTarget.style.borderColor = 'var(--border-focus)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--gold-light)' }}
-          onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.boxShadow = 'none' }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(122,158,126,0.18)' }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)'; e.currentTarget.style.boxShadow = 'none' }}
         />
-        {errors.password && <p style={{ fontSize: 12, color: 'var(--error)' }}>{errors.password.message}</p>}
+        {errors.password && <p style={{ fontSize: 12, color: 'var(--c-danger)' }}>{errors.password.message}</p>}
       </div>
 
       <button
@@ -263,7 +263,7 @@ export default function LoginPage() {
         disabled={loading}
         style={{
           width: '100%', height: 44, borderRadius: 'var(--radius-md)',
-          background: 'var(--gold)', color: 'var(--gold-text)',
+          background: 'var(--c-gold)', color: 'var(--c-text-on-dark)',
           fontSize: 15, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           opacity: loading ? 0.6 : 1,
@@ -277,7 +277,7 @@ export default function LoginPage() {
         {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : 'Sign in'}
       </button>
 
-      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-tertiary)' }}>
+      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--c-text-4)' }}>
         SkyGlobal Renovations — Internal Access Only
       </p>
     </form>

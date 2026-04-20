@@ -20,17 +20,17 @@ import { useEffect, useRef } from 'react'
 type Timeframe = 'this_month' | 'last_month' | 'this_year' | 'all_time'
 
 const SOURCE_COLORS: Record<string, string> = {
-  Thumbtack: '#3583b3',
-  Referral: '#10b981',
-  Google: '#e6ab35',
-  Instagram: '#8b5cf6',
-  'Door Knock': '#f97316',
-  Facebook: '#6366f1',
-  Yelp: '#ef4444',
-  Other: '#9a9585',
+  Thumbtack: '#7A9E7E',
+  Referral: '#4A6741',
+  Google: '#8B6914',
+  Instagram: '#A07850',
+  'Door Knock': '#D4A853',
+  Facebook: '#CFC4B4',
+  Yelp: '#B94A3A',
+  Other: '#7A6652',
 }
 
-const EXPENSE_COLORS = ['#e6ab35','#3583b3','#10b981','#ef4444','#8b5cf6','#f97316','#6366f1','#9a9585']
+const EXPENSE_COLORS = ['#8B6914','#7A9E7E','#4A6741','#B94A3A','#A07850','#D4A853','#CFC4B4','#7A6652']
 
 export default function ReportsPage() {
   const router = useRouter()
@@ -57,7 +57,7 @@ export default function ReportsPage() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user || cancelled) return
 
-        const [p, l, e, pe, pep] = await Promise.all([
+        const [p, l, e, pe] = await Promise.all([
           supabase.from('projects')
             .select('id, title, contract_value, amount_paid, lead_cost, type, status, customer_id, start_date, created_at, customers(name, id)')
             .eq('user_id', user.id).is('deleted_at', null),
@@ -70,17 +70,15 @@ export default function ReportsPage() {
           supabase.from('project_expenses')
             .select('id, amount, category, date, project_id')
             .eq('user_id', user.id),
-          supabase.from('project_expenses')
-            .select('id, amount, category, date, project_id')
-            .eq('user_id', user.id),
         ])
 
         if (!cancelled) {
           setProjects(p.data ?? [])
           setLeads(l.data ?? [])
           setExpenses(e.data ?? [])
+          // Same data used for both expense totals and per-project lookup
           setProjExpenses(pe.data ?? [])
-          setProjExpByProject(pep.data ?? [])
+          setProjExpByProject(pe.data ?? [])
         }
       } catch (_) {}
       if (!cancelled) setLoading(false)
@@ -254,12 +252,12 @@ export default function ReportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Reports</h1>
-          <p className="text-[#9a9585] text-sm">Business analytics and insights</p>
+          <p className="text-[var(--sg-text-2)] text-sm">Business analytics and insights</p>
         </div>
-        <div className="flex items-center gap-1 bg-[#252419] border border-[#2e2d26] rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg p-1">
           {([['this_month','This Month'],['last_month','Last Month'],['this_year','This Year'],['all_time','All Time']] as [Timeframe, string][]).map(([val, label]) => (
             <button key={val} onClick={() => setTimeframe(val)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${timeframe === val ? 'bg-[#e6ab35] text-[#1d1c17]' : 'text-[#9a9585] hover:text-[#efeae2]'}`}>
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${timeframe === val ? 'bg-[var(--sg-sky)] text-[var(--sg-base)]' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]'}`}>
               {label}
             </button>
           ))}
@@ -269,41 +267,41 @@ export default function ReportsPage() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: formatCurrency(kpi.revenue), color: '#e6ab35' },
-          { label: 'Total Expenses', value: formatCurrency(kpi.totalExp), color: '#ef4444' },
-          { label: 'Gross Profit', value: formatCurrency(kpi.profit), color: kpi.profit >= 0 ? '#10b981' : '#ef4444' },
-          { label: 'Profit Margin', value: `${kpi.margin.toFixed(1)}%`, color: kpi.margin >= 20 ? '#10b981' : kpi.margin < 0 ? '#ef4444' : '#e6ab35' },
+          { label: 'Total Revenue', value: formatCurrency(kpi.revenue), color: '#8B6914' },
+          { label: 'Total Expenses', value: formatCurrency(kpi.totalExp), color: '#B94A3A' },
+          { label: 'Gross Profit', value: formatCurrency(kpi.profit), color: kpi.profit >= 0 ? '#4A6741' : '#B94A3A' },
+          { label: 'Profit Margin', value: `${kpi.margin.toFixed(1)}%`, color: kpi.margin >= 20 ? '#4A6741' : kpi.margin < 0 ? '#B94A3A' : '#8B6914' },
         ].map(card => (
-          <div key={card.label} className="bg-[#252419] border border-[#2e2d26] rounded-xl p-5">
-            <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">{card.label}</p>
+          <div key={card.label} className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-5">
+            <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">{card.label}</p>
             <p className="text-2xl font-bold" style={{ color: card.color }}>{card.value}</p>
           </div>
         ))}
       </div>
 
       {/* Revenue vs Expenses Bar Chart */}
-      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-        <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Revenue vs Expenses</h3>
+      <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
+        <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Revenue vs Expenses</h3>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={monthlyData} barCategoryGap="25%">
-            <CartesianGrid strokeDasharray="3 3" stroke="#2e2d26" vertical={false} />
-            <XAxis dataKey="month" tick={{ fill: '#9a9585', fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: '#9a9585', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--sg-border)" vertical={false} />
+            <XAxis dataKey="month" tick={{ fill: '#A07850', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: '#A07850', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
             <Tooltip
-              contentStyle={{ backgroundColor: '#1d1c17', border: '1px solid #2e2d26', borderRadius: 8 }}
-              labelStyle={{ color: '#efeae2', fontWeight: 600 }}
+              contentStyle={{ backgroundColor: '#FEFCF8', border: '1px solid #E0D5C7', borderRadius: 8 }}
+              labelStyle={{ color: 'var(--sg-text-1)', fontWeight: 600 }}
               formatter={(v: any, name: string) => [formatCurrency(Number(v)), name.charAt(0).toUpperCase() + name.slice(1)]}
             />
-            <Bar dataKey="revenue" name="revenue" fill="#e6ab35" radius={[4,4,0,0]} />
-            <Bar dataKey="expenses" name="expenses" fill="#ef4444" radius={[4,4,0,0]} />
-            <Bar dataKey="profit" name="profit" fill="#3583b3" radius={[4,4,0,0]} />
+            <Bar dataKey="revenue" name="revenue" fill="#8B6914" radius={[4,4,0,0]} />
+            <Bar dataKey="expenses" name="expenses" fill="#B94A3A" radius={[4,4,0,0]} />
+            <Bar dataKey="profit" name="profit" fill="#4A6741" radius={[4,4,0,0]} />
           </BarChart>
         </ResponsiveContainer>
         <div className="flex items-center gap-6 mt-2 justify-center">
-          {[['Revenue','#e6ab35'],['Expenses','#ef4444'],['Profit','#3583b3']].map(([l,c]) => (
+          {[['Revenue','#8B6914'],['Expenses','#B94A3A'],['Profit','#4A6741']].map(([l,c]) => (
             <div key={l} className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: c }} />
-              <span className="text-xs text-[#9a9585]">{l}</span>
+              <span className="text-xs text-[var(--sg-text-2)]">{l}</span>
             </div>
           ))}
         </div>
@@ -312,49 +310,49 @@ export default function ReportsPage() {
       {/* Lead Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Lead Sources Donut */}
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Lead Sources</h3>
+        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
+          <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Lead Sources</h3>
           {sourceData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={sourceData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={2}>
                     {sourceData.map((entry, i) => (
-                      <Cell key={i} fill={SOURCE_COLORS[entry.name] ?? '#9a9585'} />
+                      <Cell key={i} fill={SOURCE_COLORS[entry.name] ?? '#475569'} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#1d1c17', border: '1px solid #2e2d26', borderRadius: 8 }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--sg-elevated)', border: '1px solid var(--sg-border-md)', borderRadius: 8 }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
                 {sourceData.map(s => (
                   <div key={s.name} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_COLORS[s.name] ?? '#9a9585' }} />
-                    <span className="text-xs text-[#9a9585]">{s.name}: {s.value}</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_COLORS[s.name] ?? '#475569' }} />
+                    <span className="text-xs text-[var(--sg-text-2)]">{s.name}: {s.value}</span>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-[220px] text-[#9a9585] text-sm">No leads yet</div>
+            <div className="flex items-center justify-center h-[220px] text-[var(--sg-text-2)] text-sm">No leads yet</div>
           )}
         </div>
 
         {/* Lead Stage Funnel */}
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Lead Stage Funnel</h3>
+        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
+          <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Lead Stage Funnel</h3>
           <div className="space-y-3 mt-2">
             {stageData.map(s => {
               const maxCount = Math.max(...stageData.map(x => x.count), 1)
               const pct = (s.count / maxCount) * 100
-              const color = s.stage === 'Won' ? '#10b981' : s.stage === 'Lost' ? '#ef4444' : '#3583b3'
+              const color = s.stage === 'Won' ? '#4A6741' : s.stage === 'Lost' ? '#B94A3A' : '#7A9E7E'
               return (
                 <div key={s.stage}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[#9a9585]">{s.stage}</span>
-                    <span className="text-[#efeae2] font-medium">{s.count}</span>
+                    <span className="text-[var(--sg-text-2)]">{s.stage}</span>
+                    <span className="text-[var(--sg-text-1)] font-medium">{s.count}</span>
                   </div>
-                  <div className="h-2 bg-[#1d1c17] rounded-full overflow-hidden">
+                  <div className="h-2 bg-[var(--sg-base)] rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
                   </div>
                 </div>
@@ -365,8 +363,8 @@ export default function ReportsPage() {
       </div>
 
       {/* Expenses Breakdown Donut */}
-      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-        <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Expenses by Category</h3>
+      <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
+        <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Expenses by Category</h3>
         {expBreakdown.length > 0 ? (
           <div className="flex flex-col lg:flex-row gap-6 items-center">
             <div className="flex-shrink-0">
@@ -375,7 +373,7 @@ export default function ReportsPage() {
                   <Pie data={expBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" paddingAngle={2}>
                     {expBreakdown.map((_, i) => <Cell key={i} fill={EXPENSE_COLORS[i % EXPENSE_COLORS.length]} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#1d1c17', border: '1px solid #2e2d26', borderRadius: 8 }} formatter={(v: any) => [formatCurrency(Number(v)), '']} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--sg-elevated)', border: '1px solid var(--sg-border-md)', borderRadius: 8 }} formatter={(v: any) => [formatCurrency(Number(v)), '']} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -386,23 +384,23 @@ export default function ReportsPage() {
                 return (
                   <div key={cat.name} className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length] }} />
-                    <span className="text-sm text-[#9a9585] flex-1">{cat.name}</span>
-                    <span className="text-sm text-[#efeae2]">{formatCurrency(cat.value)}</span>
-                    <span className="text-xs text-[#9a9585] w-10 text-right">{pct}%</span>
+                    <span className="text-sm text-[var(--sg-text-2)] flex-1">{cat.name}</span>
+                    <span className="text-sm text-[var(--sg-text-1)]">{formatCurrency(cat.value)}</span>
+                    <span className="text-xs text-[var(--sg-text-2)] w-10 text-right">{pct}%</span>
                   </div>
                 )
               })}
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-[180px] text-[#9a9585] text-sm">No expenses recorded</div>
+          <div className="flex items-center justify-center h-[180px] text-[var(--sg-text-2)] text-sm">No expenses recorded</div>
         )}
       </div>
 
       {/* Monthly P&L Table */}
-      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+      <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[#efeae2]">Monthly P&L</h3>
+          <h3 className="text-sm font-semibold text-[var(--sg-text-1)]">Monthly P&L</h3>
           <Button variant="ghost" size="sm" onClick={handleExportPL}>
             <Download className="h-4 w-4 mr-1" /> Export CSV
           </Button>
@@ -410,35 +408,35 @@ export default function ReportsPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b-2 border-b-[#e6ab35]">
+              <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
                 {['Month','Revenue','Expenses','Gross Profit','Margin %'].map(h => (
-                  <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[#efeae2] uppercase tracking-wider">{h}</th>
+                  <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {plTable.map((row, i) => (
-                <tr key={row.month} className={`border-b border-[#2e2d26] ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'}`}>
-                  <td className="px-4 py-3 text-sm text-[#efeae2] font-medium">{row.month}</td>
-                  <td className="px-4 py-3 text-sm text-[#e6ab35]">{formatCurrency(row.revenue)}</td>
-                  <td className="px-4 py-3 text-sm text-[#ef4444]">{formatCurrency(row.expenses)}</td>
-                  <td className={`px-4 py-3 text-sm font-medium ${row.profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+                <tr key={row.month} className="data-table border-b border-[var(--sg-border)] bg-[var(--sg-surface)]">
+                  <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium">{row.month}</td>
+                  <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">{formatCurrency(row.revenue)}</td>
+                  <td className="px-4 py-3 text-sm text-[var(--sg-danger)]">{formatCurrency(row.expenses)}</td>
+                  <td className={`px-4 py-3 text-sm font-medium ${row.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}>
                     {formatCurrency(row.profit)}
                   </td>
-                  <td className={`px-4 py-3 text-sm ${row.margin >= 20 ? 'text-[#10b981]' : row.margin < 0 ? 'text-[#ef4444]' : 'text-[#e6ab35]'}`}>
+                  <td className={`px-4 py-3 text-sm ${row.margin >= 20 ? 'text-[var(--sg-success)]' : row.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}>
                     {row.margin}%
                   </td>
                 </tr>
               ))}
               {/* Totals row */}
-              <tr className="border-t-2 border-t-[#e6ab35]">
-                <td className="px-4 py-3 text-sm font-bold text-[#efeae2]">TOTALS</td>
-                <td className="px-4 py-3 text-sm font-bold text-[#e6ab35]">{formatCurrency(plTotals.revenue)}</td>
-                <td className="px-4 py-3 text-sm font-bold text-[#ef4444]">{formatCurrency(plTotals.expenses)}</td>
-                <td className={`px-4 py-3 text-sm font-bold ${plTotals.profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+              <tr className="bg-[var(--sg-elevated)] border-t border-[var(--sg-border-md)]">
+                <td className="px-4 py-3 text-sm font-bold text-[var(--sg-text-1)]">TOTALS</td>
+                <td className="px-4 py-3 text-sm font-bold text-[var(--sg-gold)]">{formatCurrency(plTotals.revenue)}</td>
+                <td className="px-4 py-3 text-sm font-bold text-[var(--sg-danger)]">{formatCurrency(plTotals.expenses)}</td>
+                <td className={`px-4 py-3 text-sm font-bold ${plTotals.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}>
                   {formatCurrency(plTotals.profit)}
                 </td>
-                <td className={`px-4 py-3 text-sm font-bold ${plTotals.margin >= 20 ? 'text-[#10b981]' : plTotals.margin < 0 ? 'text-[#ef4444]' : 'text-[#e6ab35]'}`}>
+                <td className={`px-4 py-3 text-sm font-bold ${plTotals.margin >= 20 ? 'text-[var(--sg-success)]' : plTotals.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}>
                   {plTotals.margin}%
                 </td>
               </tr>
@@ -448,71 +446,71 @@ export default function ReportsPage() {
       </div>
 
       {/* Top Customers Table */}
-      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-        <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Top Customers by Revenue</h3>
+      <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
+        <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Top Customers by Revenue</h3>
         {topCustomers.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b-2 border-b-[#e6ab35]">
+                <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
                   {['#','Customer','Projects','Revenue','Avg Project','Last Project'].map(h => (
-                    <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[#efeae2] uppercase tracking-wider">{h}</th>
+                    <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {topCustomers.map((c, i) => (
                   <tr key={c.id} onClick={() => router.push(`/customers/${c.id}`)}
-                    className={`border-b border-[#2e2d26] cursor-pointer transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
-                    <td className="px-4 py-3 text-sm text-[#9a9585]">{i + 1}</td>
-                    <td className="px-4 py-3 text-sm text-[#efeae2] font-medium">{c.name}</td>
-                    <td className="px-4 py-3 text-sm text-[#9a9585]">{c.projects}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{formatCurrency(c.revenue)}</td>
-                    <td className="px-4 py-3 text-sm text-[#9a9585]">{c.projects > 0 ? formatCurrency(c.revenue / c.projects) : '—'}</td>
-                    <td className="px-4 py-3 text-sm text-[#9a9585]">{c.lastProject || '—'}</td>
+                    className="data-table border-b border-[var(--sg-border)] cursor-pointer transition-colors bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]">
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{i + 1}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium">{c.name}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{c.projects}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">{formatCurrency(c.revenue)}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{c.projects > 0 ? formatCurrency(c.revenue / c.projects) : '—'}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{c.lastProject || '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="text-[#9a9585] text-sm text-center py-8">No project data yet</p>
+          <p className="text-[var(--sg-text-2)] text-sm text-center py-8">No project data yet</p>
         )}
       </div>
 
       {/* Project Performance Table */}
-      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
-        <h3 className="text-sm font-semibold text-[#efeae2] mb-4">Project Performance</h3>
+      <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
+        <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Project Performance</h3>
         {projectPerf.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b-2 border-b-[#e6ab35]">
+                <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
                   {['Project','Customer','Status','Contract','Costs','Profit','Margin'].map(h => (
-                    <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[#efeae2] uppercase tracking-wider">{h}</th>
+                    <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {projectPerf.map((p, i) => (
                   <tr key={p.id} onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)}
-                    className={`border-b border-[#2e2d26] cursor-pointer transition-colors ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}>
-                    <td className="px-4 py-3 text-sm text-[#efeae2] font-medium max-w-[180px] truncate">{p.title}</td>
-                    <td className="px-4 py-3 text-sm text-[#9a9585]">{p.customerName}</td>
+                    className="data-table border-b border-[var(--sg-border)] cursor-pointer transition-colors bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]">
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium max-w-[180px] truncate">{p.title}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{p.customerName}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        p.status === 'Completed' ? 'bg-[#10b981]/15 text-[#10b981]' :
-                        p.status === 'In Progress' ? 'bg-[#e6ab35]/15 text-[#e6ab35]' :
-                        p.status === 'Cancelled' ? 'bg-[#ef4444]/15 text-[#ef4444]' :
-                        'bg-[#3583b3]/15 text-[#3583b3]'
+                        p.status === 'Completed' ? 'bg-[rgba(74,103,65,0.12)] text-[var(--sg-success)]' :
+                        p.status === 'In Progress' ? 'bg-[rgba(139,105,20,0.12)] text-[var(--sg-gold)]' :
+                        p.status === 'Cancelled' ? 'bg-[rgba(185,74,58,0.12)] text-[var(--sg-danger)]' :
+                        'bg-[rgba(122,158,126,0.10)] text-[var(--sg-sky)]'
                       }`}>{p.status}</span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-[#e6ab35]">{formatCurrency(p.contract_value ?? 0)}</td>
-                    <td className="px-4 py-3 text-sm text-[#ef4444]">{formatCurrency(p.costs)}</td>
-                    <td className={`px-4 py-3 text-sm font-medium ${p.profit >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">{formatCurrency(p.contract_value ?? 0)}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-danger)]">{formatCurrency(p.costs)}</td>
+                    <td className={`px-4 py-3 text-sm font-medium ${p.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}>
                       {formatCurrency(p.profit)}
                     </td>
-                    <td className={`px-4 py-3 text-sm ${p.margin >= 20 ? 'text-[#10b981]' : p.margin < 0 ? 'text-[#ef4444]' : 'text-[#e6ab35]'}`}>
+                    <td className={`px-4 py-3 text-sm ${p.margin >= 20 ? 'text-[var(--sg-success)]' : p.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}>
                       {p.margin}%
                     </td>
                   </tr>
@@ -521,7 +519,7 @@ export default function ReportsPage() {
             </table>
           </div>
         ) : (
-          <p className="text-[#9a9585] text-sm text-center py-8">No projects yet</p>
+          <p className="text-[var(--sg-text-2)] text-sm text-center py-8">No projects yet</p>
         )}
       </div>
     </div>

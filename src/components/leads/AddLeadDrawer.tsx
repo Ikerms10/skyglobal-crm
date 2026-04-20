@@ -149,7 +149,7 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
       <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="p-5 space-y-5">
         {/* Customer section */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-[#efeae2] block">Customer</label>
+          <label className="text-sm font-medium text-[var(--sg-text-1)] block">Customer</label>
           <div className="flex gap-2">
             <button
               type="button"
@@ -157,8 +157,8 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
               className={cn(
                 'flex-1 py-2 text-sm rounded-lg border transition-colors',
                 customerMode === 'existing'
-                  ? 'bg-[#e6ab35] border-[#e6ab35] text-[#1d1c17] font-semibold'
-                  : 'border-[#2e2d26] text-[#9a9585] hover:text-[#efeae2]',
+                  ? 'bg-[var(--sg-gold)] border-[var(--sg-gold)] text-[#000] font-semibold'
+                  : 'border-[var(--sg-border)] text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]',
               )}
             >
               Existing Customer
@@ -169,8 +169,8 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
               className={cn(
                 'flex-1 py-2 text-sm rounded-lg border transition-colors',
                 customerMode === 'new'
-                  ? 'bg-[#e6ab35] border-[#e6ab35] text-[#1d1c17] font-semibold'
-                  : 'border-[#2e2d26] text-[#9a9585] hover:text-[#efeae2]',
+                  ? 'bg-[var(--sg-gold)] border-[var(--sg-gold)] text-[#000] font-semibold'
+                  : 'border-[var(--sg-border)] text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]',
               )}
             >
               New Customer
@@ -179,10 +179,10 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
 
           {customerMode === 'existing' ? (
             selectedCustomer ? (
-              <div className="flex items-center justify-between bg-[#1d1c17] border border-[#2e2d26] rounded-lg p-3">
+              <div className="flex items-center justify-between bg-[var(--sg-base)] border border-[var(--sg-border)] rounded-lg p-3">
                 <div>
-                  <p className="text-sm font-medium text-[#efeae2]">{selectedCustomer.name}</p>
-                  <p className="text-xs text-[#9a9585]">{selectedCustomer.phone || selectedCustomer.email}</p>
+                  <p className="text-sm font-medium text-[var(--sg-text-1)]">{selectedCustomer.name}</p>
+                  <p className="text-xs text-[var(--sg-text-2)]">{selectedCustomer.phone || selectedCustomer.email}</p>
                 </div>
                 <Button
                   type="button"
@@ -195,16 +195,16 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
               </div>
             ) : (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9a9585]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--sg-text-2)]" />
                 <input
                   {...register('customer_search')}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                   placeholder="Search existing customers..."
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#2e2d26] bg-[#1d1c17] text-sm text-[#efeae2] placeholder-[#9a9585] focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--sg-border)] bg-[var(--sg-base)] text-sm text-[var(--sg-text-1)] placeholder-[var(--sg-text-2)] focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]"
                 />
                 {showDropdown && customerResults.length > 0 && (
-                  <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-[#252419] border border-[#2e2d26] rounded-lg shadow-xl overflow-hidden">
+                  <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg shadow-xl overflow-hidden">
                     {customerResults.map(c => (
                       <button
                         key={c.id}
@@ -214,10 +214,10 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
                           setShowDropdown(false)
                           reset({ ...DEFAULT_VALUES, customer_search: '' })
                         }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-[#2e2d26] transition-colors"
+                        className="w-full text-left px-4 py-2.5 hover:bg-[var(--sg-elevated)] transition-colors"
                       >
-                        <p className="text-sm font-medium text-[#efeae2]">{c.name}</p>
-                        <p className="text-xs text-[#9a9585]">{c.email || c.phone}</p>
+                        <p className="text-sm font-medium text-[var(--sg-text-1)]">{c.name}</p>
+                        <p className="text-xs text-[var(--sg-text-2)]">{c.email || c.phone}</p>
                       </button>
                     ))}
                   </div>
@@ -225,10 +225,10 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
               </div>
             )
           ) : (
-            <div className="space-y-3 p-3 bg-[#1d1c17] rounded-lg border border-[#2e2d26]">
+            <div className="space-y-3 p-3 bg-[var(--sg-base)] rounded-lg border border-[var(--sg-border)]">
               <div className="flex items-center gap-2 mb-1">
-                <UserPlus className="h-4 w-4 text-[#3583b3]" />
-                <span className="text-sm text-[#3583b3] font-medium">New Customer</span>
+                <UserPlus className="h-4 w-4 text-[var(--sg-sky)]" />
+                <span className="text-sm text-[var(--sg-sky)] font-medium">New Customer</span>
               </div>
               <Input label="Name" {...register('new_customer_name')} placeholder="John Smith" required />
               <Input label="Phone" {...register('new_customer_phone')} placeholder="(407) 555-0123" />

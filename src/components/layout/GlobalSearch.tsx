@@ -26,7 +26,11 @@ function getRecent(): RecentItem[] {
   } catch { return [] }
 }
 
-const TYPE_ICONS = { customer: '👤', lead: '🎯', project: '📋' }
+const TYPE_ICON_MAP = {
+  customer: <User size={13} aria-hidden="true" />,
+  lead:     <Target size={13} aria-hidden="true" />,
+  project:  <Briefcase size={13} aria-hidden="true" />,
+}
 
 export function GlobalSearch() {
   const [query, setQuery] = useState('')
@@ -83,7 +87,6 @@ export function GlobalSearch() {
     enabled: debouncedQuery.length >= 2,
   })
 
-  // Flat list for keyboard navigation
   const allResults: { href: string; label: string; sub: string; type: 'customer' | 'lead' | 'project'; id: string }[] = []
   if (data) {
     data.customers.forEach((c: any) => allResults.push({ href: `/customers/${c.id}`, label: c.name, sub: c.phone || c.email || c.type, type: 'customer', id: c.id }))
@@ -126,10 +129,33 @@ export function GlobalSearch() {
 
   const clearSearch = () => { setQuery(''); setOpen(false); setHighlight(-1) }
 
+  const sectionHeaderStyle: React.CSSProperties = {
+    fontSize: 9,
+    fontWeight: 700,
+    color: 'var(--c-text-3)',
+    padding: '8px 14px 4px',
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    fontFamily: "'DM Mono', monospace",
+    background: 'var(--c-nested)',
+    display: 'block',
+  }
+
   return (
     <div ref={ref} className="relative max-w-md w-full">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9a9585] pointer-events-none" />
+      <div style={{ position: 'relative' }}>
+        <Search
+          style={{
+            position: 'absolute',
+            left: 11,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--c-text-4)',
+            pointerEvents: 'none',
+          }}
+          size={14}
+          aria-hidden="true"
+        />
         <input
           ref={inputRef}
           value={query}
@@ -137,31 +163,101 @@ export function GlobalSearch() {
           onFocus={() => { setOpen(true); setRecent(getRecent()) }}
           onKeyDown={handleKeyDown}
           placeholder="Search... (⌘K)"
-          className="w-full bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
-          style={{ fontSize: 14 }}
+          aria-label="Global search"
+          aria-expanded={showDropdown}
+          aria-autocomplete="list"
+          style={{
+            width: '100%',
+            background: 'var(--c-nested)',
+            border: '1px solid var(--c-border)',
+            color: 'var(--c-text-2)',
+            borderRadius: 'var(--r-sm)',
+            paddingLeft: 34,
+            paddingRight: 32,
+            paddingTop: 7,
+            paddingBottom: 7,
+            fontSize: 13,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            outline: 'none',
+            transition: 'border-color 150ms, box-shadow 150ms',
+          }}
+          onFocusCapture={e => {
+            e.currentTarget.style.borderColor = 'var(--c-sage-soft)'
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(122,158,126,0.18)'
+            e.currentTarget.style.background = 'var(--c-card)'
+          }}
+          onBlurCapture={e => {
+            e.currentTarget.style.borderColor = 'var(--c-border)'
+            e.currentTarget.style.boxShadow = 'none'
+            e.currentTarget.style.background = 'var(--c-nested)'
+          }}
         />
         {isFetching && query.length >= 2 ? (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9a9585] animate-spin" />
+          <Loader2
+            style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--c-sage-soft)' }}
+            size={13}
+            className="animate-spin"
+            aria-label="Searching..."
+          />
         ) : query ? (
-          <button onClick={clearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9a9585] hover:text-[#efeae2]">
-            <X className="h-3.5 w-3.5" />
+          <button
+            onClick={clearSearch}
+            style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--c-text-4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            aria-label="Clear search"
+          >
+            <X size={13} aria-hidden="true" />
           </button>
         ) : null}
       </div>
 
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-[#1d1c17] border border-[#2e2d26] rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto">
-          {/* Show recent items when no query */}
+        <div
+          role="listbox"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            background: 'var(--c-card)',
+            backdropFilter: 'blur(20px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+            border: '1px solid var(--c-border)',
+            borderRadius: 'var(--r-md)',
+            boxShadow: 'var(--s-modal)',
+            zIndex: 50,
+            maxHeight: 400,
+            overflowY: 'auto',
+          }}
+        >
+          {/* Recent */}
           {query.length < 2 && recent.length > 0 && (
             <div>
-              <p className="text-[10px] text-[#9a9585] font-semibold px-4 py-2 uppercase tracking-wider bg-[#252419]">Recent</p>
+              <span style={sectionHeaderStyle}>Recent</span>
               {recent.map((r, i) => (
-                <button key={r.href} onClick={() => navigate(r.href, r.name, r.type, r.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${highlight === i ? 'bg-[#3583b3]/20' : 'hover:bg-[#252419]'}`}>
-                  <span className="text-sm">{TYPE_ICONS[r.type]}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-[#efeae2] truncate">{r.name}</p>
-                    <p className="text-xs text-[#9a9585] capitalize">{r.type}</p>
+                <button
+                  key={r.href}
+                  role="option"
+                  aria-selected={highlight === i}
+                  onClick={() => navigate(r.href, r.name, r.type, r.id)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '9px 14px',
+                    textAlign: 'left',
+                    background: highlight === i ? 'var(--c-nested)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--c-text-1)',
+                    transition: 'background 100ms',
+                  }}
+                >
+                  <span style={{ color: 'var(--c-text-4)' }}>{TYPE_ICON_MAP[r.type]}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{ fontSize: 13, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</p>
+                    <p style={{ fontSize: 10, color: 'var(--c-text-3)', margin: 0, textTransform: 'capitalize', fontFamily: "'DM Mono', monospace", letterSpacing: '0.04em' }}>{r.type}</p>
                   </div>
                 </button>
               ))}
@@ -172,49 +268,76 @@ export function GlobalSearch() {
           {query.length >= 2 && (
             <>
               {!hasResults && !isFetching && (
-                <div className="px-4 py-6 text-center">
-                  <p className="text-2xl mb-2">🔍</p>
-                  <p className="text-sm text-[#efeae2] mb-1">No results for &quot;{debouncedQuery}&quot;</p>
-                  <p className="text-xs text-[#9a9585]">Try a different search term</p>
+                <div style={{ padding: '24px 14px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 13, color: 'var(--c-text-1)', marginBottom: 4, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    No results for &quot;{debouncedQuery}&quot;
+                  </p>
+                  <p style={{ fontSize: 11, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace" }}>Try a different search term</p>
                 </div>
               )}
 
               {data?.customers && data.customers.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-[#9a9585] font-semibold px-4 py-2 uppercase tracking-wider bg-[#252419]">
-                    Customers ({data.customers.length})
-                  </p>
-                  {data.customers.map((c: any, idx: number) => {
-                    const globalIdx = idx
-                    return (
-                      <button key={c.id} onClick={() => navigate(`/customers/${c.id}`, c.name, 'customer', c.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${highlight === globalIdx ? 'bg-[#3583b3]/20' : 'hover:bg-[#252419]'}`}>
-                        <User className="h-4 w-4 text-[#9a9585] flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-sm text-[#efeae2] truncate">{c.name}</p>
-                          <p className="text-xs text-[#9a9585] truncate">{c.phone || c.email || c.type}</p>
-                        </div>
-                      </button>
-                    )
-                  })}
+                  <span style={sectionHeaderStyle}>Customers ({data.customers.length})</span>
+                  {data.customers.map((c: any, idx: number) => (
+                    <button
+                      key={c.id}
+                      role="option"
+                      aria-selected={highlight === idx}
+                      onClick={() => navigate(`/customers/${c.id}`, c.name, 'customer', c.id)}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '9px 14px',
+                        textAlign: 'left',
+                        background: highlight === idx ? 'var(--c-nested)' : 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--c-text-1)',
+                        transition: 'background 100ms',
+                      }}
+                    >
+                      <User size={13} style={{ color: 'var(--c-text-4)', flexShrink: 0 }} aria-hidden="true" />
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: 13, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
+                        <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0, fontFamily: "'DM Mono', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.phone || c.email || c.type}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
 
               {data?.leads && data.leads.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-[#9a9585] font-semibold px-4 py-2 uppercase tracking-wider bg-[#252419]">
-                    Leads ({data.leads.length})
-                  </p>
+                  <span style={sectionHeaderStyle}>Leads ({data.leads.length})</span>
                   {data.leads.map((l: any, idx: number) => {
                     const globalIdx = (data.customers?.length ?? 0) + idx
                     const custName = Array.isArray(l.customers) ? l.customers[0]?.name : l.customers?.name
                     return (
-                      <button key={l.id} onClick={() => navigate('/leads', l.title, 'lead', l.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${highlight === globalIdx ? 'bg-[#3583b3]/20' : 'hover:bg-[#252419]'}`}>
-                        <Target className="h-4 w-4 text-[#9a9585] flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-sm text-[#efeae2] truncate">{l.title}</p>
-                          <p className="text-xs text-[#9a9585] truncate">
+                      <button
+                        key={l.id}
+                        role="option"
+                        aria-selected={highlight === globalIdx}
+                        onClick={() => navigate('/leads', l.title, 'lead', l.id)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '9px 14px',
+                          textAlign: 'left',
+                          background: highlight === globalIdx ? 'var(--c-nested)' : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'background 100ms',
+                        }}
+                      >
+                        <Target size={13} style={{ color: 'var(--c-gold)', flexShrink: 0 }} aria-hidden="true" />
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: 13, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
+                          <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0, fontFamily: "'DM Mono', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {l.stage}{l.estimated_value ? ` · $${l.estimated_value.toLocaleString()}` : ''}
                             {custName ? ` · ${custName}` : ''}
                           </p>
@@ -227,19 +350,33 @@ export function GlobalSearch() {
 
               {data?.projects && data.projects.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-[#9a9585] font-semibold px-4 py-2 uppercase tracking-wider bg-[#252419]">
-                    Projects ({data.projects.length})
-                  </p>
+                  <span style={sectionHeaderStyle}>Projects ({data.projects.length})</span>
                   {data.projects.map((p: any, idx: number) => {
                     const globalIdx = (data.customers?.length ?? 0) + (data.leads?.length ?? 0) + idx
                     const custName = Array.isArray(p.customers) ? p.customers[0]?.name : p.customers?.name
                     return (
-                      <button key={p.id} onClick={() => navigate(`/customers/${p.customer_id}/projects/${p.id}`, p.title, 'project', p.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${highlight === globalIdx ? 'bg-[#3583b3]/20' : 'hover:bg-[#252419]'}`}>
-                        <Briefcase className="h-4 w-4 text-[#9a9585] flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-sm text-[#efeae2] truncate">{p.title}</p>
-                          <p className="text-xs text-[#9a9585] truncate">
+                      <button
+                        key={p.id}
+                        role="option"
+                        aria-selected={highlight === globalIdx}
+                        onClick={() => navigate(`/customers/${p.customer_id}/projects/${p.id}`, p.title, 'project', p.id)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '9px 14px',
+                          textAlign: 'left',
+                          background: highlight === globalIdx ? 'var(--c-nested)' : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'background 100ms',
+                        }}
+                      >
+                        <Briefcase size={13} style={{ color: 'var(--c-sage)', flexShrink: 0 }} aria-hidden="true" />
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: 13, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</p>
+                          <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0, fontFamily: "'DM Mono', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {p.status}{p.contract_value ? ` · $${p.contract_value.toLocaleString()}` : ''}
                             {custName ? ` · ${custName}` : ''}
                           </p>

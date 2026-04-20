@@ -121,10 +121,10 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
       <div className="p-5 space-y-5">
         {/* Customer info */}
         {customer && (
-          <div className="bg-[#1d1c17] rounded-lg p-3 border border-[#2e2d26]">
-            <p className="text-xs text-[#9a9585] mb-1">Customer</p>
+          <div className="bg-[var(--sg-base)] rounded-lg p-3 border border-[var(--sg-border)]">
+            <p className="text-xs text-[var(--sg-text-2)] mb-1">Customer</p>
             {customer.id ? (
-              <Link href={`/customers/${customer.id}`} className="text-[#3583b3] font-medium hover:underline text-sm">
+              <Link href={`/customers/${customer.id}`} className="text-[var(--sg-sky)] font-medium hover:underline text-sm">
                 {customer.name}
               </Link>
             ) : (
@@ -132,13 +132,13 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
             )}
             <div className="mt-2 flex gap-3 flex-wrap">
               {customer.phone && (
-                <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-xs text-[#3583b3] hover:text-[#efeae2]">
+                <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-xs text-[var(--sg-sky)] hover:text-[var(--sg-text-1)]">
                   <Phone className="h-3 w-3" />
                   {customer.phone}
                 </a>
               )}
               {customer.email && (
-                <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-xs text-[#3583b3] hover:text-[#efeae2]">
+                <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-xs text-[var(--sg-sky)] hover:text-[var(--sg-text-1)]">
                   <Mail className="h-3 w-3" />
                   {customer.email}
                 </a>
@@ -181,7 +181,7 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
             placeholder="Why was this lead lost?"
           />
 
-          <div className="text-xs text-[#9a9585] pt-2 border-t border-[#2e2d26]">
+          <div className="text-xs text-[var(--sg-text-2)] pt-2 border-t border-[var(--sg-border)]">
             <p>Created: {formatDate(lead.created_at)}</p>
             <p>Updated: {formatDate(lead.updated_at)}</p>
           </div>
@@ -191,7 +191,7 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
           </div>
 
-          <div className="pt-2 border-t border-[#2e2d26]">
+          <div className="pt-2 border-t border-[var(--sg-border)]">
             <Button type="button" variant="danger" className="w-full" onClick={() => setConfirmDelete(true)}>
               Delete Lead
             </Button>

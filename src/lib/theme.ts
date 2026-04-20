@@ -1,23 +1,23 @@
 export const theme = {
   bg: {
-    main: '#1d1c17',
-    surface: '#252419',
-    overlay: 'rgba(29,28,23,0.80)',
+    main: '#F7F4EF',
+    surface: '#FEFCF8',
+    overlay: 'rgba(247,244,239,0.90)',
   },
   border: {
-    default: '#2e2d26',
-    gold: '#e6ab35',
-    blue: '#3583b3',
+    default: '#DDD6C8',
+    gold: '#8B6914',
+    blue: '#4A6741',
   },
   text: {
     white: '#ffffff',
-    cream: '#efeae2',
-    muted: '#9a9585',
-    dark: '#1d1c17',
+    cream: '#EDE7DB',
+    muted: '#A07850',
+    dark: '#1C1209',
   },
   accent: {
-    gold: '#e6ab35',
-    blue: '#3583b3',
-    error: '#ef4444',
+    gold: '#8B6914',
+    blue: '#4A6741',
+    error: '#B94A3A',
   },
 } as const

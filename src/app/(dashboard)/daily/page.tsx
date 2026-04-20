@@ -310,7 +310,7 @@ export default function DailyPage() {
                     marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4,
                     padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
                     background: 'var(--gold)', border: 'none', cursor: 'pointer',
-                    color: '#1d1c17', opacity: newTodoText.trim() ? 1 : 0.4,
+                    color: '#000', opacity: newTodoText.trim() ? 1 : 0.4,
                   }}
                 >
                   <Plus size={12} /> Add

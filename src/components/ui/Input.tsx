@@ -14,10 +14,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {label && (
-          <label htmlFor={inputId} style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <label htmlFor={inputId} style={{ fontSize: 13, fontWeight: 500, color: 'var(--c-text-3)', display: 'flex', alignItems: 'center', gap: 4 }}>
             {label}
             {required && (
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--gold)', display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sg-gold)', display: 'inline-block', flexShrink: 0 }} />
             )}
           </label>
         )}
@@ -31,34 +31,34 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className
           )}
           style={{
-            background: 'var(--bg-input)',
-            border: `1px solid ${error ? 'var(--error)' : 'var(--border-subtle)'}`,
-            borderRadius: 'var(--radius-md)',
+            background: 'var(--c-card)',
+            border: `1px solid ${error ? 'var(--c-danger)' : 'var(--c-border)'}`,
+            borderRadius: 'var(--r-sm)',
             padding: '10px 14px',
             fontSize: 15,
-            color: 'var(--text-primary)',
+            color: 'var(--sg-text-1)',
             transition: 'border-color 150ms, box-shadow 150ms',
             ...props.style,
           }}
           onFocus={(e) => {
             if (!error) {
-              e.currentTarget.style.borderColor = 'var(--border-focus)'
-              e.currentTarget.style.boxShadow = '0 0 0 3px var(--gold-light)'
+              e.currentTarget.style.borderColor = 'var(--c-sage-soft)'
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(122,158,126,0.18)'
             }
             props.onFocus?.(e)
           }}
           onBlur={(e) => {
-            e.currentTarget.style.borderColor = error ? 'var(--error)' : 'var(--border-subtle)'
+            e.currentTarget.style.borderColor = error ? 'var(--c-danger)' : 'var(--c-border)'
             e.currentTarget.style.boxShadow = 'none'
             props.onBlur?.(e)
           }}
           {...props}
         />
         {error && (
-          <p style={{ fontSize: 12, color: 'var(--error)', marginTop: 2 }}>{error}</p>
+          <p style={{ fontSize: 12, color: 'var(--c-danger)', marginTop: 2 }}>{error}</p>
         )}
         {hint && !error && (
-          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{hint}</p>
+          <p style={{ fontSize: 12, color: 'var(--c-text-4)', marginTop: 2 }}>{hint}</p>
         )}
       </div>
     )

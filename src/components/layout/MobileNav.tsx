@@ -2,21 +2,21 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart3, DollarSign, Settings, LogOut, X } from 'lucide-react'
+import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart2, Receipt, Settings, LogOut, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
 const primaryItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/leads', label: 'Leads', icon: Target },
+  { href: '/leads',     label: 'Leads',     icon: Target },
   { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/projects', label: 'Projects', icon: Briefcase },
+  { href: '/projects',  label: 'Projects',  icon: Briefcase },
 ]
 
 const moreItems = [
-  { href: '/expenses', label: 'Expenses', icon: DollarSign },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/expenses', label: 'Expenses', icon: Receipt },
+  { href: '/reports',  label: 'Reports',  icon: BarChart2 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -36,35 +36,82 @@ export function MobileNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#252419] border-t border-[#2e2d26] z-40 flex h-16 safe-bottom">
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 flex h-16 safe-bottom"
+        style={{
+          background: 'var(--c-sidebar)',
+          borderTop: '1px solid var(--c-border)',
+        }}
+        aria-label="Mobile navigation"
+      >
         {primaryItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href + '/'))
           return (
-            <Link key={href} href={href}
-              className={cn('flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors',
-                isActive ? 'text-[#e6ab35]' : 'text-[#9a9585]')}>
+            <Link
+              key={href}
+              href={href}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
+              style={{
+                color: isActive ? 'var(--c-sage)' : 'var(--c-text-4)',
+                textShadow: 'none',
+              }}
+              aria-current={isActive ? 'page' : undefined}
+            >
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{label}</span>
+              <span style={{ fontSize: 10, fontFamily: "'DM Mono', monospace", letterSpacing: '0.04em' }}>{label}</span>
             </Link>
           )
         })}
         <button
           onClick={() => setMoreOpen(true)}
-          className={cn('flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors',
-            isMoreActive ? 'text-[#e6ab35]' : 'text-[#9a9585]')}>
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
+          style={{ color: isMoreActive ? 'var(--c-sage)' : 'var(--c-text-4)' }}
+          aria-label="More navigation options"
+          aria-expanded={moreOpen}
+        >
           <MoreHorizontal className="h-5 w-5" />
-          <span className="text-[10px] font-medium">More</span>
+          <span style={{ fontSize: 10, fontFamily: "'DM Mono', monospace", letterSpacing: '0.04em' }}>More</span>
         </button>
       </nav>
 
-      {/* More Sheet */}
+      {/* More sheet */}
       {moreOpen && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setMoreOpen(false)} />
-          <div className="fixed bottom-0 left-0 right-0 bg-[#252419] border-t border-[#2e2d26] z-50 rounded-t-2xl pb-8">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2e2d26]">
-              <span className="text-sm font-semibold text-white">More</span>
-              <button onClick={() => setMoreOpen(false)} className="text-[#9a9585] p-1">
+          <div
+            className="fixed inset-0 z-50"
+            style={{ background: 'rgba(28,18,9,0.5)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setMoreOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl pb-8"
+            style={{
+              background: 'var(--c-card)',
+              border: '1px solid var(--c-border)',
+              borderBottom: 'none',
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="More options"
+          >
+            <div
+              className="flex items-center justify-between px-5 py-4"
+              style={{ borderBottom: '1px solid var(--c-border)' }}
+            >
+              <span style={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: 16,
+                color: 'var(--c-text-1)',
+                letterSpacing: '-0.01em',
+              }}>
+                More
+              </span>
+              <button
+                onClick={() => setMoreOpen(false)}
+                style={{ color: 'var(--sg-text-3)', padding: 4 }}
+                aria-label="Close"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -72,18 +119,39 @@ export function MobileNav() {
               {moreItems.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname.startsWith(href)
                 return (
-                  <Link key={href} href={href} onClick={() => setMoreOpen(false)}
-                    className={cn('flex items-center gap-3 px-4 py-3 rounded-xl transition-colors',
-                      isActive ? 'bg-[#e6ab35]/10 text-[#e6ab35]' : 'text-[#efeae2] hover:bg-[#2e2d26]')}>
-                    <Icon className="h-5 w-5" />
-                    <span className="text-sm font-medium">{label}</span>
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMoreOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
+                    style={{
+                      background: isActive ? 'var(--sg-sky-dim)' : 'transparent',
+                      color: isActive ? 'var(--sg-sky)' : 'var(--sg-text-1)',
+                      border: isActive ? '1px solid var(--sg-border-bright)' : '1px solid transparent',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    }}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>{label}</span>
                   </Link>
                 )
               })}
-              <button onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors">
-                <LogOut className="h-5 w-5" />
-                <span className="text-sm font-medium">Sign Out</span>
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
+                style={{
+                  color: 'var(--sg-danger)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-danger-bg)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+              >
+                <LogOut className="h-5 w-5" aria-hidden="true" />
+                <span style={{ fontSize: 14, fontWeight: 500 }}>Sign Out</span>
               </button>
             </div>
           </div>

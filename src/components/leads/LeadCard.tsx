@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Lead } from '@/types'
 import { formatCurrency, cn } from '@/lib/utils'
 import { format, isToday, isPast, parseISO, differenceInDays } from 'date-fns'
+import { Phone } from 'lucide-react'
 
 interface LeadCardProps {
   lead: Lead
@@ -11,31 +12,54 @@ interface LeadCardProps {
   isDragOverlay?: boolean
 }
 
-const STAGE_BORDER: Record<string, string> = {
-  'New Lead':      '#3583b3',
-  'Estimate Sent': '#e6ab35',
-  'Follow-up':     '#bf5af2',
-  'Won':           '#30d158',
-  'Lost':          '#ff453a',
-  'On Hold':       '#6e6e73',
+const VALUE_TIER = (v: number) => {
+  if (v >= 20000) return { color: '#8B6914', glow: 'rgba(139,105,20,0.20)', pulse: true }
+  if (v >= 5000)  return { color: '#8B6914', glow: 'rgba(139,105,20,0.10)', pulse: false }
+  return { color: '#7A9E7E', glow: 'rgba(122,158,126,0.12)', pulse: false }
 }
 
 const SOURCE_STYLES: Record<string, { bg: string; text: string }> = {
-  Thumbtack:    { bg: '#3583b3', text: '#fff' },
-  Referral:     { bg: '#10b981', text: '#fff' },
-  Google:       { bg: '#e6ab35', text: '#1d1c17' },
-  Instagram:    { bg: '#8b5cf6', text: '#fff' },
-  Facebook:     { bg: '#1877f2', text: '#fff' },
-  'Door Knock': { bg: '#f97316', text: '#fff' },
-  Yelp:         { bg: '#ef4444', text: '#fff' },
-  Other:        { bg: '#9a9585', text: '#fff' },
+  Thumbtack:    { bg: 'rgba(212,168,83,0.15)',   text: '#D4A853' },
+  Referral:     { bg: 'rgba(74,103,65,0.12)',    text: '#4A6741' },
+  Google:       { bg: 'rgba(122,158,126,0.12)',  text: '#7A9E7E' },
+  Instagram:    { bg: 'rgba(160,120,80,0.12)',   text: '#A07850' },
+  Facebook:     { bg: 'rgba(122,158,126,0.12)',  text: '#7A9E7E' },
+  'Door Knock': { bg: 'rgba(139,105,20,0.12)',   text: '#8B6914' },
+  Yelp:         { bg: 'rgba(185,74,58,0.12)',    text: '#B94A3A' },
+  Other:        { bg: 'rgba(160,120,80,0.10)',   text: '#A07850' },
 }
 
-function DaysInStageBadge({ updatedAt }: { updatedAt: string }) {
+function DaysInStagePill({ updatedAt, stage }: { updatedAt: string; stage: string }) {
+  if (['Won', 'Lost'].includes(stage)) return null
   const days = differenceInDays(new Date(), new Date(updatedAt))
-  const color = days > 7 ? '#ef4444' : days >= 3 ? '#e6ab35' : '#9a9585'
+
+  let bg = 'rgba(122,158,126,0.12)'
+  let color = '#7A9E7E'
+  let suffix = ''
+
+  if (days >= 15) {
+    bg = 'rgba(185,74,58,0.12)'
+    color = '#B94A3A'
+    suffix = ' !'
+  } else if (days >= 8) {
+    bg = 'rgba(212,168,83,0.15)'
+    color = '#D4A853'
+    suffix = ' \u26A0'
+  }
+
   return (
-    <span style={{ color, fontSize: 11, fontWeight: 600 }}>{days}d</span>
+    <span style={{
+      fontSize: 10,
+      fontWeight: 700,
+      padding: '2px 6px',
+      borderRadius: 4,
+      background: bg,
+      color,
+      fontFamily: "'DM Mono', monospace",
+      border: `1px solid ${color}30`,
+    }}>
+      {days}d{suffix}
+    </span>
   )
 }
 
@@ -48,24 +72,22 @@ function FollowUpRow({ date, stage }: { date: string; stage: string }) {
 
   if (past) {
     return (
-      <div className="flex items-center gap-1 text-[11px] font-semibold text-[#ef4444]">
-        <span>📅</span>
-        <span>OVERDUE · {formatted}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: '#B94A3A', fontFamily: "'DM Mono', monospace" }}>
+        <span style={{ fontSize: 8, letterSpacing: '0.1em' }}>OVERDUE</span>
+        <span>{formatted}</span>
       </div>
     )
   }
   if (today) {
     return (
-      <div className="flex items-center gap-1 text-[11px] font-semibold text-[#e6ab35]">
-        <span>📅</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: '#8B6914', fontFamily: "'DM Mono', monospace" }}>
         <span>Today</span>
       </div>
     )
   }
   return (
-    <div className="flex items-center gap-1 text-[11px] text-[#9a9585]">
-      <span>📅</span>
-      <span>{formatted}</span>
+    <div style={{ fontSize: 11, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>
+      {formatted}
     </div>
   )
 }
@@ -76,97 +98,173 @@ export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps
     data: { lead },
   })
 
-  const style = {
+  const customer = lead.customer as { name?: string; phone?: string; type?: string } | null
+  const srcStyle = SOURCE_STYLES[lead.source] ?? SOURCE_STYLES.Other
+  const value = lead.estimated_value ?? 0
+  const tier = VALUE_TIER(value)
+
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    borderLeft: `3px solid ${STAGE_BORDER[lead.stage] ?? '#9a9585'}`,
+    borderLeft: `3px solid ${tier.color}`,
+    boxShadow: isDragOverlay
+      ? `0 8px 40px rgba(28,18,9,0.15), 0 0 20px ${tier.glow}`
+      : 'none',
   }
 
-  const customer = lead.customer as { name?: string; phone?: string } | null
-  const srcStyle = SOURCE_STYLES[lead.source] ?? SOURCE_STYLES.Other
+  const cardStyle: React.CSSProperties = {
+    background: isDragging ? 'var(--c-card-hover)' : 'var(--c-card)',
+    border: '1px solid var(--c-border-light)',
+    borderRadius: 10,
+    padding: '12px 14px',
+    cursor: 'pointer',
+    opacity: isDragging ? 0.5 : 1,
+    transform: isDragOverlay ? 'scale(1.04) rotate(1.5deg)' : undefined,
+    transition: 'border-color 150ms, box-shadow 150ms, transform 150ms, background 150ms',
+    boxShadow: 'var(--s-card)',
+  }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(
-        'bg-[#252419] border border-[#2e2d26] rounded-lg p-3 cursor-pointer transition-all',
-        'hover:bg-[#2a2920] hover:shadow-lg',
-        isDragging && 'opacity-40',
-        isDragOverlay && 'shadow-2xl rotate-1 scale-105',
-      )}
-      onClick={() => onClick(lead)}
+      className={cn('group', isDragOverlay && 'shadow-lg')}
       {...attributes}
       {...listeners}
     >
-      {/* Row 1: Source badge + Value */}
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span style={{
-          backgroundColor: srcStyle.bg,
-          color: srcStyle.text,
-          fontSize: 10,
-          fontWeight: 700,
-          padding: '2px 7px',
-          borderRadius: 4,
-          lineHeight: '16px',
+      <div
+        style={cardStyle}
+        onClick={() => onClick(lead)}
+        onMouseEnter={e => {
+          if (isDragging || isDragOverlay) return
+          const el = e.currentTarget as HTMLDivElement
+          el.style.borderColor = 'var(--c-border-mid)'
+          el.style.transform = 'translateY(-2px)'
+          el.style.boxShadow = `var(--s-card-hover), 0 0 12px ${tier.glow}`
+          el.style.background = 'var(--c-card)'
+        }}
+        onMouseLeave={e => {
+          const el = e.currentTarget as HTMLDivElement
+          el.style.borderColor = 'var(--c-border-light)'
+          el.style.transform = 'translateY(0)'
+          el.style.boxShadow = 'var(--s-card)'
+          el.style.background = 'var(--c-card)'
+        }}
+      >
+        {/* Row 1: Title */}
+        {customer?.name && (
+          <p style={{
+            color: 'var(--c-text-1)',
+            fontSize: 14,
+            fontWeight: 700,
+            marginBottom: 2,
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            letterSpacing: '-0.01em',
+          }}>
+            {customer.name}
+          </p>
+        )}
+        <p style={{
+          color: 'var(--c-text-4)',
+          fontSize: 11,
+          marginBottom: 8,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}>
-          {lead.source}
-        </span>
-        {(lead.estimated_value ?? 0) > 0 ? (
-          <span style={{ color: '#e6ab35', fontWeight: 700, fontSize: 13 }}>
-            {formatCurrency(lead.estimated_value ?? 0)}
+          {lead.title}
+        </p>
+
+        {/* Row 2: Value + Source */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 8 }}>
+          {value > 0 ? (
+            <span
+              className={tier.pulse ? 'pulse-dot' : ''}
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: tier.color,
+                fontFamily: "'DM Mono', monospace",
+                padding: '2px 8px',
+                background: tier.glow,
+                borderRadius: 6,
+                border: `1px solid ${tier.color}30`,
+              }}
+            >
+              {formatCurrency(value)}
+            </span>
+          ) : (
+            <span style={{ fontSize: 11, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>—</span>
+          )}
+          <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '2px 6px',
+            borderRadius: 4,
+            background: srcStyle.bg,
+            color: srcStyle.text,
+            fontFamily: "'DM Mono', monospace",
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+          }}>
+            {lead.source}
           </span>
-        ) : (
-          <span style={{ color: '#9a9585', fontSize: 11 }}>No estimate</span>
+        </div>
+
+        {/* Row 3: Phone */}
+        {customer?.phone && (
+          <a
+            href={`tel:${customer.phone}`}
+            onClick={e => e.stopPropagation()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              color: 'var(--c-text-3)',
+              fontSize: 12,
+              marginBottom: 8,
+              textDecoration: 'none',
+              fontFamily: "'DM Mono', monospace",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--c-sage-soft)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-text-3)' }}
+          >
+            <Phone size={11} aria-hidden="true" />
+            {customer.phone}
+          </a>
+        )}
+
+        {/* Row 4: Customer type + Days in stage */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '2px 6px',
+            borderRadius: 4,
+            background: 'rgba(160,120,80,0.08)',
+            color: 'var(--c-text-4)',
+            fontFamily: "'DM Mono', monospace",
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+          }}>
+            {customer?.type ?? 'Residential'}
+          </span>
+          <DaysInStagePill updatedAt={lead.updated_at} stage={lead.stage} />
+        </div>
+
+        {/* Row 5: Follow-up date */}
+        {lead.follow_up_date && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--c-border-light)' }}>
+            <FollowUpRow date={lead.follow_up_date} stage={lead.stage} />
+          </div>
         )}
       </div>
-
-      {/* Row 2: Customer name */}
-      {customer?.name && (
-        <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 700, marginBottom: 2, lineHeight: '1.2' }}>
-          {customer.name}
-        </p>
-      )}
-
-      {/* Row 3: Job title */}
-      <p style={{ color: '#9a9585', fontSize: 12, marginBottom: 4 }} className="truncate">
-        {lead.title}
-      </p>
-
-      {/* Row 4: Phone */}
-      {customer?.phone && (
-        <a
-          href={`tel:${customer.phone}`}
-          onClick={e => e.stopPropagation()}
-          style={{ color: '#efeae2', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}
-        >
-          <span>📞</span>
-          <span>{customer.phone}</span>
-        </a>
-      )}
-
-      {/* Row 5: Job type + Days in stage */}
-      <div className="flex items-center justify-between mt-1">
-        <span style={{
-          fontSize: 10,
-          fontWeight: 600,
-          padding: '2px 6px',
-          borderRadius: 4,
-          backgroundColor: lead.stage === 'Won' ? '#10b981' : '#3583b3',
-          color: '#fff',
-        }}>
-          {(lead as any).customer?.type ?? 'Residential'}
-        </span>
-        <DaysInStageBadge updatedAt={lead.updated_at} />
-      </div>
-
-      {/* Row 6: Follow-up date */}
-      {lead.follow_up_date && (
-        <div className="mt-1.5">
-          <FollowUpRow date={lead.follow_up_date} stage={lead.stage} />
-        </div>
-      )}
     </div>
   )
 }

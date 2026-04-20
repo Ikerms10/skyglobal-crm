@@ -13,7 +13,7 @@ export function MapsLink({ address, showIcon = true, className }: MapsLinkProps)
         href={mapsUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-[#3583b3] hover:text-[#4a9fd4] transition-colors inline-flex items-center gap-1 break-words"
+        className="text-[var(--sg-sky)] hover:text-[#4a9fd4] transition-colors inline-flex items-center gap-1 break-words"
         onClick={e => e.stopPropagation()}
       >
         {showIcon && <span>📍</span>}
@@ -32,7 +32,7 @@ export function DirectionsButton({ address }: { address: string | null | undefin
       target="_blank"
       rel="noopener noreferrer"
       onClick={e => e.stopPropagation()}
-      className="inline-flex items-center gap-1.5 bg-[#3583b3] hover:bg-[#2a6d96] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+      className="inline-flex items-center gap-1.5 bg-[var(--sg-sky)] hover:bg-[#2a6d96] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
     >
       🗺️ Directions
     </a>

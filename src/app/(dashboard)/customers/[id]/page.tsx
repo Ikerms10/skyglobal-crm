@@ -118,7 +118,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   if (error) {
     return (
       <div className="p-4 md:p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <p className="text-[#ef4444]">{error}</p>
+        <p className="text-[var(--sg-danger)]">{error}</p>
         <Button onClick={loadData}>Try Again</Button>
       </div>
     )
@@ -127,8 +127,8 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   if (!customer) {
     return (
       <div className="p-4 md:p-6">
-        <p className="text-[#9a9585]">Customer not found.</p>
-        <Link href="/customers" className="text-[#3583b3] hover:underline text-sm mt-2 inline-block">Back to Customers</Link>
+        <p className="text-[var(--sg-text-2)]">Customer not found.</p>
+        <Link href="/customers" className="text-[var(--sg-sky)] hover:underline text-sm mt-2 inline-block">Back to Customers</Link>
       </div>
     )
   }
@@ -141,26 +141,26 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Back */}
-      <Link href="/customers" className="flex items-center gap-2 text-[#9a9585] hover:text-[#efeae2] transition-colors text-sm">
+      <Link href="/customers" className="flex items-center gap-2 text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)] transition-colors text-sm">
         <ArrowLeft className="h-4 w-4" /> Customers
       </Link>
 
       {/* Header */}
-      <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+      <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="flex-1 space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold text-white">{customer.name}</h1>
               <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-[#9a9585]">
+            <div className="flex flex-wrap gap-4 text-sm text-[var(--sg-text-2)]">
               {customer.phone && (
-                <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 hover:text-[#3583b3] transition-colors">
+                <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 hover:text-[var(--sg-sky)] transition-colors">
                   <Phone className="h-4 w-4" />{customer.phone}
                 </a>
               )}
               {customer.email && (
-                <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 hover:text-[#3583b3] transition-colors">
+                <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 hover:text-[var(--sg-sky)] transition-colors">
                   <Mail className="h-4 w-4" />{customer.email}
                 </a>
               )}
@@ -205,23 +205,23 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[#2e2d26]">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[var(--sg-border)]">
           {[
-            { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'text-[#e6ab35]' },
-            { label: 'Active Projects', value: String(activeProjects), icon: Briefcase, color: 'text-[#3583b3]' },
-            { label: 'Open Leads', value: String(openLeads), icon: Target, color: 'text-[#10b981]' },
-            { label: 'Avg Project Value', value: formatCurrency(avgProjectValue), icon: DollarSign, color: 'text-[#9a9585]' },
+            { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'text-[var(--sg-gold)]' },
+            { label: 'Active Projects', value: String(activeProjects), icon: Briefcase, color: 'text-[var(--sg-sky)]' },
+            { label: 'Open Leads', value: String(openLeads), icon: Target, color: 'text-[var(--c-sage)]' },
+            { label: 'Avg Project Value', value: formatCurrency(avgProjectValue), icon: DollarSign, color: 'text-[var(--sg-text-2)]' },
           ].map(({ label, value, color }) => (
             <div key={label} className="text-center">
               <p className={`text-xl font-bold ${color}`}>{value}</p>
-              <p className="text-xs text-[#9a9585] mt-0.5">{label}</p>
+              <p className="text-xs text-[var(--sg-text-2)] mt-0.5">{label}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-[#2e2d26]">
+      <div className="border-b border-[var(--sg-border)]">
         <nav className="flex gap-0 overflow-x-auto">
           {[
             { id: 'projects', label: `Projects (${projects.length})`, icon: Briefcase },
@@ -235,8 +235,8 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               className={cn(
                 'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                 activeTab === id
-                  ? 'border-[#e6ab35] text-[#e6ab35]'
-                  : 'border-transparent text-[#9a9585] hover:text-[#efeae2]'
+                  ? 'border-[var(--sg-gold)] text-[var(--sg-gold)]'
+                  : 'border-transparent text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]'
               )}
             >
               <Icon className="h-4 w-4" />{label}
@@ -261,13 +261,13 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               action={{ label: 'Create Project', onClick: () => setNewProjectOpen(true) }}
             />
           ) : (
-            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+            <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-2 border-b-[#e6ab35]">
+                    <tr className="border-b-2 border-b-[var(--sg-gold)]">
                       {['Project', 'Status', 'Type', 'Contract', 'Payment', 'Start', 'End', ''].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -276,16 +276,16 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                       <tr
                         key={p.id}
                         onClick={() => router.push(`/customers/${customerId}/projects/${p.id}`)}
-                        className={cn('border-b border-[#2e2d26] cursor-pointer transition-colors', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}
+                        className={cn('border-b border-[var(--sg-border)] cursor-pointer transition-colors', i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]', 'hover:bg-[var(--sg-elevated)]')}
                       >
-                        <td className="px-4 py-3 text-sm font-medium text-[#efeae2]">{p.title}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-text-1)]">{p.title}</td>
                         <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
                         <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
-                        <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{formatCurrency(p.contract_value)}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">{formatCurrency(p.contract_value)}</td>
                         <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
-                        <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(p.start_date)}</td>
-                        <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(p.end_date)}</td>
-                        <td className="px-4 py-3 text-sm text-[#3583b3]">Open</td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.start_date)}</td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.end_date)}</td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-sky)]">Open</td>
                       </tr>
                     ))}
                   </tbody>
@@ -301,27 +301,27 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
           {leads.length === 0 ? (
             <EmptyState icon={Target} title="No leads yet" description="No leads linked to this customer." />
           ) : (
-            <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+            <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-2 border-b-[#e6ab35]">
+                    <tr className="border-b-2 border-b-[var(--sg-gold)]">
                       {['Title', 'Stage', 'Source', 'Value', 'Follow-up', 'Added'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {leads.map((l, i) => (
-                      <tr key={l.id} className={cn('border-b border-[#2e2d26]', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]')}>
-                        <td className="px-4 py-3 text-sm font-medium text-[#efeae2]">{l.title}</td>
+                      <tr key={l.id} className={cn('border-b border-[var(--sg-border)]', i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]')}>
+                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-text-1)]">{l.title}</td>
                         <td className="px-4 py-3"><Badge variant="default">{l.stage}</Badge></td>
-                        <td className="px-4 py-3 text-sm text-[#9a9585]">{l.source}</td>
-                        <td className="px-4 py-3 text-sm text-[#e6ab35]">{formatCurrency(l.estimated_value)}</td>
-                        <td className={cn('px-4 py-3 text-sm whitespace-nowrap', l.follow_up_date && new Date(l.follow_up_date) < new Date() ? 'text-[#ef4444]' : 'text-[#9a9585]')}>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{l.source}</td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">{formatCurrency(l.estimated_value)}</td>
+                        <td className={cn('px-4 py-3 text-sm whitespace-nowrap', l.follow_up_date && new Date(l.follow_up_date) < new Date() ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-text-2)]')}>
                           {formatDate(l.follow_up_date)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(l.created_at)}</td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(l.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -346,17 +346,17 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               {activities.map((a, i) => (
                 <div key={a.id} className="flex gap-4">
                   <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-[#2e2d26] flex items-center justify-center text-sm flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[var(--sg-elevated)] flex items-center justify-center text-sm flex-shrink-0">
                       {ACTIVITY_ICONS[a.type] ?? '📋'}
                     </div>
-                    {i < activities.length - 1 && <div className="w-0.5 bg-[#2e2d26] flex-1 my-1" />}
+                    {i < activities.length - 1 && <div className="w-0.5 bg-[var(--sg-elevated)] flex-1 my-1" />}
                   </div>
                   <div className="pb-4 flex-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-white">{a.type}</p>
-                      <span className="text-xs text-[#9a9585]">{formatRelativeTime(a.created_at)}</span>
+                      <span className="text-xs text-[var(--sg-text-2)]">{formatRelativeTime(a.created_at)}</span>
                     </div>
-                    {a.content && <p className="text-sm text-[#9a9585] mt-0.5">{a.content}</p>}
+                    {a.content && <p className="text-sm text-[var(--sg-text-2)] mt-0.5">{a.content}</p>}
                   </div>
                 </div>
               ))}
@@ -366,7 +366,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
       )}
 
       {activeTab === 'info' && (
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6">
+        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               { label: 'Full Name', value: customer.name },
@@ -381,28 +381,28 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               { label: 'Referred By', value: customer.referred_by },
             ].map(({ label, value }) => (
               <div key={label}>
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">{label}</p>
-                <p className="text-sm text-[#efeae2]">{value ?? '—'}</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-sm text-[var(--sg-text-1)]">{value ?? '—'}</p>
               </div>
             ))}
             {customer.tags?.length > 0 && (
               <div className="md:col-span-2">
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-2">Tags</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-2">Tags</p>
                 <div className="flex flex-wrap gap-2">
                   {customer.tags.map((tag: string) => (
-                    <span key={tag} className="text-xs px-2 py-1 bg-[#2e2d26] text-[#efeae2] rounded">{tag}</span>
+                    <span key={tag} className="text-xs px-2 py-1 bg-[var(--sg-elevated)] text-[var(--sg-text-1)] rounded">{tag}</span>
                   ))}
                 </div>
               </div>
             )}
             {customer.notes && (
               <div className="md:col-span-2">
-                <p className="text-xs text-[#9a9585] uppercase tracking-wider mb-1">Notes</p>
-                <p className="text-sm text-[#efeae2] whitespace-pre-wrap">{customer.notes}</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">Notes</p>
+                <p className="text-sm text-[var(--sg-text-1)] whitespace-pre-wrap">{customer.notes}</p>
               </div>
             )}
           </div>
-          <div className="mt-6 pt-6 border-t border-[#2e2d26]">
+          <div className="mt-6 pt-6 border-t border-[var(--sg-border)]">
             <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
               <Edit2 className="h-4 w-4" /> Edit Customer Info
             </Button>

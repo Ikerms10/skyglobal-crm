@@ -37,9 +37,13 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, zIndex: 50,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        padding: '0',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        padding: 0,
       }}
       className="md:items-center md:p-4"
     >
@@ -47,54 +51,92 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
       <div
         onClick={onClose}
         style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(0,0,0,0.45)',
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(28,18,9,0.5)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
         }}
+        aria-hidden="true"
       />
 
       {/* Dialog */}
       <div
         ref={dialogRef}
-        className={cn('animate-scale-in relative w-full flex flex-col', 'rounded-t-[20px] md:rounded-[20px]')}
+        className={cn('animate-scale-in relative w-full flex flex-col', 'rounded-t-[20px] md:rounded-[16px]')}
         style={{
           maxWidth: maxWidths[size],
           maxHeight: '95vh',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-subtle)',
-          boxShadow: 'var(--shadow-xl)',
+          background: 'var(--c-card)',
+          backdropFilter: 'blur(20px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+          border: '1px solid var(--c-border)',
+          boxShadow: 'var(--s-modal)',
           overflow: 'hidden',
         }}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
       >
+        {/* Top accent line */}
+        <div style={{
+          height: 2,
+          background: 'linear-gradient(90deg, transparent, var(--c-gold), transparent)',
+          flexShrink: 0,
+        }} aria-hidden="true" />
+
         {/* Header */}
         {title && (
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '20px 24px 16px',
-            borderBottom: '1px solid var(--border-subtle)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '18px 24px 14px',
+            borderBottom: '1px solid var(--c-border)',
             flexShrink: 0,
           }}>
-            <h2 id="modal-title" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            <h2
+              id="modal-title"
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: 'var(--c-text-1)',
+                margin: 0,
+                fontFamily: 'var(--font-rajdhani)',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+              }}
+            >
               {title}
             </h2>
             <button
               onClick={onClose}
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 28, height: 28, borderRadius: 8,
-                background: 'var(--bg-secondary)', border: 'none',
-                color: 'var(--text-tertiary)', cursor: 'pointer',
-                transition: 'background 150ms, color 150ms',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: 'transparent',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-text-4)',
+                cursor: 'pointer',
+                transition: 'background 150ms, color 150ms, border-color 150ms',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-elevated, #3a3a3c)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; e.currentTarget.style.color = 'var(--text-tertiary)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(185,74,58,0.10)'
+                e.currentTarget.style.color = 'var(--c-danger)'
+                e.currentTarget.style.borderColor = 'rgba(185,74,58,0.3)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'transparent'
+                e.currentTarget.style.color = 'var(--c-text-4)'
+                e.currentTarget.style.borderColor = 'var(--c-border)'
+              }}
               aria-label="Close"
             >
-              <X size={14} />
+              <X size={14} aria-hidden="true" />
             </button>
           </div>
         )}
@@ -107,9 +149,11 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
         {/* Footer */}
         {footer && (
           <div style={{
-            display: 'flex', justifyContent: 'flex-end', gap: 8,
-            padding: '16px 24px',
-            borderTop: '1px solid var(--border-subtle)',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 8,
+            padding: '14px 24px',
+            borderTop: '1px solid var(--c-border)',
             flexShrink: 0,
           }}>
             {footer}

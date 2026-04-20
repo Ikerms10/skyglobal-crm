@@ -32,18 +32,28 @@ export function Drawer({ open, onClose, title, children, width = 'md' }: DrawerP
   return (
     <>
       <div
-        className={cn('fixed inset-0 bg-[#1d1c17]/80 backdrop-blur-sm z-40 transition-opacity', open ? 'opacity-100' : 'opacity-0 pointer-events-none')}
+        className={cn('fixed inset-0 backdrop-blur-sm z-40 transition-opacity', open ? 'opacity-100' : 'opacity-0 pointer-events-none')}
+        style={{ background: 'rgba(28,18,9,0.5)' }}
         onClick={onClose}
       />
-      <div className={cn(
-        'fixed right-0 top-0 h-full bg-[#252419] border-l border-[#2e2d26] shadow-2xl z-50 flex flex-col transition-transform duration-300 w-full',
-        widths[width],
-        open ? 'translate-x-0' : 'translate-x-full'
-      )}>
+      <div
+        className={cn(
+          'fixed right-0 top-0 h-full z-50 flex flex-col transition-transform duration-300 w-full',
+          widths[width],
+          open ? 'translate-x-0' : 'translate-x-full'
+        )}
+        style={{ background: 'var(--c-card)', borderLeft: '1px solid var(--c-border)' }}
+      >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#2e2d26] flex-shrink-0">
-            <h2 className="text-lg font-semibold text-white">{title}</h2>
-            <button onClick={onClose} className="text-[#9a9585] hover:text-[#efeae2] transition-colors p-1 rounded">
+          <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--c-border)' }}>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--c-text-1)' }}>{title}</h2>
+            <button
+              onClick={onClose}
+              className="transition-colors p-1 rounded"
+              style={{ color: 'var(--c-text-4)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--c-text-1)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-text-4)' }}
+            >
               <X className="h-5 w-5" />
             </button>
           </div>

@@ -86,8 +86,8 @@ export default function CustomersPage() {
 
   const SortIcon = ({ field }: { field: SortField }) => (
     <span className="ml-1 inline-flex flex-col">
-      <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
-      <ChevronDown className={cn('h-3 w-3 -mt-1', sortField === field && sortDir === 'desc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
+      <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-[var(--sg-gold)]' : 'text-[var(--sg-text-2)]')} />
+      <ChevronDown className={cn('h-3 w-3 -mt-1', sortField === field && sortDir === 'desc' ? 'text-[var(--sg-gold)]' : 'text-[var(--sg-text-2)]')} />
     </span>
   )
 
@@ -96,7 +96,7 @@ export default function CustomersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Customers</h1>
-          <p className="text-[#9a9585] text-sm">{customers.length} total customers</p>
+          <p className="text-[var(--sg-text-2)] text-sm">{customers.length} total customers</p>
         </div>
         <Button onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4" /> Add Customer
@@ -108,12 +108,12 @@ export default function CustomersPage() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search customers..."
-          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] w-64"
+          className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)] w-64"
         />
         <select
           value={filterType}
           onChange={e => setFilterType(e.target.value)}
-          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]"
+          className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]"
         >
           <option value="">All Types</option>
           <option value="Residential">Residential</option>
@@ -129,11 +129,11 @@ export default function CustomersPage() {
           action={{ label: 'Add Customer', onClick: () => setAddOpen(true) }}
         />
       ) : (
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b-2 border-b-[#e6ab35]">
+                <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
                   {[
                     { label: 'Name', field: 'name' as SortField },
                     { label: 'Type', field: 'type' as SortField },
@@ -146,7 +146,7 @@ export default function CustomersPage() {
                   ].map(({ label, field }) => (
                     <th key={label}
                       onClick={field ? () => handleSort(field) : undefined}
-                      className={cn('text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[#e6ab35] select-none')}
+                      className={cn('text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-3)] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[var(--sg-text-1)] select-none')}
                     >
                       {label}{field && <SortIcon field={field} />}
                     </th>
@@ -158,49 +158,49 @@ export default function CustomersPage() {
                   <tr
                     key={customer.id}
                     onClick={() => router.push(`/customers/${customer.id}`)}
-                    className={cn('border-b border-[#2e2d26] transition-colors group cursor-pointer', i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]', 'hover:bg-[#2e2d26]')}
+                    className="data-table border-b border-[var(--sg-border)] transition-colors group cursor-pointer bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]"
                   >
                     <td className="px-4 py-3">
-                      <span className="text-sm font-medium text-[#efeae2]">{customer.name}</span>
-                      {customer.company_name && <p className="text-xs text-[#9a9585]">{customer.company_name}</p>}
+                      <span className="text-sm font-medium text-[var(--sg-text-1)]">{customer.name}</span>
+                      {customer.company_name && <p className="text-xs text-[var(--sg-text-2)]">{customer.company_name}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       {customer.phone ? (
-                        <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-sm text-[#efeae2] hover:text-[#3583b3] transition-colors">
+                        <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-sm text-[var(--sg-text-1)] hover:text-[var(--sg-sky)] transition-colors">
                           <Phone className="h-3 w-3" />{customer.phone}
                         </a>
-                      ) : <span className="text-[#9a9585]">—</span>}
+                      ) : <span className="text-[var(--sg-text-2)]">—</span>}
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       {customer.email ? (
-                        <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-sm text-[#efeae2] hover:text-[#3583b3] transition-colors">
+                        <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-sm text-[var(--sg-text-1)] hover:text-[var(--sg-sky)] transition-colors">
                           <Mail className="h-3 w-3" /><span className="truncate max-w-[180px]">{customer.email}</span>
                         </a>
-                      ) : <span className="text-[#9a9585]">—</span>}
+                      ) : <span className="text-[var(--sg-text-2)]">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm text-[#9a9585]">{customer.city ?? '—'}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{customer.city ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {customer.tags?.slice(0, 3).map(tag => (
-                          <span key={tag} className="text-xs px-1.5 py-0.5 bg-[#2e2d26] text-[#efeae2] rounded">{tag}</span>
+                          <span key={tag} className="text-xs px-1.5 py-0.5 bg-[var(--sg-elevated)] text-[var(--sg-text-2)] rounded">{tag}</span>
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(customer.created_at)}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(customer.created_at)}</td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         <button
                           onClick={e => { e.stopPropagation(); setEditCustomer(customer) }}
-                          className="p-1.5 text-[#9a9585] hover:text-[#3583b3] transition-colors rounded"
+                          className="p-1.5 text-[var(--sg-text-2)] hover:text-[var(--sg-sky)] transition-colors rounded"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); setDeleteId(customer.id) }}
-                          className="p-1.5 text-[#9a9585] hover:text-[#ef4444] transition-colors rounded"
+                          className="p-1.5 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-colors rounded"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

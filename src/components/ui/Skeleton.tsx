@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils'
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded bg-[#252419]', className)} />
+  return <div className={cn('skeleton rounded', className)} />
 }
 
 export function CardSkeleton() {
   return (
-    <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-6 space-y-3">
+    <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6 space-y-3">
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-8 w-2/3" />
       <Skeleton className="h-3 w-1/4" />
@@ -18,7 +18,7 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className="space-y-2">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex gap-4 p-4 bg-[#252419] rounded-lg">
+        <div key={i} className="flex gap-4 p-4 bg-[var(--sg-surface)] rounded-lg">
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 flex-1" />
@@ -33,10 +33,10 @@ export function KanbanSkeleton() {
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex-shrink-0 w-72 bg-[#252419] rounded-xl p-4 space-y-3">
+        <div key={i} className="flex-shrink-0 w-72 bg-[var(--sg-surface)] rounded-xl p-4 space-y-3">
           <Skeleton className="h-5 w-24" />
           {Array.from({ length: 3 }).map((_, j) => (
-            <div key={j} className="bg-[#1d1c17] rounded-lg p-3 space-y-2">
+            <div key={j} className="bg-[var(--sg-elevated)] rounded-lg p-3 space-y-2">
               <Skeleton className="h-3 w-3/4" />
               <Skeleton className="h-3 w-1/2" />
               <Skeleton className="h-3 w-1/3" />

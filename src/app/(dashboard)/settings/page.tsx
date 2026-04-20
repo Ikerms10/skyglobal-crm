@@ -11,14 +11,14 @@ import { User, Lock, Building2, Calendar, Shield, Database, ExternalLink, Check 
 function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
     <div style={{
-      background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
-      borderRadius: 'var(--radius-lg)', padding: '24px', boxShadow: 'var(--shadow-sm)',
+      background: 'var(--sg-surface)', border: '1px solid var(--sg-border)',
+      borderRadius: 'var(--r-lg)', padding: '24px', boxShadow: 'var(--shadow-sm)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--gold-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon size={16} style={{ color: 'var(--gold)' }} />
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--sg-gold-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon size={16} style={{ color: 'var(--sg-gold)' }} />
         </div>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--sg-text-1)', margin: 0 }}>{title}</h2>
       </div>
       {children}
     </div>

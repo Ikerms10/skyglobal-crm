@@ -11,24 +11,71 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/login')
 
   return (
-    <div className="flex h-screen bg-[#1d1c17] overflow-hidden">
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: 'var(--c-canvas)', position: 'relative' }}
+    >
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex">
+      <div className="hidden md:flex" style={{ position: 'relative', zIndex: 10 }}>
         <Sidebar userEmail={user.email ?? ''} />
       </div>
 
       {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0" style={{ position: 'relative', zIndex: 10 }}>
         {/* Top header */}
-        <header className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-[#2e2d26] bg-[#1d1c17] sticky top-0 z-30 flex-shrink-0">
+        <header
+          style={{
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '0 16px',
+            background: 'var(--c-topnav)',
+            backdropFilter: 'blur(20px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+            borderBottom: '1px solid var(--c-border)',
+            boxShadow: 'var(--s-topnav)',
+            position: 'sticky',
+            top: 0,
+            flexShrink: 0,
+            zIndex: 30,
+          }}
+        >
           <div className="md:hidden">
-            <span className="font-bold text-[#e6ab35] text-lg">SkyGlobal</span>
+            <span
+              style={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: 17,
+                color: 'var(--c-text-1)',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              SkyGlobal
+            </span>
           </div>
           <div className="flex-1">
             <GlobalSearch />
           </div>
           <NotificationBell />
-          <div className="h-8 w-8 rounded-full bg-[#3583b3] flex items-center justify-center text-xs font-bold text-white">
+          <div
+            style={{
+              height: 32,
+              width: 32,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--c-gold), var(--c-gold-mid))',
+              border: '1px solid var(--c-gold-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 12,
+              fontWeight: 700,
+              color: 'var(--c-text-on-gold)',
+              flexShrink: 0,
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              boxShadow: '0 2px 8px var(--c-gold-shadow)',
+            }}
+          >
             {(user.email ?? 'U')[0].toUpperCase()}
           </div>
         </header>

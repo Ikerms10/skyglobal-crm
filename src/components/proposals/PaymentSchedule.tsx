@@ -25,7 +25,7 @@ function pctInput(value: number, onChange: (v: number) => void) {
       style={{
         width: 44,
         background: 'rgba(230,171,53,0.07)',
-        border: '1px solid #e6ab35',
+        border: '1px solid var(--sg-gold)',
         borderRadius: 3,
         color: '#1a1a1a',
         fontSize: 12,
@@ -87,11 +87,11 @@ export function PaymentSchedule({ total, depositPct, progressPct, finalPct, onDe
         <div style={{
           marginTop: 6,
           padding: '4px 10px',
-          background: '#fef3c7',
-          border: '1px solid #f59e0b',
+          background: 'var(--c-gold-bg)',
+          border: '1px solid var(--c-gold-border)',
           borderRadius: 4,
           fontSize: 11,
-          color: '#92400e',
+          color: 'var(--c-gold)',
           fontFamily: 'sans-serif',
         }}>
           ⚠ Percentages total {fmt(totalSum)}% — must equal 100%

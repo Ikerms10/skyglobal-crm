@@ -22,29 +22,29 @@ type ProjectWithCustomer = Project & { customers: { name: string; id: string } |
 
 function MapViewCard({ p, onClick }: { p: ProjectWithCustomer; onClick: () => void }) {
   return (
-    <div className="bg-[#252419] border border-[#2e2d26] rounded-xl p-4 flex flex-col gap-3">
+    <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4 flex flex-col gap-3">
       <div>
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-[#efeae2] leading-tight">{p.title}</p>
+          <p className="text-sm font-semibold text-[var(--sg-text-1)] leading-tight">{p.title}</p>
           <StatusBadge status={p.status} />
         </div>
         {p.customers && (
-          <p className="text-xs text-[#9a9585] mt-0.5">{p.customers.name}</p>
+          <p className="text-xs text-[var(--sg-text-2)] mt-0.5">{p.customers.name}</p>
         )}
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           <Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge>
         </div>
       </div>
       {p.address && (
-        <div className="flex items-start gap-1.5 text-xs text-[#9a9585]">
-          <MapPin className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-[#3583b3]" />
+        <div className="flex items-start gap-1.5 text-xs text-[var(--sg-text-2)]">
+          <MapPin className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-[var(--sg-sky)]" />
           <span className="break-words">{p.address}</span>
         </div>
       )}
       <div className="flex items-center gap-2 flex-wrap mt-auto pt-1">
         {p.address && <DirectionsButton address={p.address} />}
         <button onClick={onClick}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#1d1c17] border border-[#2e2d26] text-[#efeae2] hover:bg-[#2e2d26] transition-colors">
+          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--sg-base)] border border-[var(--sg-border)] text-[var(--sg-text-1)] hover:bg-[var(--sg-elevated)] transition-colors">
           <ExternalLink className="h-3.5 w-3.5" /> Open Project
         </button>
       </div>
@@ -121,8 +121,8 @@ export default function ProjectsPage() {
 
   const SortIcon = ({ field }: { field: SortField }) => (
     <span className="ml-1 inline-flex flex-col">
-      <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
-      <ChevronDown className={cn('h-3 w-3 -mt-1', sortField === field && sortDir === 'desc' ? 'text-[#e6ab35]' : 'text-[#9a9585]')} />
+      <ChevronUp className={cn('h-3 w-3', sortField === field && sortDir === 'asc' ? 'text-[var(--sg-gold)]' : 'text-[var(--sg-text-2)]')} />
+      <ChevronDown className={cn('h-3 w-3 -mt-1', sortField === field && sortDir === 'desc' ? 'text-[var(--sg-gold)]' : 'text-[var(--sg-text-2)]')} />
     </span>
   )
 
@@ -131,19 +131,19 @@ export default function ProjectsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Projects</h1>
-          <p className="text-[#9a9585] text-sm">{projects.length} total projects</p>
+          <p className="text-[var(--sg-text-2)] text-sm">{projects.length} total projects</p>
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex items-center bg-[#252419] border border-[#2e2d26] rounded-lg p-1 gap-1">
+          <div className="flex items-center bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg p-1 gap-1">
             <button onClick={() => setViewMode('list')}
               className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors',
-                viewMode === 'list' ? 'bg-[#e6ab35] text-[#1d1c17]' : 'text-[#9a9585] hover:text-[#efeae2]')}>
+                viewMode === 'list' ? 'bg-[var(--sg-gold)] text-black' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]')}>
               <List className="h-3.5 w-3.5" /> List
             </button>
             <button onClick={() => setViewMode('map')}
               className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors',
-                viewMode === 'map' ? 'bg-[#e6ab35] text-[#1d1c17]' : 'text-[#9a9585] hover:text-[#efeae2]')}>
+                viewMode === 'map' ? 'bg-[var(--sg-gold)] text-black' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]')}>
               <MapPin className="h-3.5 w-3.5" /> Map
             </button>
           </div>
@@ -153,17 +153,17 @@ export default function ProjectsPage() {
 
       {/* Summary bar */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-4">
-          <p className="text-xs text-[#9a9585]">Active</p>
-          <p className="text-2xl font-bold text-[#e6ab35]">{activeCount}</p>
+        <div className="bg-[var(--sg-surface)] border-l-4 border-l-[var(--sg-gold)] border border-[var(--sg-border)] rounded-xl p-4">
+          <p className="text-xs text-[var(--sg-text-2)]">Active</p>
+          <p className="text-2xl font-bold text-[var(--sg-gold)]">{activeCount}</p>
         </div>
-        <div className="bg-[#252419] border-l-4 border-l-[#e6ab35] border border-[#2e2d26] rounded-xl p-4">
-          <p className="text-xs text-[#9a9585]">Contract Value</p>
-          <p className="text-2xl font-bold text-[#e6ab35]">{formatCurrency(totalContractValue)}</p>
+        <div className="bg-[var(--sg-surface)] border-l-4 border-l-[var(--sg-gold)] border border-[var(--sg-border)] rounded-xl p-4">
+          <p className="text-xs text-[var(--sg-text-2)]">Contract Value</p>
+          <p className="text-2xl font-bold text-[var(--sg-gold)]">{formatCurrency(totalContractValue)}</p>
         </div>
-        <div className="bg-[#252419] border-l-4 border-l-[#ef4444] border border-[#2e2d26] rounded-xl p-4">
-          <p className="text-xs text-[#9a9585]">Overdue</p>
-          <p className="text-2xl font-bold text-[#ef4444]">{overdueCount}</p>
+        <div className="bg-[var(--sg-surface)] border-l-4 border-l-[var(--sg-danger)] border border-[var(--sg-border)] rounded-xl p-4">
+          <p className="text-xs text-[var(--sg-text-2)]">Overdue</p>
+          <p className="text-2xl font-bold text-[var(--sg-danger)]">{overdueCount}</p>
         </div>
       </div>
 
@@ -173,15 +173,15 @@ export default function ProjectsPage() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search projects..."
-          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] placeholder-[#9a9585] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3] w-64"
+          className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)] w-64"
         />
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]">
+          className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]">
           <option value="">All Statuses</option>
           {['Scheduled','In Progress','On Hold','Completed','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <select value={filterPayment} onChange={e => setFilterPayment(e.target.value)}
-          className="bg-[#252419] border border-[#2e2d26] text-[#efeae2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3583b3] focus:border-[#3583b3]">
+          className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]">
           <option value="">All Payment Status</option>
           {['Unpaid','Partial','Paid','Overdue'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -197,7 +197,7 @@ export default function ProjectsPage() {
                 href={`https://www.google.com/maps/search/${viewAllOnMapUrl}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-[#3583b3] hover:bg-[#2a6d96] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 bg-[var(--sg-sky)] hover:brightness-110 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
               >
                 🗺️ View All on Map
               </a>
@@ -207,16 +207,16 @@ export default function ProjectsPage() {
             {mapProjects.length > 0 ? mapProjects.map(p => (
               <MapViewCard key={p.id} p={p} onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)} />
             )) : (
-              <p className="text-[#9a9585] text-sm col-span-2 py-8 text-center">No active projects with addresses</p>
+              <p className="text-[var(--sg-text-2)] text-sm col-span-2 py-8 text-center">No active projects with addresses</p>
             )}
           </div>
         </div>
       ) : (
-        <div className="bg-[#252419] border border-[#2e2d26] rounded-xl overflow-hidden">
+        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full" style={{ minWidth: 700 }}>
               <thead>
-                <tr className="border-b-2 border-b-[#e6ab35]">
+                <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
                   {[
                     { label: 'Project', field: 'title' as SortField },
                     { label: 'Customer', field: null },
@@ -229,7 +229,7 @@ export default function ProjectsPage() {
                   ].map(({ label, field }) => (
                     <th key={label}
                       onClick={field ? () => handleSort(field) : undefined}
-                      className={cn('text-left px-4 py-3 text-xs font-medium text-[#efeae2] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[#e6ab35] select-none')}
+                      className={cn('text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-3)] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[var(--sg-text-1)] select-none')}
                     >
                       {label}{field && <SortIcon field={field} />}
                     </th>
@@ -241,23 +241,23 @@ export default function ProjectsPage() {
                   <tr
                     key={p.id}
                     onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)}
-                    className={`border-b border-[#2e2d26] transition-colors cursor-pointer ${i % 2 === 0 ? 'bg-[#1d1c17]' : 'bg-[#252419]'} hover:bg-[#2e2d26]`}
+                    className="data-table border-b border-[var(--sg-border)] transition-colors cursor-pointer bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]"
                   >
                     <td className="px-4 py-3">
-                      <span className="text-sm font-medium text-[#efeae2]">{p.title}</span>
+                      <span className="text-sm font-medium text-[var(--sg-text-1)]">{p.title}</span>
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       {p.customers && (
-                        <Link href={`/customers/${p.customers.id}`} className="text-sm text-[#9a9585] hover:text-[#3583b3]">
+                        <Link href={`/customers/${p.customers.id}`} className="text-sm text-[var(--sg-text-2)] hover:text-[var(--sg-sky)]">
                           {p.customers.name}
                         </Link>
                       )}
                     </td>
                     <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
                     <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
-                    <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(p.start_date)}</td>
-                    <td className="px-4 py-3 text-sm text-[#9a9585] whitespace-nowrap">{formatDate(p.end_date)}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-[#e6ab35]">{formatCurrency(p.contract_value)}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.start_date)}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.end_date)}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">{formatCurrency(p.contract_value)}</td>
                     <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
                   </tr>
                 ))}

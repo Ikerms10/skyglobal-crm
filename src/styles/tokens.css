@@ -1,0 +1,179 @@
+/* ─── SkyGlobal CRM — Warm Design Tokens ──────────────────────────────────── */
+:root {
+
+  /* ─── SURFACE HIERARCHY ──────────────────────────────────────────────────
+     Rule: each level is slightly warmer/deeper than the one above it.
+     Content floats UP (lightest), page sits BELOW (mid), sidebar RECEDES (warmest).
+  ────────────────────────────────────────────────────────────────────────── */
+
+  --c-canvas:          #F7F4EF;   /* page background — warm linen */
+  --c-card:            #FEFCF8;   /* card/panel surface — near-white with warmth */
+  --c-card-hover:      #F5F0E6;   /* card hover state */
+  --c-nested:          #F0EAE0;   /* nested surfaces inside cards */
+  --c-sidebar:         #EDE7DB;   /* sidebar background — warm cream */
+  --c-sidebar-hover:   #E4DDD1;   /* sidebar item hover */
+  --c-sidebar-active:  #DAD2C3;   /* sidebar active item fill */
+  --c-topnav:          rgba(247, 244, 239, 0.88); /* frosted linen glass */
+
+  /* ─── BRAND ACCENTS ────────────────────────────────────────────────────── */
+
+  --c-gold:            #8B6914;   /* amber honey — revenue, primary CTA, money */
+  --c-gold-mid:        #C4952A;   /* lighter gold — secondary gold moments */
+  --c-gold-warm:       #D4A853;   /* warm gold — pending/warning badges */
+  --c-gold-bg:         #F5ECD8;   /* gold tint fill for badges/backgrounds */
+  --c-gold-border:     rgba(139, 105, 20, 0.20);
+  --c-gold-shadow:     rgba(139, 105, 20, 0.15);
+
+  --c-sage:            #4A6741;   /* sage forest — success, profit, won, positive */
+  --c-sage-soft:       #7A9E7E;   /* muted sage — interactive elements, links */
+  --c-sage-bg:         #E8F0E4;   /* sage tint fill */
+  --c-sage-border:     rgba(74, 103, 65, 0.20);
+
+  /* ─── SEMANTIC STATES ──────────────────────────────────────────────────── */
+
+  --c-danger:          #B94A3A;   /* clay red — overdue, unpaid, errors */
+  --c-danger-bg:       #F7EDEB;
+  --c-danger-border:   rgba(185, 74, 58, 0.20);
+
+  --c-warning:         #D4A853;   /* pending, in progress */
+  --c-warning-bg:      #F5ECD8;
+  --c-warning-border:  rgba(212, 168, 83, 0.25);
+
+  --c-success:         #4A6741;   /* same as sage */
+  --c-success-bg:      #E8F0E4;
+  --c-success-border:  rgba(74, 103, 65, 0.20);
+
+  /* ─── TYPOGRAPHY ───────────────────────────────────────────────────────── */
+
+  --c-text-1:          #1C1209;   /* espresso — primary headings, values */
+  --c-text-2:          #5C4A38;   /* dark driftwood — body text */
+  --c-text-3:          #7A6652;   /* medium driftwood — secondary labels */
+  --c-text-4:          #A07850;   /* terracotta — muted labels, placeholders */
+  --c-text-5:          #C4B09A;   /* lightest — disabled, hints */
+  --c-text-sidebar:    #6B5A48;   /* sidebar inactive nav items */
+  --c-text-on-gold:    #FEFCF8;   /* text on gold backgrounds */
+  --c-text-on-dark:    #F5F0E8;   /* text on dark (espresso) backgrounds */
+
+  /* ─── BORDERS ──────────────────────────────────────────────────────────── */
+
+  --c-border-light:    #EDE7DC;   /* hairline — most card borders */
+  --c-border:          #E0D5C7;   /* default border */
+  --c-border-mid:      #CFC4B4;   /* medium emphasis */
+  --c-border-strong:   #B8A898;   /* strong borders, dividers */
+
+  /* ─── SHADOWS (warm-tinted, espresso base) ─────────────────────────────── */
+
+  --s-card:            0 1px 3px rgba(28, 18, 9, 0.05), 0 1px 8px rgba(28, 18, 9, 0.04);
+  --s-card-inset:      inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --s-card-hover:      0 4px 16px rgba(28, 18, 9, 0.09), 0 1px 4px rgba(28, 18, 9, 0.05);
+  --s-card-hover-inset: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --s-button:          0 1px 3px rgba(28, 18, 9, 0.12), 0 1px 2px rgba(28, 18, 9, 0.08);
+  --s-button-hover:    0 4px 12px rgba(139, 105, 20, 0.20), 0 1px 4px rgba(28, 18, 9, 0.10);
+  --s-modal:           0 20px 60px rgba(28, 18, 9, 0.15), 0 4px 20px rgba(28, 18, 9, 0.08);
+  --s-topnav:          0 1px 0 rgba(28, 18, 9, 0.06), 0 2px 8px rgba(28, 18, 9, 0.04);
+  --s-sidebar-logo:    0 2px 8px rgba(28, 18, 9, 0.20);
+
+  /* ─── RADIUS ───────────────────────────────────────────────────────────── */
+
+  --r-sm:  8px;
+  --r-md:  12px;
+  --r-lg:  16px;
+  --r-xl:  24px;
+
+  /* ─── TYPOGRAPHY ───────────────────────────────────────────────────────── */
+
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body:    'Plus Jakarta Sans', sans-serif;
+  --font-mono:    'DM Mono', monospace;
+
+  /* ─── TRANSITIONS ──────────────────────────────────────────────────────── */
+
+  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast:     150ms;
+  --dur-normal:   250ms;
+  --dur-slow:     400ms;
+
+  /* ─── Z-INDEX ──────────────────────────────────────────────────────────── */
+
+  --z-base:     1;
+  --z-dropdown: 10;
+  --z-sticky:   20;
+  --z-overlay:  30;
+  --z-modal:    40;
+  --z-popover:  50;
+  --z-toast:    60;
+  --z-tooltip:  70;
+
+  /* ─── LEGACY ALIASES — maps old --sg-* to new warm tokens ─────────────────
+     All existing code using --sg-* automatically inherits the new palette.
+  ────────────────────────────────────────────────────────────────────────── */
+
+  --sg-base:          var(--c-canvas);
+  --sg-surface:       var(--c-card);
+  --sg-elevated:      var(--c-nested);
+  --sg-glass:         var(--c-topnav);
+
+  --sg-gold:          var(--c-gold);
+  --sg-gold-dim:      var(--c-gold-bg);
+  --sg-gold-glow:     rgba(139, 105, 20, 0.18);
+  --sg-sky:           var(--c-sage-soft);
+  --sg-sky-dim:       var(--c-sage-bg);
+  --sg-sky-glow:      rgba(122, 158, 126, 0.22);
+
+  --sg-success:       var(--c-sage);
+  --sg-danger:        var(--c-danger);
+  --sg-warning:       var(--c-gold-warm);
+
+  --sg-text-1:        var(--c-text-1);
+  --sg-text-2:        var(--c-text-3);
+  --sg-text-3:        var(--c-text-4);
+
+  --sg-border:        var(--c-border-light);
+  --sg-border-md:     var(--c-border);
+  --sg-border-bright: var(--c-border-mid);
+
+  /* old flat aliases */
+  --sg-bg-base:        var(--c-canvas);
+  --sg-bg-surface:     var(--c-card);
+  --sg-bg-elevated:    var(--c-nested);
+  --sg-bg-glass:       var(--c-topnav);
+  --sg-accent:         var(--c-sage-soft);
+  --sg-accent-glow:    rgba(122, 158, 126, 0.22);
+  --sg-text-primary:   var(--c-text-1);
+  --sg-text-secondary: var(--c-text-3);
+  --sg-text-muted:     var(--c-text-4);
+  --sg-border-card:    var(--c-border-light);
+  --sg-border-subtle:  var(--c-border-light);
+  --text-primary:      var(--c-text-1);
+  --text-secondary:    var(--c-text-3);
+  --text-tertiary:     var(--c-text-4);
+  --bg-card:           var(--c-card);
+  --bg-tertiary:       var(--c-nested);
+  --bg-elevated:       var(--c-nested);
+  --gold:              var(--c-gold);
+  --blue:              var(--c-sage-soft);
+  --success:           var(--c-sage);
+  --error:             var(--c-danger);
+  --warning:           var(--c-gold-warm);
+  --error-light:       var(--c-danger-bg);
+  --success-light:     var(--c-sage-bg);
+  --border-card:       var(--c-border-light);
+  --border-subtle:     var(--c-border-light);
+  --radius-sm:         8px;
+  --radius-md:         12px;
+  --radius-lg:         16px;
+  --radius-xl:         20px;
+  --radius-2xl:        24px;
+  --font-ui:           'Plus Jakarta Sans', sans-serif;
+  --font-rajdhani:     'Plus Jakarta Sans', sans-serif;
+  --font-jetbrains:    'DM Mono', monospace;
+  --font-inter:        'Plus Jakarta Sans', sans-serif;
+
+  /* shadow aliases */
+  --shadow-xs: var(--s-card);
+  --shadow-sm: var(--s-card);
+  --shadow-md: var(--s-card-hover);
+  --shadow-lg: var(--s-modal);
+  --shadow-xl: var(--s-modal);
+}
