@@ -11,6 +11,7 @@ import { ExteriorTemplate } from '@/components/proposals/templates/ExteriorTempl
 import { CabinetTemplate } from '@/components/proposals/templates/CabinetTemplate'
 import { CustomTemplate } from '@/components/proposals/templates/CustomTemplate'
 import { LineItem } from '@/components/proposals/EditableTable'
+import { ScopeStep } from '@/components/proposals/ScopeOfWork'
 import { downloadProposalPDF } from '@/components/proposals/ProposalPDF'
 import { format } from 'date-fns'
 
@@ -22,6 +23,29 @@ const TEMPLATE_LABELS: Record<ProposalTemplate, string> = {
 }
 
 function genId() { return Math.random().toString(36).slice(2) }
+
+function defaultScopeSteps(template: ProposalTemplate): ScopeStep[] {
+  if (template === 'interior') return [
+    { title: 'Step 1: Preparation & Protection', bullets: ['Environment Shielding: All furniture, flooring, fixtures, and hardware fully masked and protected with professional-grade coverings.', 'Surface Cleaning: All paintable surfaces wiped clean; dust, grease, and contaminants removed prior to any application.'] },
+    { title: 'Step 2: Remediation & Priming', bullets: ['Drywall Restoration: Holes, cracks, and surface imperfections filled and sanded flush for seamless paint adhesion.', 'Priming: Stain-blocking primer applied to all repaired areas and bare surfaces ensuring lasting topcoat adhesion.'] },
+    { title: 'Step 3: Premium Application', bullets: ['Execution: Two full coats of Sherwin-Williams premium interior paint applied for complete, even, durable coverage.', 'Detailing: Clean sharp lines at all transitions — ceilings, trim, doors, windows, and outlets executed with precision.'] },
+    { title: 'Step 4: Site Restoration & Quality Control', bullets: ['Cleanup: All masking removed, surfaces wiped clean, furniture returned, and area left spotless.', 'Final Walkthrough: On-site inspection with client to verify satisfaction and address any touch-up items immediately.'] },
+  ]
+  if (template === 'exterior') return [
+    { title: 'Step 01: Power Washing — Foundation of Adhesion', bullets: ['Full exterior pressure wash at 2,500–3,500 PSI removing all surface contamination.', 'Soft Chemical Wash: mildicide solution applied to eradicate mold, mildew, and algae at the root.', 'Surfaces allowed to fully dry (24–48 hours) before any paint application.'] },
+    { title: 'Step 02: Scraping, Priming & Stabilization', bullets: ['Level 2 Prep: Hand-scraping all peeling and failing paint to create a firm, adherent surface.', 'Remediation: Cracks and gaps filled with SherMax™ elastomeric sealant; checks re-caulked.', 'Priming: All bare wood, concrete, and masonry primed with appropriate system primers.'] },
+    { title: 'Step 03: Expert Paint Application', bullets: ['Airless sprayers for uniform, millage-controlled coverage across all surfaces.', 'Full Protection: Complete masking of all windows, doors, fixtures, landscaping, and hardscape.', 'Finishing: Sherwin-Williams premium exterior coatings in HOA-approved colors — back-rolled for penetration.'] },
+    { title: 'Step 04: Final Cleanup & Quality Assurance', bullets: ['Complete removal of all masking, drop cloths, and protective materials.', 'Cleaning of plant beds, concrete, and all adjacent surfaces of any overspray.', 'Final Walkthrough: On-site inspection with client to verify satisfaction before sign-off.'] },
+  ]
+  if (template === 'cabinet') return [
+    { title: 'Phase 1: Teardown & Precision Labeling', bullets: ['Careful removal of all doors, drawer fronts, and hardware with zero damage to boxes.', 'Proprietary labeling system ensuring exact reinstallation alignment.', 'Transport to professional spray shop for controlled environment application.'] },
+    { title: 'Phase 2: Protection & Surface Prep', bullets: ['Complete Home Protection: masking of all countertops, appliances, and adjacent areas.', 'Chemical Degreasing: cooking oils, fingerprints, and contaminants fully stripped.', 'Dustless Sanding: EKASANDER orbital system for scratch pattern without airborne dust.'] },
+    { title: 'Phase 3: Industrial Primer System', bullets: ['2-Coat Bonding Primer: Renner 1K 643/648 industrial wood primer system.', 'Tannin Blocking: oil-based stain blockers prevent bleed-through on oak and pine.', 'Inter-Coat Sanding: 320 grit between all coats for glass-smooth adhesion.'] },
+    { title: 'Phase 4: Professional Topcoat & Reinstallation', bullets: ['Fine-Finish Spraying: HVLP fine-finish spray tips produce a factory smooth, drip-free finish.', 'White-Glove Delivery: all doors and drawers wrapped in film for protection during transport.', 'Reinstallation: precise mounting, hardware installation, and door alignment.'] },
+  ]
+  // custom
+  return [{ title: 'Step 1: Project Overview', bullets: ['Describe the scope of work and key deliverables here.'] }]
+}
 
 function defaultLineItems(template: ProposalTemplate): LineItem[] {
   if (template === 'interior') {
@@ -61,7 +85,7 @@ function buildInitialData(template: ProposalTemplate, customer: any) {
     // template-specific
     coatingTier: template === 'exterior' ? 'tier2' : template === 'cabinet' ? 'signature' : '',
     sheen: 'Satin',
-    scopeOfWork: '',
+    scopeOfWork: defaultScopeSteps(template),
   }
   return base
 }
@@ -125,7 +149,9 @@ export default function ProposalNewPage() {
         showInsurancePage: p.show_insurance_page,
         coatingTier: td.coatingTier ?? '',
         sheen: td.sheen ?? 'Satin',
-        scopeOfWork: td.scopeOfWork ?? '',
+        scopeOfWork: Array.isArray(td.scopeOfWork)
+          ? td.scopeOfWork
+          : (td.scopeOfWork ? [{ title: 'Scope of Work', bullets: [td.scopeOfWork] }] : defaultScopeSteps(p.template as ProposalTemplate)),
       })
     })
   }, [proposalId])

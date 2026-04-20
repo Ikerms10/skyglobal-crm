@@ -2,13 +2,14 @@
 import { EditableField } from '../EditableField'
 import { EditableTable, LineItem } from '../EditableTable'
 import { PaymentSchedule } from '../PaymentSchedule'
+import { ScopeOfWork, ScopeStep } from '../ScopeOfWork'
 import { Lock } from 'lucide-react'
 
 const S = {
   page: {
-    background: '#fff',
+    background: '#FEFCF8',
     fontFamily: 'Georgia, "Times New Roman", serif',
-    color: '#1a1a1a',
+    color: '#1C1209',
     fontSize: 13,
     lineHeight: 1.6,
   } as React.CSSProperties,
@@ -17,22 +18,19 @@ const S = {
     fontWeight: 700,
     letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
-    color: '#3583b3',
-    borderBottom: '2px solid #3583b3',
+    color: '#8B6914',
+    borderBottom: '1px solid #E0D5C7',
     paddingBottom: 4,
     marginBottom: 12,
     marginTop: 24,
   },
   table: { width: '100%', borderCollapse: 'collapse' as const, fontSize: 12 },
-  td: { padding: '7px 10px', border: '1px solid #e5e7eb', verticalAlign: 'middle' as const },
-  step: { marginBottom: 14 },
-  stepTitle: { fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontSize: 13 },
-  bullet: { marginLeft: 16, marginBottom: 3, color: '#374151' } as React.CSSProperties,
+  td: { padding: '7px 10px', border: '1px solid #E0D5C7', verticalAlign: 'middle' as const },
   staticNote: {
     display: 'flex' as const,
     alignItems: 'center' as const,
     gap: 4,
-    color: '#9a9585',
+    color: '#A07850',
     fontSize: 10,
     fontFamily: 'sans-serif',
     fontStyle: 'normal' as const,
@@ -46,8 +44,8 @@ function LockedBadge() {
 
 function PageBreak() {
   return (
-    <div style={{ borderTop: '3px dashed #e5e7eb', margin: '32px 0', position: 'relative' }}>
-      <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', background: '#fff', padding: '0 8px', fontSize: 10, color: '#9ca3af', fontFamily: 'sans-serif' }}>page break</span>
+    <div style={{ borderTop: '3px dashed #E0D5C7', margin: '32px 0', position: 'relative' }}>
+      <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', background: '#FEFCF8', padding: '0 8px', fontSize: 10, color: '#A07850', fontFamily: 'sans-serif' }}>page break</span>
     </div>
   )
 }
@@ -67,6 +65,7 @@ interface Props {
     lineItems: LineItem[]
     coatingTier: string
     sheen: string
+    scopeOfWork: ScopeStep[]
     showInsurancePage: boolean
   }
   onChange: (patch: Partial<Props['data']>) => void
@@ -81,7 +80,7 @@ const COATING_TIERS = [
 const SHEEN_OPTIONS = ['Flat', 'Satin', 'Semi-Gloss', 'Gloss']
 
 export function ExteriorTemplate({ data, onChange }: Props) {
-  const f = (field: keyof Props['data']) => (val: string | number | LineItem[] | boolean) =>
+  const f = (field: keyof Props['data']) => (val: string | number | LineItem[] | boolean | ScopeStep[]) =>
     onChange({ [field]: val } as any)
 
   return (
@@ -89,23 +88,25 @@ export function ExteriorTemplate({ data, onChange }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
-          <div style={{ width: 48, height: 48, background: '#1d1c17', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e6ab35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
+          <div style={{ width: 64, height: 64, background: '#1C1209', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+            <img src="/skyglobal-logo.svg" width="40" height="40" alt="SkyGlobal" />
           </div>
           <LockedBadge />
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a' }}>SkyGlobal Renovations LLC</div>
-          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Professional Renovation Services</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#1C1209' }}>SkyGlobal Renovations LLC</div>
+          <div style={{ fontSize: 11, color: '#A07850', marginTop: 2 }}>Professional Renovation Services</div>
         </div>
       </div>
 
-      <div style={{ background: '#1d1c17', color: '#e6ab35', padding: '14px 20px', borderRadius: 6, marginBottom: 16, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', letterSpacing: '0.04em' }}>
-        <EditableField value={data.projectName} onChange={f('projectName')} placeholder="PROJECT NAME / NUMBER" style={{ color: '#e6ab35', fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 700 }} inputStyle={{ background: '#2e2d26', color: '#e6ab35', border: '1px solid #e6ab35' }} />
-        {' '}<span style={{ color: '#9a9585', fontWeight: 400 }}>| EXTERIOR PROTECTION & FINISHING PROPOSAL</span>
+      {/* Proposal Title Banner */}
+      <div style={{
+        background: '#F0EAE0', borderTop: '3px solid #8B6914', borderBottom: '3px solid #8B6914',
+        padding: '14px 24px', marginBottom: 16,
+        fontSize: 14, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', letterSpacing: '0.04em',
+      }}>
+        <EditableField value={data.projectName} onChange={f('projectName')} placeholder="PROJECT NAME / NUMBER" style={{ color: '#8B6914', fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 700 }} inputStyle={{ background: '#F5ECD8', color: '#8B6914', border: '1px solid #D4A853' }} />
+        {' '}<span style={{ color: '#A07850', fontWeight: 400 }}>| EXTERIOR PROTECTION & FINISHING PROPOSAL</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 4, fontSize: 12 }}>
@@ -116,8 +117,8 @@ export function ExteriorTemplate({ data, onChange }: Props) {
         </div>
       </div>
 
-      <div style={{ background: '#f9f9f7', border: '1px solid #e5e7eb', borderRadius: 4, padding: '8px 12px', marginBottom: 4, fontSize: 11, color: '#6b7280', fontStyle: 'italic', lineHeight: 1.5 }}>
-        <strong style={{ fontStyle: 'normal', color: '#374151' }}>CONFIDENTIAL:</strong> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC.
+      <div style={{ background: '#F5ECD8', borderLeft: '3px solid #D4A853', border: '1px solid #E8D5A3', borderRadius: 4, padding: '8px 12px', marginBottom: 4, fontSize: 11, color: '#A07850', fontStyle: 'italic', lineHeight: 1.5 }}>
+        <strong style={{ fontStyle: 'normal', color: '#5C4A38' }}>CONFIDENTIAL:</strong> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC.
       </div>
 
       <div style={S.sectionHeader}>Section I — Business Contact<LockedBadge /></div>
@@ -145,57 +146,52 @@ export function ExteriorTemplate({ data, onChange }: Props) {
             ['Project Type', 'Exterior Protection & Level 2 Prep'],
             ['Total Investment', <EditableField key="ti" value={data.totalInvestment != null ? String(data.totalInvestment) : ''} onChange={v => onChange({ totalInvestment: v ? parseFloat(v) : null })} type="number" prefix="$" placeholder="0.00" />],
           ].map(([label, content], i) => (
-            <tr key={i} style={{ background: i % 2 === 0 ? '#f9f9f7' : '#fff' }}>
-              <td style={{ ...S.td, fontWeight: 600, width: '35%', color: '#374151' }}>{label as string}</td>
+            <tr key={i} style={{ background: i % 2 === 0 ? '#F5ECD8' : '#FEFCF8' }}>
+              <td style={{ ...S.td, fontWeight: 600, width: '35%', color: '#5C4A38' }}>{label as string}</td>
               <td style={S.td}>{content as React.ReactNode}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div style={S.sectionHeader}>
-        Section III — The SkyGlobal 4-Step Exterior Process
-        <LockedBadge />
-      </div>
-      <p style={{ fontSize: 12, color: '#374151', marginBottom: 10, fontStyle: 'italic' }}>
+      <div style={S.sectionHeader}>Section III — The SkyGlobal 4-Step Exterior Process</div>
+      <p style={{ fontSize: 12, color: '#5C4A38', marginBottom: 10, fontStyle: 'italic' }}>
         Florida's heat, humidity, and UV radiation demand a system — not just a coat of paint.
       </p>
-      {[
-        { step: 'Step 01: Power Washing — Foundation of Adhesion', bullets: ['Full exterior pressure wash at 2,500–3,500 PSI removing all surface contamination.', 'Soft Chemical Wash: mildicide solution applied to eradicate mold, mildew, and algae at the root.', 'Surfaces allowed to fully dry (24–48 hours) before any paint application.'] },
-        { step: 'Step 02: Scraping, Priming & Stabilization', bullets: ['Level 2 Prep: Hand-scraping all peeling and failing paint to create a firm, adherent surface.', 'Remediation: Cracks and gaps filled with SherMax™ elastomeric sealant; checks re-caulked.', 'Priming: All bare wood, concrete, and masonry primed with appropriate system primers.'] },
-        { step: 'Step 03: Expert Paint Application', bullets: ['Airless sprayers for uniform, millage-controlled coverage across all surfaces.', 'Full Protection: Complete masking of all windows, doors, fixtures, landscaping, and hardscape.', 'Finishing: Sherwin-Williams premium exterior coatings in HOA-approved colors — back-rolled for penetration.'] },
-        { step: 'Step 04: Final Cleanup & Quality Assurance', bullets: ['Complete removal of all masking, drop cloths, and protective materials.', 'Cleaning of plant beds, concrete, and all adjacent surfaces of any overspray.', 'Final Walkthrough: On-site inspection with client to verify satisfaction before sign-off.'] },
-      ].map(({ step, bullets }, i) => (
-        <div key={i} style={S.step}>
-          <div style={S.stepTitle}>{step}</div>
-          {bullets.map((b, j) => <div key={j} style={S.bullet}>• {b}</div>)}
-        </div>
-      ))}
+      <ScopeOfWork
+        steps={data.scopeOfWork}
+        onChange={steps => onChange({ scopeOfWork: steps })}
+      />
 
       <PageBreak />
 
       <div style={S.sectionHeader}>Section IV — Material Specifications & Coating Selection</div>
-      <p style={{ fontSize: 12, color: '#374151', marginBottom: 12, fontStyle: 'italic' }}>
+      <p style={{ fontSize: 12, color: '#5C4A38', marginBottom: 12, fontStyle: 'italic' }}>
         We use <strong style={{ fontStyle: 'normal' }}>Sherwin-Williams</strong> systems engineered for the Florida climate. Select your coating tier:
       </p>
 
       {COATING_TIERS.map(tier => (
-        <label key={tier.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10, cursor: 'pointer', padding: '8px 10px', borderRadius: 4, background: data.coatingTier === tier.id ? 'rgba(53,131,179,0.08)' : 'transparent', border: data.coatingTier === tier.id ? '1px solid #3583b3' : '1px solid transparent' }}>
-          <input type="radio" name="coatingTier" value={tier.id} checked={data.coatingTier === tier.id} onChange={() => onChange({ coatingTier: tier.id })} style={{ marginTop: 3, accentColor: '#3583b3' }} />
+        <label key={tier.id} style={{
+          display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10, cursor: 'pointer',
+          padding: '8px 10px', borderRadius: 4,
+          background: data.coatingTier === tier.id ? 'rgba(74,103,65,0.08)' : 'transparent',
+          border: data.coatingTier === tier.id ? '1px solid #4A6741' : '1px solid transparent',
+        }}>
+          <input type="radio" name="coatingTier" value={tier.id} checked={data.coatingTier === tier.id} onChange={() => onChange({ coatingTier: tier.id })} style={{ marginTop: 3, accentColor: '#4A6741' }} />
           <div>
             <div style={{ fontWeight: 600, fontSize: 12 }}>{tier.label}</div>
-            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 1 }}>{tier.desc}</div>
+            <div style={{ fontSize: 11, color: '#A07850', marginTop: 1 }}>{tier.desc}</div>
           </div>
         </label>
       ))}
 
       <div style={{ marginTop: 12, fontSize: 12 }}>
         <strong>Selected Sheen:</strong>{' '}
-        <select value={data.sheen} onChange={e => onChange({ sheen: e.target.value })} style={{ background: 'rgba(230,171,53,0.07)', border: '1px solid #e6ab35', borderRadius: 3, color: '#1a1a1a', fontSize: 12, fontFamily: 'Georgia, serif', padding: '2px 6px', outline: 'none' }}>
+        <select value={data.sheen} onChange={e => onChange({ sheen: e.target.value })} style={{ background: 'rgba(212,168,83,0.07)', border: '1px solid #D4A853', borderRadius: 3, color: '#1C1209', fontSize: 12, fontFamily: 'Georgia, serif', padding: '2px 6px', outline: 'none' }}>
           {SHEEN_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
-      <div style={{ marginTop: 8, fontSize: 12, color: '#374151' }}>
+      <div style={{ marginTop: 8, fontSize: 12, color: '#5C4A38' }}>
         <strong>Sealant:</strong> SherMax™ Urethanized Elastomeric Sealant (Included)
       </div>
 
@@ -212,15 +208,15 @@ export function ExteriorTemplate({ data, onChange }: Props) {
         ['Insurance Coverage', '$2,000,000 General Liability. Policy No. CEG-00312198-00. COI available upon request.'],
       ].map(([title, body], i) => (
         <div key={i} style={{ marginBottom: 10, fontSize: 12 }}>
-          <strong style={{ color: '#1a1a1a' }}>{i + 1}. {title}:</strong>{' '}
-          <span style={{ color: '#374151' }}>{body}</span>
+          <strong style={{ color: '#1C1209' }}>{i + 1}. {title}:</strong>{' '}
+          <span style={{ color: '#5C4A38' }}>{body}</span>
         </div>
       ))}
 
-      <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #e5e7eb' }}>
+      <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #E0D5C7' }}>
         <div style={{ display: 'flex', gap: 40, fontSize: 12 }}>
-          <div><div style={{ borderBottom: '1px solid #1a1a1a', minWidth: 200, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div><div style={{ color: '#6b7280' }}>Client Acceptance Signature</div></div>
-          <div><div style={{ borderBottom: '1px solid #1a1a1a', minWidth: 120, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div><div style={{ color: '#6b7280' }}>Date</div></div>
+          <div><div style={{ borderBottom: '1px solid #1C1209', minWidth: 200, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div><div style={{ color: '#A07850' }}>Client Acceptance Signature</div></div>
+          <div><div style={{ borderBottom: '1px solid #1C1209', minWidth: 120, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div><div style={{ color: '#A07850' }}>Date</div></div>
         </div>
       </div>
 
@@ -228,12 +224,12 @@ export function ExteriorTemplate({ data, onChange }: Props) {
         <>
           <PageBreak />
           <div style={S.sectionHeader}>Certificate of Insurance</div>
-          <div style={{ border: '2px solid #1d1c17', borderRadius: 6, padding: 20, fontSize: 12, lineHeight: 1.8 }}>
+          <div style={{ border: '1px solid #E0D5C7', borderLeft: '3px solid #4A6741', borderRadius: 6, padding: 20, fontSize: 12, lineHeight: 1.8 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div><strong>Insured:</strong> SkyGlobal Renovations LLC<br /><strong>Policy Number:</strong> CEG-00312198-00<br /><strong>Coverage:</strong> $2,000,000 General Liability</div>
               <div><strong>Phone:</strong> 352-782-2460<br /><strong>Email:</strong> skyglobalsvcs@gmail.com</div>
             </div>
-            <div style={{ marginTop: 12, padding: '8px 12px', background: '#f9f9f7', borderRadius: 4, fontStyle: 'italic', color: '#6b7280', fontSize: 11 }}>Full COI available upon request.</div>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: '#F5ECD8', borderRadius: 4, fontStyle: 'italic', color: '#A07850', fontSize: 11 }}>Full COI available upon request.</div>
           </div>
         </>
       )}

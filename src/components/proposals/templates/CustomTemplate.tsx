@@ -2,21 +2,22 @@
 import { EditableField } from '../EditableField'
 import { EditableTable, LineItem } from '../EditableTable'
 import { PaymentSchedule } from '../PaymentSchedule'
+import { ScopeOfWork, ScopeStep } from '../ScopeOfWork'
 import { Lock } from 'lucide-react'
 
 const S = {
-  page: { background: '#fff', fontFamily: 'Georgia, "Times New Roman", serif', color: '#1a1a1a', fontSize: 13, lineHeight: 1.6 } as React.CSSProperties,
-  sectionHeader: { fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#3583b3', borderBottom: '2px solid #3583b3', paddingBottom: 4, marginBottom: 12, marginTop: 24 },
+  page: { background: '#FEFCF8', fontFamily: 'Georgia, "Times New Roman", serif', color: '#1C1209', fontSize: 13, lineHeight: 1.6 } as React.CSSProperties,
+  sectionHeader: { fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#8B6914', borderBottom: '1px solid #E0D5C7', paddingBottom: 4, marginBottom: 12, marginTop: 24 },
   table: { width: '100%', borderCollapse: 'collapse' as const, fontSize: 12 },
-  td: { padding: '7px 10px', border: '1px solid #e5e7eb', verticalAlign: 'middle' as const },
-  staticNote: { display: 'flex' as const, alignItems: 'center' as const, gap: 4, color: '#9a9585', fontSize: 10, fontFamily: 'sans-serif', fontStyle: 'normal' as const, marginTop: 2 },
+  td: { padding: '7px 10px', border: '1px solid #E0D5C7', verticalAlign: 'middle' as const },
+  staticNote: { display: 'flex' as const, alignItems: 'center' as const, gap: 4, color: '#A07850', fontSize: 10, fontFamily: 'sans-serif', fontStyle: 'normal' as const, marginTop: 2 },
 }
 
 function LockedBadge() { return <span style={S.staticNote}><Lock size={10} /> Static — edit in Settings</span> }
 function PageBreak() {
   return (
-    <div style={{ borderTop: '3px dashed #e5e7eb', margin: '32px 0', position: 'relative' }}>
-      <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', background: '#fff', padding: '0 8px', fontSize: 10, color: '#9ca3af', fontFamily: 'sans-serif' }}>page break</span>
+    <div style={{ borderTop: '3px dashed #E0D5C7', margin: '32px 0', position: 'relative' }}>
+      <span style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', background: '#FEFCF8', padding: '0 8px', fontSize: 10, color: '#A07850', fontFamily: 'sans-serif' }}>page break</span>
     </div>
   )
 }
@@ -35,7 +36,7 @@ interface Props {
     progressPct: number
     finalPct: number
     lineItems: LineItem[]
-    scopeOfWork: string
+    scopeOfWork: ScopeStep[]
     showInsurancePage: boolean
   }
   onChange: (patch: Partial<Props['data']>) => void
@@ -46,25 +47,24 @@ export function CustomTemplate({ data, onChange }: Props) {
 
   return (
     <div style={S.page}>
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
-          <div style={{ width: 48, height: 48, background: '#1d1c17', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e6ab35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
+          <div style={{ width: 64, height: 64, background: '#1C1209', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+            <img src="/skyglobal-logo.svg" width="40" height="40" alt="SkyGlobal" />
           </div>
           <LockedBadge />
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a' }}>SkyGlobal Renovations LLC</div>
-          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Professional Renovation Services</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#1C1209' }}>SkyGlobal Renovations LLC</div>
+          <div style={{ fontSize: 11, color: '#A07850', marginTop: 2 }}>Professional Renovation Services</div>
         </div>
       </div>
 
-      <div style={{ background: '#1d1c17', color: '#e6ab35', padding: '14px 20px', borderRadius: 6, marginBottom: 16, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', letterSpacing: '0.04em' }}>
-        <EditableField value={data.projectName} onChange={f('projectName')} placeholder="PROJECT NAME / NUMBER" style={{ color: '#e6ab35', fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 700 }} inputStyle={{ background: '#2e2d26', color: '#e6ab35', border: '1px solid #e6ab35' }} />
-        {' '}<span style={{ color: '#9a9585', fontWeight: 400 }}>| PROFESSIONAL SERVICE PROPOSAL</span>
+      {/* Proposal Title Banner */}
+      <div style={{ background: '#F0EAE0', borderTop: '3px solid #8B6914', borderBottom: '3px solid #8B6914', padding: '14px 24px', marginBottom: 16, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', letterSpacing: '0.04em' }}>
+        <EditableField value={data.projectName} onChange={f('projectName')} placeholder="PROJECT NAME / NUMBER" style={{ color: '#8B6914', fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 700 }} inputStyle={{ background: '#F5ECD8', color: '#8B6914', border: '1px solid #D4A853' }} />
+        {' '}<span style={{ color: '#A07850', fontWeight: 400 }}>| PROFESSIONAL SERVICE PROPOSAL</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 4, fontSize: 12 }}>
@@ -75,8 +75,8 @@ export function CustomTemplate({ data, onChange }: Props) {
         </div>
       </div>
 
-      <div style={{ background: '#f9f9f7', border: '1px solid #e5e7eb', borderRadius: 4, padding: '8px 12px', marginBottom: 4, fontSize: 11, color: '#6b7280', fontStyle: 'italic', lineHeight: 1.5 }}>
-        <strong style={{ fontStyle: 'normal', color: '#374151' }}>CONFIDENTIAL:</strong> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC.
+      <div style={{ background: '#F5ECD8', borderLeft: '3px solid #D4A853', border: '1px solid #E8D5A3', borderRadius: 4, padding: '8px 12px', marginBottom: 4, fontSize: 11, color: '#A07850', fontStyle: 'italic', lineHeight: 1.5 }}>
+        <strong style={{ fontStyle: 'normal', color: '#5C4A38' }}>CONFIDENTIAL:</strong> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC.
       </div>
 
       <div style={S.sectionHeader}>Section I — Business Contact<LockedBadge /></div>
@@ -104,8 +104,8 @@ export function CustomTemplate({ data, onChange }: Props) {
             ['Service Type', <EditableField key="ps" value={data.projectScope} onChange={f('projectScope')} placeholder="e.g. Epoxy Floors, Drywall Repair, Paver Sealing..." />],
             ['Total Investment', <EditableField key="ti" value={data.totalInvestment != null ? String(data.totalInvestment) : ''} onChange={v => onChange({ totalInvestment: v ? parseFloat(v) : null })} type="number" prefix="$" placeholder="0.00" />],
           ].map(([label, content], i) => (
-            <tr key={i} style={{ background: i % 2 === 0 ? '#f9f9f7' : '#fff' }}>
-              <td style={{ ...S.td, fontWeight: 600, width: '35%', color: '#374151' }}>{label as string}</td>
+            <tr key={i} style={{ background: i % 2 === 0 ? '#F5ECD8' : '#FEFCF8' }}>
+              <td style={{ ...S.td, fontWeight: 600, width: '35%', color: '#5C4A38' }}>{label as string}</td>
               <td style={S.td}>{content as React.ReactNode}</td>
             </tr>
           ))}
@@ -113,26 +113,10 @@ export function CustomTemplate({ data, onChange }: Props) {
       </table>
 
       <div style={S.sectionHeader}>Section III — Scope of Work</div>
-      <p style={{ fontSize: 12, color: '#9a9585', marginBottom: 8, fontFamily: 'sans-serif', fontStyle: 'italic' }}>Describe the full scope, process steps, and deliverables for this project:</p>
-      <textarea
-        value={data.scopeOfWork}
-        onChange={e => onChange({ scopeOfWork: e.target.value })}
-        placeholder="Describe the scope of work, process steps, deliverables, timelines, and any special considerations..."
-        style={{
-          width: '100%',
-          minHeight: 200,
-          fontFamily: 'Georgia, serif',
-          fontSize: 13,
-          color: '#1a1a1a',
-          border: '1.5px solid #e6ab35',
-          borderRadius: 4,
-          padding: '10px 12px',
-          background: 'rgba(230,171,53,0.04)',
-          outline: 'none',
-          resize: 'vertical',
-          lineHeight: 1.7,
-          boxSizing: 'border-box',
-        }}
+      <p style={{ fontSize: 12, color: '#A07850', marginBottom: 8, fontFamily: 'sans-serif', fontStyle: 'italic' }}>Describe the full scope, process steps, and deliverables for this project:</p>
+      <ScopeOfWork
+        steps={data.scopeOfWork}
+        onChange={steps => onChange({ scopeOfWork: steps })}
       />
 
       <PageBreak />
@@ -150,15 +134,15 @@ export function CustomTemplate({ data, onChange }: Props) {
         ['Insurance Coverage', '$2,000,000 General Liability. Policy No. CEG-00312198-00. COI available upon request.'],
       ].map(([title, body], i) => (
         <div key={i} style={{ marginBottom: 10, fontSize: 12 }}>
-          <strong style={{ color: '#1a1a1a' }}>{i + 1}. {title}:</strong>{' '}
-          <span style={{ color: '#374151' }}>{body}</span>
+          <strong style={{ color: '#1C1209' }}>{i + 1}. {title}:</strong>{' '}
+          <span style={{ color: '#5C4A38' }}>{body}</span>
         </div>
       ))}
 
-      <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #e5e7eb' }}>
+      <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #E0D5C7' }}>
         <div style={{ display: 'flex', gap: 40, fontSize: 12 }}>
-          <div><div style={{ borderBottom: '1px solid #1a1a1a', minWidth: 200, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div><div style={{ color: '#6b7280' }}>Client Acceptance Signature</div></div>
-          <div><div style={{ borderBottom: '1px solid #1a1a1a', minWidth: 120, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div><div style={{ color: '#6b7280' }}>Date</div></div>
+          <div><div style={{ borderBottom: '1px solid #1C1209', minWidth: 200, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div><div style={{ color: '#A07850' }}>Client Acceptance Signature</div></div>
+          <div><div style={{ borderBottom: '1px solid #1C1209', minWidth: 120, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div><div style={{ color: '#A07850' }}>Date</div></div>
         </div>
       </div>
 
@@ -166,12 +150,12 @@ export function CustomTemplate({ data, onChange }: Props) {
         <>
           <PageBreak />
           <div style={S.sectionHeader}>Certificate of Insurance</div>
-          <div style={{ border: '2px solid #1d1c17', borderRadius: 6, padding: 20, fontSize: 12, lineHeight: 1.8 }}>
+          <div style={{ border: '1px solid #E0D5C7', borderLeft: '3px solid #4A6741', borderRadius: 6, padding: 20, fontSize: 12, lineHeight: 1.8 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div><strong>Insured:</strong> SkyGlobal Renovations LLC<br /><strong>Policy Number:</strong> CEG-00312198-00<br /><strong>Coverage:</strong> $2,000,000 General Liability</div>
               <div><strong>Phone:</strong> 352-782-2460<br /><strong>Email:</strong> skyglobalsvcs@gmail.com</div>
             </div>
-            <div style={{ marginTop: 12, padding: '8px 12px', background: '#f9f9f7', borderRadius: 4, fontStyle: 'italic', color: '#6b7280', fontSize: 11 }}>Full COI available upon request.</div>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: '#F5ECD8', borderRadius: 4, fontStyle: 'italic', color: '#A07850', fontSize: 11 }}>Full COI available upon request.</div>
           </div>
         </>
       )}
