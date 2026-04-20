@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -14,72 +14,9 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-// 6-digit OTP input with auto-advance
-function OTPInput({ onComplete }: { onComplete: (code: string) => void }) {
-  const [digits, setDigits] = useState(['', '', '', '', '', ''])
-  const refs = useRef<Array<HTMLInputElement | null>>([])
-
-  const handleChange = (i: number, val: string) => {
-    const digit = val.replace(/\D/g, '').slice(-1)
-    const next = [...digits]
-    next[i] = digit
-    setDigits(next)
-    if (digit && i < 5) refs.current[i + 1]?.focus()
-    if (next.every(d => d !== '') && digit) {
-      onComplete(next.join(''))
-    }
-  }
-
-  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) {
-      refs.current[i - 1]?.focus()
-    }
-  }
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    if (text.length === 6) {
-      setDigits(text.split(''))
-      onComplete(text)
-    }
-  }
-
-  return (
-    <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-      {digits.map((d, i) => (
-        <input
-          key={i}
-          ref={el => { refs.current[i] = el }}
-          type="text"
-          inputMode="numeric"
-          maxLength={1}
-          value={d}
-          onChange={e => handleChange(i, e.target.value)}
-          onKeyDown={e => handleKeyDown(i, e)}
-          onPaste={i === 0 ? handlePaste : undefined}
-          style={{
-            width: 44, height: 52, textAlign: 'center',
-            fontSize: 20, fontWeight: 700,
-            background: 'var(--c-card)',
-            border: `1px solid ${d ? 'var(--c-sage-soft)' : 'var(--c-border)'}`,
-            borderRadius: 'var(--r-sm)',
-            color: 'var(--c-text-1)',
-            outline: 'none',
-            transition: 'border-color 150ms',
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [otpScreen, setOtpScreen] = useState(false)
-  const [pendingEmail, setPendingEmail] = useState('')
-  const [otpLoading, setOtpLoading] = useState(false)
-  const [resendCooldown, setResendCooldown] = useState(0)
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -103,73 +40,25 @@ export default function LoginPage() {
     return () => sub.unsubscribe()
   }, [watch])
 
-  useEffect(() => {
-    if (resendCooldown <= 0) return
-    const t = setInterval(() => setResendCooldown(c => c - 1), 1000)
-    return () => clearInterval(t)
-  }, [resendCooldown])
-
   const onSubmit = async (data: FormData) => {
     setLoading(true)
     try {
       const supabase = createClient()
-      const { data: authData, error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
-      if (error) throw new Error(error.message)
-
-      // Check if 2FA enabled in user metadata
-      const twoFaEnabled = authData.user?.user_metadata?.two_factor_enabled
-      if (twoFaEnabled) {
-        // Sign out temporarily, send OTP
-        await supabase.auth.signOut()
-        const { error: otpError } = await supabase.auth.signInWithOtp({ email: data.email })
-        if (otpError) throw new Error(otpError.message)
-        setPendingEmail(data.email)
-        setOtpScreen(true)
-        setResendCooldown(30)
-        toast.success('Check your email for the 6-digit code')
-      } else {
-        localStorage.removeItem('draft:login')
-        toast.success('Welcome back!')
-        router.push('/dashboard')
-        router.refresh()
-      }
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Login failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const verifyOTP = async (code: string) => {
-    setOtpLoading(true)
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.verifyOtp({
-        email: pendingEmail,
-        token: code,
-        type: 'email',
-      })
+      const { error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
       if (error) throw new Error(error.message)
       localStorage.removeItem('draft:login')
       toast.success('Welcome back!')
       router.push('/dashboard')
       router.refresh()
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Invalid code')
+      const msg = err instanceof Error ? err.message : 'Login failed'
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('over_email')) {
+        toast.error('Please wait a moment and try again')
+      } else {
+        toast.error(msg)
+      }
     } finally {
-      setOtpLoading(false)
-    }
-  }
-
-  const resendOTP = async () => {
-    if (resendCooldown > 0) return
-    try {
-      const supabase = createClient()
-      await supabase.auth.signInWithOtp({ email: pendingEmail })
-      setResendCooldown(30)
-      toast.success('New code sent')
-    } catch {
-      toast.error('Failed to resend code')
+      setLoading(false)
     }
   }
 
@@ -183,46 +72,6 @@ export default function LoginPage() {
     color: 'var(--c-text-1)',
     outline: 'none',
     transition: 'border-color 150ms, box-shadow 150ms',
-  }
-
-  if (otpScreen) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--c-text-1)', margin: 0 }}>Two-factor verification</h2>
-          <p style={{ fontSize: 14, color: 'var(--c-text-3)', marginTop: 6 }}>
-            Enter the 6-digit code sent to <strong>{pendingEmail}</strong>
-          </p>
-        </div>
-
-        {otpLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
-            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--c-gold)' }} />
-          </div>
-        ) : (
-          <OTPInput onComplete={verifyOTP} />
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            onClick={() => setOtpScreen(false)}
-            style={{ fontSize: 13, color: 'var(--c-text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            ← Back to login
-          </button>
-          <button
-            onClick={resendOTP}
-            disabled={resendCooldown > 0}
-            style={{
-              fontSize: 13, color: resendCooldown > 0 ? 'var(--c-text-4)' : 'var(--c-gold)',
-              background: 'none', border: 'none', cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer', padding: 0,
-            }}
-          >
-            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
-          </button>
-        </div>
-      </div>
-    )
   }
 
   return (

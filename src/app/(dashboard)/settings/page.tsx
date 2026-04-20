@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { User, Lock, Building2, Calendar, Shield, Database, ExternalLink, Check } from 'lucide-react'
+import { User, Lock, Building2, Calendar, Database, ExternalLink, Check } from 'lucide-react'
 
 // ─── Section wrapper ────────────────────────────────────────────────────────
 function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
@@ -47,11 +47,6 @@ export default function SettingsPage() {
   const [businessAddress, setBusinessAddress] = useState('')
   const [businessLoading, setBusinessLoading] = useState(false)
 
-  // 2FA
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false)
-  const [twoFALoading, setTwoFALoading] = useState(false)
-  const [twoFAProtectedSince, setTwoFAProtectedSince] = useState<string | null>(null)
-
   // Google Calendar
   const [calendarConnected, setCalendarConnected] = useState(false)
   const [calendarEmail, setCalendarEmail] = useState<string | null>(null)
@@ -84,8 +79,6 @@ export default function SettingsPage() {
       setBusinessPhone(user.user_metadata?.business_phone ?? '')
       setBusinessEmail(user.user_metadata?.business_email ?? '')
       setBusinessAddress(user.user_metadata?.business_address ?? '')
-      setTwoFAEnabled(user.user_metadata?.two_factor_enabled ?? false)
-      setTwoFAProtectedSince(user.user_metadata?.two_factor_since ?? null)
       setCalendarConnected(user.user_metadata?.google_calendar_connected ?? false)
       setCalendarEmail(user.user_metadata?.google_calendar_email ?? null)
       setLastBackup(user.user_metadata?.last_backup ?? null)
@@ -133,31 +126,6 @@ export default function SettingsPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to save')
     } finally {
       setBusinessLoading(false)
-    }
-  }
-
-  const toggle2FA = async () => {
-    setTwoFALoading(true)
-    try {
-      const newVal = !twoFAEnabled
-      const data: Record<string, unknown> = { two_factor_enabled: newVal }
-      if (newVal) {
-        data.two_factor_since = new Date().toISOString()
-        // Send verification OTP
-        await supabase.auth.signInWithOtp({ email })
-        toast.success('Verification code sent to your email — check your inbox to confirm 2FA setup')
-        data.two_factor_since = new Date().toISOString()
-      } else {
-        toast.success('Two-factor authentication disabled')
-      }
-      const { error } = await supabase.auth.updateUser({ data })
-      if (error) throw new Error(error.message)
-      setTwoFAEnabled(newVal)
-      if (newVal) setTwoFAProtectedSince(new Date().toISOString())
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update 2FA')
-    } finally {
-      setTwoFALoading(false)
     }
   }
 
@@ -279,35 +247,6 @@ export default function SettingsPage() {
             />
             <div>
               <Button onClick={changePassword} loading={passwordLoading}>Update Password</Button>
-            </div>
-          </div>
-        </Section>
-
-        {/* Security / 2FA */}
-        <Section icon={Shield} title="Security">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>Two-factor authentication</p>
-              <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 4 }}>
-                {twoFAEnabled
-                  ? `Protected${twoFAProtectedSince ? ` since ${new Date(twoFAProtectedSince).toLocaleDateString()}` : ''}`
-                  : 'Add an extra layer of security via email OTP'}
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              {twoFAEnabled && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--success)', fontWeight: 500 }}>
-                  <Check size={12} /> Active
-                </div>
-              )}
-              <Button
-                variant={twoFAEnabled ? 'secondary' : 'primary'}
-                size="sm"
-                loading={twoFALoading}
-                onClick={toggle2FA}
-              >
-                {twoFAEnabled ? 'Disable' : 'Enable'}
-              </Button>
             </div>
           </div>
         </Section>
