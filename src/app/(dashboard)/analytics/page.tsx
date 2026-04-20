@@ -538,11 +538,17 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Top Customers */}
-          <div className="glass" style={{ padding: '16px 20px' }}>
+          <div style={{
+            padding: '16px 20px',
+            background: 'var(--c-card)',
+            border: '1px solid var(--c-border-light)',
+            borderRadius: 12,
+            boxShadow: 'var(--s-card)',
+          }}>
             <h3 style={{
-              fontFamily: 'var(--font-rajdhani)', fontWeight: 700, fontSize: 14,
-              color: 'var(--sg-text-primary)', margin: '0 0 12px',
-              textTransform: 'uppercase', letterSpacing: '0.08em',
+              fontWeight: 700, fontSize: 13,
+              color: 'var(--c-text-1)', margin: '0 0 12px',
+              textTransform: 'uppercase', letterSpacing: '0.04em',
             }}>
               Top Customers
             </h3>
@@ -555,35 +561,41 @@ export default function AnalyticsPage() {
                   return (
                     <div key={c.id} style={{
                       position: 'relative', padding: '10px 12px', borderRadius: 8, overflow: 'hidden',
-                      background: 'rgba(14,20,32,0.5)', border: '1px solid var(--sg-border)',
-                    }}>
+                      background: 'var(--c-nested)', border: '1px solid var(--c-border-light)',
+                      transition: 'background 150ms',
+                    }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--c-sidebar-hover)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--c-nested)' }}
+                    >
                       {/* Background revenue bar */}
                       <div style={{
                         position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 8,
-                        background: `linear-gradient(90deg, rgba(${i === 0 ? '245,158,11' : '59,130,246'},0.08), transparent)`,
+                        background: i === 0
+                          ? 'linear-gradient(90deg, rgba(139,105,20,0.10), transparent)'
+                          : 'linear-gradient(90deg, rgba(74,103,65,0.07), transparent)',
                         width: `${Math.round(c.revenue / maxRev * 100)}%`,
                         transition: 'width 0.8s ease',
                       }} aria-hidden="true" />
                       <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{
-                            fontFamily: 'var(--font-rajdhani)', fontWeight: 700, fontSize: 15,
-                            color: i === 0 ? 'var(--sg-gold)' : 'var(--sg-text-muted)',
+                            fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14,
+                            color: 'var(--c-gold)',
                           }} aria-hidden="true">
                             {i === 0 ? '👑' : `#${i + 1}`}
                           </span>
                           <div>
-                            <p style={{ fontFamily: 'var(--font-ui)', fontWeight: 600, fontSize: 13, color: 'var(--sg-text-primary)', margin: 0 }}>
+                            <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--c-text-1)', margin: 0 }}>
                               {c.name}
                             </p>
-                            <p style={{ fontSize: 10, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>
+                            <p style={{ fontSize: 10, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", margin: 0 }}>
                               {c.jobs} job{c.jobs !== 1 ? 's' : ''}
                             </p>
                           </div>
                         </div>
                         <span style={{
-                          fontFamily: 'var(--font-rajdhani)', fontWeight: 700, fontSize: 14,
-                          color: i === 0 ? 'var(--sg-gold)' : 'var(--sg-text-primary)',
+                          fontFamily: "'DM Mono', monospace", fontWeight: i === 0 ? 700 : 600, fontSize: 14,
+                          color: i === 0 ? 'var(--c-gold)' : 'var(--c-text-1)',
                         }}>
                           {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(c.revenue)}
                         </span>
@@ -592,7 +604,7 @@ export default function AnalyticsPage() {
                   )
                 })}
                 {topCustomers.length === 0 && (
-                  <p style={{ color: 'var(--sg-text-muted)', fontSize: 13, fontFamily: 'var(--font-ui)', textAlign: 'center', padding: '20px 0' }}>
+                  <p style={{ color: 'var(--c-text-3)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
                     No data yet
                   </p>
                 )}
