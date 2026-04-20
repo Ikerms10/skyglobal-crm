@@ -2,13 +2,14 @@
 import { EditableField, EditableSelect } from '../EditableField'
 import { EditableTable, LineItem } from '../EditableTable'
 import { PaymentSchedule } from '../PaymentSchedule'
+import { ScopeOfWork, ScopeStep } from '../ScopeOfWork'
 import { Lock } from 'lucide-react'
 
 const S = {
   page: {
-    background: '#fff',
+    background: '#FEFCF8',
     fontFamily: 'Georgia, "Times New Roman", serif',
-    color: '#1a1a1a',
+    color: '#1C1209',
     fontSize: 13,
     lineHeight: 1.6,
   } as React.CSSProperties,
@@ -17,8 +18,8 @@ const S = {
     fontWeight: 700,
     letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
-    color: '#3583b3',
-    borderBottom: '2px solid #3583b3',
+    color: '#8B6914',
+    borderBottom: '1px solid #E0D5C7',
     paddingBottom: 4,
     marginBottom: 12,
     marginTop: 24,
@@ -27,7 +28,7 @@ const S = {
     display: 'flex' as const,
     alignItems: 'center' as const,
     gap: 4,
-    color: '#9a9585',
+    color: '#A07850',
     fontSize: 10,
     fontFamily: 'sans-serif',
     fontStyle: 'normal' as const,
@@ -35,29 +36,20 @@ const S = {
   },
   table: { width: '100%', borderCollapse: 'collapse' as const, fontSize: 12 },
   th: {
-    background: '#3583b3',
-    color: '#fff',
+    background: '#E8F0E4',
+    color: '#4A6741',
     padding: '6px 10px',
     textAlign: 'left' as const,
     fontWeight: 600,
     fontSize: 11,
     letterSpacing: '0.04em',
+    borderBottom: '2px solid #4A6741',
   },
   td: {
     padding: '7px 10px',
-    border: '1px solid #e5e7eb',
+    border: '1px solid #E0D5C7',
     verticalAlign: 'middle' as const,
   },
-  step: {
-    marginBottom: 14,
-  },
-  stepTitle: {
-    fontWeight: 700,
-    color: '#1a1a1a',
-    marginBottom: 4,
-    fontSize: 13,
-  },
-  bullet: { marginLeft: 16, marginBottom: 3, color: '#374151' } as React.CSSProperties,
 }
 
 function LockedBadge() {
@@ -70,15 +62,11 @@ function LockedBadge() {
 
 function PageBreak() {
   return (
-    <div style={{
-      borderTop: '3px dashed #e5e7eb',
-      margin: '32px 0',
-      position: 'relative',
-    }}>
+    <div style={{ borderTop: '3px dashed #E0D5C7', margin: '32px 0', position: 'relative' }}>
       <span style={{
         position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)',
-        background: '#fff', padding: '0 8px', fontSize: 10,
-        color: '#9ca3af', fontFamily: 'sans-serif',
+        background: '#FEFCF8', padding: '0 8px', fontSize: 10,
+        color: '#A07850', fontFamily: 'sans-serif',
       }}>page break</span>
     </div>
   )
@@ -98,6 +86,7 @@ interface Props {
     progressPct: number
     finalPct: number
     lineItems: LineItem[]
+    scopeOfWork: ScopeStep[]
     showInsurancePage: boolean
   }
   onChange: (patch: Partial<Props['data']>) => void
@@ -116,36 +105,34 @@ const SCOPE_OPTIONS = [
 ]
 
 export function InteriorTemplate({ data, onChange }: Props) {
-  const f = (field: keyof Props['data']) => (val: string | number | LineItem[] | boolean) =>
+  const f = (field: keyof Props['data']) => (val: string | number | LineItem[] | boolean | ScopeStep[]) =>
     onChange({ [field]: val } as any)
 
   return (
     <div style={S.page}>
-      {/* PAGE 1 */}
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
           <div style={{
-            width: 48, height: 48, background: '#1d1c17', borderRadius: 8,
+            width: 64, height: 64, background: '#1C1209', borderRadius: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4,
           }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e6ab35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
+            <img src="/skyglobal-logo.svg" width="40" height="40" alt="SkyGlobal" />
           </div>
           <LockedBadge />
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.02em' }}>SkyGlobal Renovations LLC</div>
-          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Professional Renovation Services</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#1C1209', letterSpacing: '-0.02em' }}>SkyGlobal Renovations LLC</div>
+          <div style={{ fontSize: 11, color: '#A07850', marginTop: 2 }}>Professional Renovation Services</div>
         </div>
       </div>
 
-      {/* Proposal Title */}
+      {/* Proposal Title Banner */}
       <div style={{
-        background: '#1d1c17', color: '#e6ab35',
-        padding: '14px 20px', borderRadius: 6, marginBottom: 16,
+        background: '#F0EAE0',
+        borderTop: '3px solid #8B6914',
+        borderBottom: '3px solid #8B6914',
+        padding: '14px 24px', marginBottom: 16,
         fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
         textAlign: 'center',
       }}>
@@ -153,10 +140,10 @@ export function InteriorTemplate({ data, onChange }: Props) {
           value={data.projectName}
           onChange={f('projectName')}
           placeholder="PROJECT NAME / NUMBER"
-          style={{ color: '#e6ab35', fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 700 }}
-          inputStyle={{ background: '#2e2d26', color: '#e6ab35', border: '1px solid #e6ab35' }}
+          style={{ color: '#8B6914', fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 700 }}
+          inputStyle={{ background: '#F5ECD8', color: '#8B6914', border: '1px solid #D4A853' }}
         />
-        {' '}<span style={{ color: '#9a9585', fontWeight: 400 }}>| PROFESSIONAL SERVICE PROPOSAL</span>
+        {' '}<span style={{ color: '#A07850', fontWeight: 400 }}>| PROFESSIONAL SERVICE PROPOSAL</span>
       </div>
 
       {/* Header Info */}
@@ -177,14 +164,15 @@ export function InteriorTemplate({ data, onChange }: Props) {
 
       {/* Confidentiality */}
       <div style={{
-        background: '#f9f9f7', border: '1px solid #e5e7eb',
-        borderRadius: 4, padding: '8px 12px', marginBottom: 4,
-        fontSize: 11, color: '#6b7280', fontStyle: 'italic', lineHeight: 1.5,
+        background: '#F5ECD8', borderLeft: '3px solid #D4A853',
+        border: '1px solid #E8D5A3', borderRadius: 4,
+        padding: '8px 12px', marginBottom: 4,
+        fontSize: 11, color: '#A07850', fontStyle: 'italic', lineHeight: 1.5,
       }}>
-        <strong style={{ fontStyle: 'normal', color: '#374151' }}>CONFIDENTIAL:</strong> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC. This document may not be reproduced, distributed, or used without written authorization.
+        <strong style={{ fontStyle: 'normal', color: '#5C4A38' }}>CONFIDENTIAL:</strong> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC. This document may not be reproduced, distributed, or used without written authorization.
       </div>
 
-      {/* Section I — Business Contact */}
+      {/* Section I */}
       <div style={S.sectionHeader}>
         Section I — Business Contact
         <LockedBadge />
@@ -203,7 +191,6 @@ export function InteriorTemplate({ data, onChange }: Props) {
 
       <PageBreak />
 
-      {/* PAGE 2 */}
       {/* Section II */}
       <div style={S.sectionHeader}>Section II — Client & Project Summary</div>
       <table style={S.table}>
@@ -215,8 +202,8 @@ export function InteriorTemplate({ data, onChange }: Props) {
             ['Project Scope', <EditableSelect key="ps" value={data.projectScope} onChange={v => onChange({ projectScope: v })} options={SCOPE_OPTIONS} />],
             ['Total Investment', <EditableField key="ti" value={data.totalInvestment != null ? String(data.totalInvestment) : ''} onChange={v => onChange({ totalInvestment: v ? parseFloat(v) : null })} type="number" prefix="$" placeholder="0.00" />],
           ].map(([label, content], i) => (
-            <tr key={i} style={{ background: i % 2 === 0 ? '#f9f9f7' : '#fff' }}>
-              <td style={{ ...S.td, fontWeight: 600, width: '35%', color: '#374151' }}>{label as string}</td>
+            <tr key={i} style={{ background: i % 2 === 0 ? '#F5ECD8' : '#FEFCF8' }}>
+              <td style={{ ...S.td, fontWeight: 600, width: '35%', color: '#5C4A38' }}>{label as string}</td>
               <td style={S.td}>{content as React.ReactNode}</td>
             </tr>
           ))}
@@ -224,62 +211,24 @@ export function InteriorTemplate({ data, onChange }: Props) {
       </table>
 
       {/* Section III */}
-      <div style={S.sectionHeader}>
-        Section III — The SkyGlobal Interior Process
-        <LockedBadge />
-      </div>
-
-      {[
-        {
-          step: 'Step 1: Preparation & Protection',
-          bullets: [
-            'Environment Shielding: All furniture, flooring, fixtures, and hardware fully masked and protected with professional-grade coverings.',
-            'Surface Cleaning: All paintable surfaces wiped clean; dust, grease, and contaminants removed prior to any application.',
-          ],
-        },
-        {
-          step: 'Step 2: Remediation & Priming',
-          bullets: [
-            'Drywall Restoration: Holes, cracks, and surface imperfections filled and sanded flush for seamless paint adhesion.',
-            'Priming: Stain-blocking primer applied to all repaired areas and bare surfaces ensuring lasting topcoat adhesion.',
-          ],
-        },
-        {
-          step: 'Step 3: Premium Application',
-          bullets: [
-            'Execution: Two full coats of Sherwin-Williams premium interior paint applied for complete, even, durable coverage.',
-            'Detailing: Clean sharp lines at all transitions — ceilings, trim, doors, windows, and outlets executed with precision.',
-          ],
-        },
-        {
-          step: 'Step 4: Site Restoration & Quality Control',
-          bullets: [
-            'Cleanup: All masking removed, surfaces wiped clean, furniture returned, and area left spotless.',
-            'Final Walkthrough: On-site inspection with client to verify satisfaction and address any touch-up items immediately.',
-          ],
-        },
-      ].map(({ step, bullets }, i) => (
-        <div key={i} style={S.step}>
-          <div style={S.stepTitle}>{step}</div>
-          {bullets.map((b, j) => (
-            <div key={j} style={S.bullet}>• {b}</div>
-          ))}
-        </div>
-      ))}
+      <div style={S.sectionHeader}>Section III — The SkyGlobal Interior Process</div>
+      <ScopeOfWork
+        steps={data.scopeOfWork}
+        onChange={steps => onChange({ scopeOfWork: steps })}
+      />
 
       <PageBreak />
 
-      {/* PAGE 3 */}
       {/* Section IV */}
       <div style={S.sectionHeader}>Section IV — Material Specifications</div>
-      <p style={{ fontSize: 12, color: '#374151', marginBottom: 12, fontStyle: 'italic' }}>
+      <p style={{ fontSize: 12, color: '#5C4A38', marginBottom: 12, fontStyle: 'italic' }}>
         We use exclusively <strong style={{ fontStyle: 'normal' }}>Sherwin-Williams</strong> products. Our partnership discounts are passed directly to you with <strong style={{ fontStyle: 'normal' }}>Zero Material Markup.</strong>
       </p>
       <EditableTable items={data.lineItems} onChange={items => onChange({ lineItems: items })} />
 
       {/* Section V */}
       <div style={S.sectionHeader}>Section V — Investment & Payment Schedule</div>
-      <p style={{ fontSize: 12, color: '#374151', marginBottom: 12 }}>
+      <p style={{ fontSize: 12, color: '#5C4A38', marginBottom: 12 }}>
         The following payment schedule reflects our commitment to project alignment and financial transparency:
       </p>
       <PaymentSchedule
@@ -299,25 +248,25 @@ export function InteriorTemplate({ data, onChange }: Props) {
       </div>
       {[
         ['White Glove Cleanup', '30–45 minutes of dedicated site cleanup performed at the end of each work day. SkyGlobal leaves your home as clean as we found it — every day.'],
-        ['5-Year Workmanship Warranty', 'SkyGlobal Renovations LLC provides a 5-year warranty on all workmanship. Any defects in application, adhesion, or finish will be remediated at no cost within this period. Paint manufacturer warranty separate and applicable.'],
+        ['5-Year Workmanship Warranty', 'SkyGlobal Renovations LLC provides a 5-year warranty on all workmanship. Any defects in application, adhesion, or finish will be remediated at no cost within this period.'],
         ['Insurance Coverage', 'SkyGlobal Renovations LLC carries $2,000,000 General Liability Insurance. Policy No. CEG-00312198-00. Certificate of Insurance available upon request.'],
       ].map(([title, body], i) => (
         <div key={i} style={{ marginBottom: 10, fontSize: 12 }}>
-          <strong style={{ color: '#1a1a1a' }}>{i + 1}. {title}:</strong>{' '}
-          <span style={{ color: '#374151' }}>{body}</span>
+          <strong style={{ color: '#1C1209' }}>{i + 1}. {title}:</strong>{' '}
+          <span style={{ color: '#5C4A38' }}>{body}</span>
         </div>
       ))}
 
       {/* Signature */}
-      <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #e5e7eb' }}>
+      <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #E0D5C7' }}>
         <div style={{ display: 'flex', gap: 40, fontSize: 12 }}>
           <div>
-            <div style={{ borderBottom: '1px solid #1a1a1a', minWidth: 200, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div>
-            <div style={{ color: '#6b7280' }}>Client Acceptance Signature</div>
+            <div style={{ borderBottom: '1px solid #1C1209', minWidth: 200, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div>
+            <div style={{ color: '#A07850' }}>Client Acceptance Signature</div>
           </div>
           <div>
-            <div style={{ borderBottom: '1px solid #1a1a1a', minWidth: 120, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div>
-            <div style={{ color: '#6b7280' }}>Date</div>
+            <div style={{ borderBottom: '1px solid #1C1209', minWidth: 120, paddingBottom: 2, marginBottom: 4 }}>&nbsp;</div>
+            <div style={{ color: '#A07850' }}>Date</div>
           </div>
         </div>
       </div>
@@ -327,10 +276,7 @@ export function InteriorTemplate({ data, onChange }: Props) {
         <>
           <PageBreak />
           <div style={S.sectionHeader}>Certificate of Insurance</div>
-          <div style={{
-            border: '2px solid #1d1c17', borderRadius: 6, padding: 20,
-            fontSize: 12, lineHeight: 1.8,
-          }}>
+          <div style={{ border: '1px solid #E0D5C7', borderLeft: '3px solid #4A6741', borderRadius: 6, padding: 20, fontSize: 12, lineHeight: 1.8 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
                 <strong>Insured:</strong> SkyGlobal Renovations LLC<br />
@@ -345,7 +291,7 @@ export function InteriorTemplate({ data, onChange }: Props) {
                 <strong>Email:</strong> skyglobalsvcs@gmail.com
               </div>
             </div>
-            <div style={{ marginTop: 12, padding: '8px 12px', background: '#f9f9f7', borderRadius: 4, fontStyle: 'italic', color: '#6b7280', fontSize: 11 }}>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: '#F5ECD8', borderRadius: 4, fontStyle: 'italic', color: '#A07850', fontSize: 11 }}>
               A full Certificate of Insurance (COI) is available upon request and can be sent directly to the client, property manager, or HOA.
             </div>
           </div>
