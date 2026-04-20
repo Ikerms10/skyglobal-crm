@@ -52,7 +52,8 @@ export default function LoginPage() {
       router.refresh()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed'
-      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('over_email')) {
+      const isRateLimit = /rate.?limit|over_email|too many|exceeded|security purposes/i.test(msg)
+      if (isRateLimit) {
         toast.error('Please wait a moment and try again')
       } else {
         toast.error(msg)
