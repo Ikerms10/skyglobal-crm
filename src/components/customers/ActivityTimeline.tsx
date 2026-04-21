@@ -50,8 +50,8 @@ export function ActivityTimeline({ activities }: Props) {
         }}
       >
         <div style={{ fontSize: 36, opacity: 0.5 }}>📋</div>
-        <p style={{ color: '#bfb9ae', fontSize: 14, fontWeight: 500 }}>No activity yet</p>
-        <p style={{ color: '#8b857a', fontSize: 12 }}>Log calls, texts, and notes here.</p>
+        <p style={{ color: 'var(--c-text-3)', fontSize: 14, fontWeight: 500 }}>No activity yet</p>
+        <p style={{ color: 'var(--c-text-4)', fontSize: 12 }}>Log calls, texts, and notes here.</p>
       </div>
     );
   }
@@ -66,7 +66,7 @@ export function ActivityTimeline({ activities }: Props) {
           top: 16,
           bottom: remaining > 0 ? 72 : 16,
           width: 2,
-          background: 'rgba(255,255,255,0.07)',
+          background: 'var(--c-border-light)',
           borderRadius: 2,
         }}
       />
@@ -112,7 +112,7 @@ export function ActivityTimeline({ activities }: Props) {
                     style={{
                       fontSize: 13,
                       fontWeight: 600,
-                      color: '#ffffff',
+                      color: 'var(--c-text-1)',
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
                   >
@@ -122,7 +122,7 @@ export function ActivityTimeline({ activities }: Props) {
                     <span
                       style={{
                         fontSize: 11,
-                        color: '#8b857a',
+                        color: 'var(--c-text-4)',
                         fontFamily: "'DM Mono', monospace",
                       }}
                     >
@@ -145,7 +145,7 @@ export function ActivityTimeline({ activities }: Props) {
                   <p
                     style={{
                       fontSize: 13,
-                      color: '#bfb9ae',
+                      color: 'var(--c-text-3)',
                       marginTop: 3,
                       lineHeight: 1.55,
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -167,21 +167,21 @@ export function ActivityTimeline({ activities }: Props) {
             style={{
               padding: '7px 20px',
               borderRadius: 8,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              color: '#bfb9ae',
+              background: 'var(--c-border-light)',
+              border: '1px solid var(--c-border)',
+              color: 'var(--c-text-3)',
               fontSize: 12,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.10)';
-              e.currentTarget.style.color = '#efeae2';
+              e.currentTarget.style.background = 'var(--c-nested)';
+              e.currentTarget.style.color = 'var(--c-text-2)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-              e.currentTarget.style.color = '#bfb9ae';
+              e.currentTarget.style.background = 'var(--c-border-light)';
+              e.currentTarget.style.color = 'var(--c-text-3)';
             }}
           >
             Load more ({remaining} remaining)

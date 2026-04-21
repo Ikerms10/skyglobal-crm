@@ -11,7 +11,7 @@
 
 html {
   scroll-behavior: smooth;
-  color-scheme: dark;
+  color-scheme: light dark;
 }
 
 body {
@@ -251,7 +251,7 @@ textarea {
   transition: all 0.15s ease;
 }
 .btn-danger:hover {
-  background: #f0e0dd;
+  background: var(--c-danger-hover-bg);
   border-color: rgba(185, 74, 58, 0.35);
 }
 
