@@ -412,8 +412,7 @@ export default function ProposalNewPage() {
       const el = proposalRef.current;
       const SCALE = 2;
 
-      // Measure page-break Y positions from the live DOM before onclone modifies it.
-      // We use scrollTop-aware offsetTop accumulation so scroll position doesn't skew values.
+      // Accumulate offsetTop relative to a given ancestor (scroll-position-independent).
       const getRelativeOffsetTop = (child: HTMLElement, parent: HTMLElement): number => {
         let top = 0;
         let cur: HTMLElement | null = child;
@@ -423,9 +422,20 @@ export default function ProposalNewPage() {
         }
         return top;
       };
+
+      // Measure semantic page-break Y positions BEFORE any DOM mutations so layout is accurate.
+      // We keep [data-page-break] divs visible-but-transparent in onclone so layout doesn't shift.
       const breakYsInCanvas: number[] = Array.from(el.querySelectorAll('[data-page-break]'))
         .map((node) => Math.round(getRelativeOffsetTop(node as HTMLElement, el) * SCALE))
         .filter((y) => y > 100);
+
+      // Temporarily strip minHeight + box-shadow so canvas = actual content height, no blank tail.
+      const savedMinHeight = el.style.minHeight;
+      const savedBoxShadow = el.style.boxShadow;
+      const savedOverflow = el.style.overflow;
+      el.style.minHeight = 'auto';
+      el.style.boxShadow = 'none';
+      el.style.overflow = 'visible';
 
       const canvas = await html2canvas(el, {
         scale: SCALE,
@@ -433,39 +443,73 @@ export default function ProposalNewPage() {
         allowTaint: false,
         backgroundColor: '#ffffff',
         logging: false,
-        windowWidth: 1200,
+        windowWidth: Math.max(1400, el.scrollWidth + 200),
         width: el.scrollWidth,
         height: el.scrollHeight,
         scrollX: 0,
         scrollY: -window.scrollY,
         onclone: (doc) => {
-          // Hide UI chrome: instruction banner, locked badges, page-break decorators
-          doc.querySelectorAll('[data-pdf-hide], [data-page-break-label]').forEach((node) => {
-            (node as HTMLElement).style.display = 'none';
+          // ── A. CSS rule injection — guaranteed override, handles inherited vars too ──
+          const styleEl = doc.createElement('style');
+          styleEl.textContent = `
+            [data-pdf-hide]         { display: none !important; }
+            [data-pdf-placeholder]  { display: none !important; }
+            [data-page-break-label] { display: none !important; }
+            [data-page-break]       { border-top-color: transparent !important; }
+            button                  { display: none !important; }
+            .hover-underline        { border-bottom: none !important; text-decoration: none !important; }
+            *::placeholder          { color: transparent !important; }
+          `;
+          doc.head.appendChild(styleEl);
+
+          // ── B. Text-content sweep — belt-and-suspenders for unlabelled UI chrome ──
+          doc.querySelectorAll('span, div, p').forEach((node) => {
+            const el2 = node as HTMLElement;
+            // Only check leaf-ish nodes to avoid nuking whole sections
+            if (el2.children.length > 3) return;
+            const txt = el2.textContent?.trim() ?? '';
+            if (
+              (txt.includes('Static') && txt.includes('edit in Settings')) ||
+              (txt.includes('Fields with') && txt.includes('editable')) ||
+              txt.includes('click to type') ||
+              txt === '+ Add Step' ||
+              txt === '+ Add Row' ||
+              txt === 'page break' ||
+              (txt.includes('Percentages total') && txt.includes('%'))
+            ) {
+              el2.style.display = 'none';
+            }
           });
-          // Hide the page-break dashed divider itself (we handle breaks via canvas slicing)
-          doc.querySelectorAll('[data-page-break]').forEach((node) => {
-            (node as HTMLElement).style.borderTopColor = 'transparent';
-            (node as HTMLElement).style.margin = '16px 0';
-          });
-          // Hide all buttons (Add Step, Add Row, Remove, ✕ etc.)
-          doc.querySelectorAll('button').forEach((node) => {
-            (node as HTMLElement).style.display = 'none';
-          });
-          // Replace every <input> with a plain <span> so no input chrome appears
+
+          // ── C. Replace every <input> with a plain inline <span> ──────────────
           doc.querySelectorAll('input').forEach((node) => {
             const input = node as HTMLInputElement;
             const span = doc.createElement('span');
             span.textContent = input.value;
             span.style.fontFamily = 'Georgia, "Times New Roman", serif';
-            span.style.fontSize = input.style.fontSize || 'inherit';
-            span.style.color = input.style.color || 'inherit';
-            span.style.fontWeight = input.style.fontWeight || 'inherit';
+            span.style.fontSize = input.style.fontSize || '12px';
+            span.style.color = input.style.color || '#1a1a1a';
+            span.style.fontWeight = input.style.fontWeight || 'normal';
             span.style.textAlign = input.style.textAlign || 'left';
             span.style.display = 'inline';
+            span.style.border = 'none';
+            span.style.background = 'transparent';
             input.parentNode?.replaceChild(span, input);
           });
-          // Replace every <select> with a plain <span>
+
+          // ── D. Replace every <textarea> with a plain block <span> ───────────
+          doc.querySelectorAll('textarea').forEach((node) => {
+            const ta = node as HTMLTextAreaElement;
+            const span = doc.createElement('span');
+            span.textContent = ta.value;
+            span.style.whiteSpace = 'pre-wrap';
+            span.style.display = 'block';
+            span.style.fontFamily = 'inherit';
+            span.style.fontSize = 'inherit';
+            ta.parentNode?.replaceChild(span, ta);
+          });
+
+          // ── E. Replace every <select> with a plain inline <span> ────────────
           doc.querySelectorAll('select').forEach((node) => {
             const select = node as HTMLSelectElement;
             const span = doc.createElement('span');
@@ -474,45 +518,41 @@ export default function ProposalNewPage() {
             span.style.fontSize = 'inherit';
             select.parentNode?.replaceChild(span, select);
           });
-          // Remove hover/focus dashed underlines from editable field display spans
-          doc.querySelectorAll('.hover-underline').forEach((node) => {
-            (node as HTMLElement).style.borderBottom = 'none';
-          });
-          // Strip any contenteditable attributes and styling (ScopeOfWork inputs)
+
+          // ── F. Strip contenteditable chrome ─────────────────────────────────
           doc.querySelectorAll('[contenteditable]').forEach((node) => {
             const el2 = node as HTMLElement;
             el2.style.outline = 'none';
+            el2.style.border = 'none';
             el2.style.borderBottom = 'none';
             el2.style.boxShadow = 'none';
             el2.removeAttribute('contenteditable');
           });
-          // Ensure percentage warning banner is hidden
-          doc.querySelectorAll('[class*="warn"], [class*="alert"]').forEach((node) => {
-            (node as HTMLElement).style.display = 'none';
-          });
         },
       });
 
+      // Restore element styles
+      el.style.minHeight = savedMinHeight;
+      el.style.boxShadow = savedBoxShadow;
+      el.style.overflow = savedOverflow;
+
+      // ── Page slicing ─────────────────────────────────────────────────────────
       const A4_W = 210;
       const A4_H = 297;
       const pageHeightPx = Math.round(canvas.width * (A4_H / A4_W));
-      const MIN_PAGE_FILL = 0.15; // skip trailing page if less than 15% full
+      const MIN_PAGE_FILL = 0.15;
 
-      // Build page start positions, breaking at semantic positions where available.
-      // When a [data-page-break] element is within the current A4 page, close the
-      // page there so the next section starts fresh at the top of a new page.
+      // Build page start Y positions. Prefer semantic breaks when they fall within
+      // the current A4 page AND leave ≥30% fill on that page.
       const sortedBreaks = [...breakYsInCanvas].sort((a, b) => a - b);
       const pageStarts: number[] = [0];
       let cursor = 0;
       let bIdx = 0;
 
       while (cursor < canvas.height) {
-        // Advance break index past breaks we've already passed
         while (bIdx < sortedBreaks.length && sortedBreaks[bIdx] <= cursor) bIdx++;
-
         const naturalNext = cursor + pageHeightPx;
 
-        // Use semantic break if it falls before natural end AND leaves a meaningful page (≥30%)
         if (
           bIdx < sortedBreaks.length &&
           sortedBreaks[bIdx] < naturalNext &&
@@ -528,14 +568,15 @@ export default function ProposalNewPage() {
         pageStarts.push(cursor);
       }
 
-      // Render each page
+      // ── Render PDF pages ─────────────────────────────────────────────────────
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      pageStarts.forEach((startY, idx) => {
-        const contentRemaining = canvas.height - startY;
-        // Skip nearly-empty trailing page
-        if (idx > 0 && contentRemaining / pageHeightPx < MIN_PAGE_FILL) return;
+      let renderedPages = 0;
 
-        if (idx > 0) pdf.addPage();
+      pageStarts.forEach((startY, idx) => {
+        // Skip nearly-blank trailing pages
+        if (idx > 0 && (canvas.height - startY) / pageHeightPx < MIN_PAGE_FILL) return;
+
+        if (renderedPages > 0) pdf.addPage();
 
         const pageCanvas = document.createElement('canvas');
         pageCanvas.width = canvas.width;
@@ -545,7 +586,22 @@ export default function ProposalNewPage() {
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
         ctx.drawImage(canvas, 0, -startY);
         pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, A4_W, A4_H);
+        renderedPages++;
       });
+
+      // ── Page numbers ─────────────────────────────────────────────────────────
+      const totalPdfPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPdfPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(9);
+        pdf.setTextColor(160, 150, 130);
+        pdf.text(
+          `Page ${i} of ${totalPdfPages}`,
+          pdf.internal.pageSize.getWidth() - 12,
+          pdf.internal.pageSize.getHeight() - 8,
+          { align: 'right' }
+        );
+      }
 
       const clientSlug = (data.clientName || 'Client').replace(/\s+/g, '_');
       const dateStr = format(new Date(), 'MMMd_yyyy');
