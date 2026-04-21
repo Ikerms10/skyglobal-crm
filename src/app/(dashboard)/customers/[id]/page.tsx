@@ -1,109 +1,143 @@
-'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { toast } from 'sonner'
-import { formatCurrency, formatDate, formatRelativeTime, cn } from '@/lib/utils'
-import { Skeleton } from '@/components/ui/Skeleton'
-import { StatusBadge, PaymentBadge, Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/Button'
-import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { NewProjectModal } from '@/components/projects/NewProjectModal'
-import { EditCustomerModal } from '@/components/customers/EditCustomerModal'
-import { AddActivityModal } from '@/components/customers/AddActivityModal'
-import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink'
-import { TextTemplatesModal } from '@/components/ui/TextTemplatesModal'
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { formatCurrency, formatDate, formatRelativeTime, cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { StatusBadge, PaymentBadge, Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { NewProjectModal } from '@/components/projects/NewProjectModal';
+import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
+import { AddActivityModal } from '@/components/customers/AddActivityModal';
+import { ActivityTimeline } from '@/components/customers/ActivityTimeline';
+import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink';
+import { TextTemplatesModal } from '@/components/ui/TextTemplatesModal';
 import {
-  ArrowLeft, Phone, Mail, MapPin, Building2, Edit2, Trash2, Plus,
-  Briefcase, Target, Activity, User, DollarSign, MessageSquare, FileText
-} from 'lucide-react'
-import { TemplateSelector } from '@/components/proposals/TemplateSelector'
-import { ProposalTemplate } from '@/types'
+  ArrowLeft,
+  Phone,
+  Mail,
+  MapPin,
+  Building2,
+  Edit2,
+  Trash2,
+  Plus,
+  Briefcase,
+  Target,
+  Activity,
+  User,
+  DollarSign,
+  MessageSquare,
+  FileText,
+} from 'lucide-react';
+import { TemplateSelector } from '@/components/proposals/TemplateSelector';
+import { ProposalTemplate } from '@/types';
 
-const TABS = ['projects', 'leads', 'activity', 'info'] as const
-type Tab = typeof TABS[number]
+const TABS = ['projects', 'leads', 'activity', 'info'] as const;
+type Tab = (typeof TABS)[number];
 
 const ACTIVITY_ICONS: Record<string, string> = {
-  Call: '📞', Text: '💬', Email: '📧', Visit: '🏠',
-  Note: '📝', 'Stage Change': '🔄', 'Payment Received': '💰',
-  'Photo Added': '📷', 'Estimate Sent': '📋',
-}
+  Call: '📞',
+  Text: '💬',
+  Email: '📧',
+  Visit: '🏠',
+  Note: '📝',
+  'Stage Change': '🔄',
+  'Payment Received': '💰',
+  'Photo Added': '📷',
+  'Estimate Sent': '📋',
+};
 
 export default function CustomerDetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const customerId = params.id
+  const router = useRouter();
+  const customerId = params.id;
 
-  const [customer, setCustomer] = useState<any>(null)
-  const [projects, setProjects] = useState<any[]>([])
-  const [leads, setLeads] = useState<any[]>([])
-  const [activities, setActivities] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<Tab>('projects')
+  const [customer, setCustomer] = useState<any>(null);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('projects');
 
-  const [editOpen, setEditOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [newProjectOpen, setNewProjectOpen] = useState(false)
-  const [addActivityOpen, setAddActivityOpen] = useState(false)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [textTemplatesOpen, setTextTemplatesOpen] = useState(false)
-  const [proposalSelectorOpen, setProposalSelectorOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [addActivityOpen, setAddActivityOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [textTemplatesOpen, setTextTemplatesOpen] = useState(false);
+  const [proposalSelectorOpen, setProposalSelectorOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
-      const supabase = createClient()
+      setLoading(true);
+      setError(null);
+      const supabase = createClient();
 
       const { data: cust, error: ce } = await supabase
-        .from('customers').select('*').eq('id', customerId).single()
-      if (ce) throw new Error(ce.message)
-      setCustomer(cust)
+        .from('customers')
+        .select('*')
+        .eq('id', customerId)
+        .single();
+      if (ce) throw new Error(ce.message);
+      setCustomer(cust);
 
       const { data: proj, error: pe } = await supabase
-        .from('projects').select('*').eq('customer_id', customerId)
-        .is('deleted_at', null).order('created_at', { ascending: false })
-      if (pe) throw new Error(pe.message)
-      setProjects(proj ?? [])
+        .from('projects')
+        .select('*')
+        .eq('customer_id', customerId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+      if (pe) throw new Error(pe.message);
+      setProjects(proj ?? []);
 
       const { data: leds, error: le } = await supabase
-        .from('leads').select('*').eq('customer_id', customerId)
-        .is('deleted_at', null).order('created_at', { ascending: false })
-      if (le) throw new Error(le.message)
-      setLeads(leds ?? [])
+        .from('leads')
+        .select('*')
+        .eq('customer_id', customerId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+      if (le) throw new Error(le.message);
+      setLeads(leds ?? []);
 
       const { data: acts, error: ae } = await supabase
-        .from('activities').select('*').eq('customer_id', customerId)
-        .order('created_at', { ascending: false })
-      if (ae) throw new Error(ae.message)
-      setActivities(acts ?? [])
-
+        .from('activities')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+      if (ae) throw new Error(ae.message);
+      setActivities(acts ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load customer')
+      setError(err instanceof Error ? err.message : 'Failed to load customer');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [customerId])
+  }, [customerId]);
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleDelete = async () => {
-    setDeleteLoading(true)
+    setDeleteLoading(true);
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from('customers')
-        .update({ deleted_at: new Date().toISOString() }).eq('id', customerId)
-      if (error) throw new Error(error.message)
-      toast.success('Customer deleted')
-      router.push('/customers')
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('customers')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', customerId);
+      if (error) throw new Error(error.message);
+      toast.success('Customer deleted');
+      router.push('/customers');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete')
+      toast.error(err instanceof Error ? err.message : 'Failed to delete');
     } finally {
-      setDeleteLoading(false)
+      setDeleteLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -112,7 +146,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -121,27 +155,35 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         <p className="text-[var(--sg-danger)]">{error}</p>
         <Button onClick={loadData}>Try Again</Button>
       </div>
-    )
+    );
   }
 
   if (!customer) {
     return (
       <div className="p-4 md:p-6">
         <p className="text-[var(--sg-text-2)]">Customer not found.</p>
-        <Link href="/customers" className="text-[var(--sg-sky)] hover:underline text-sm mt-2 inline-block">Back to Customers</Link>
+        <Link
+          href="/customers"
+          className="text-[var(--sg-sky)] hover:underline text-sm mt-2 inline-block"
+        >
+          Back to Customers
+        </Link>
       </div>
-    )
+    );
   }
 
-  const totalRevenue = projects.reduce((s, p) => s + (p.contract_value ?? 0), 0)
-  const activeProjects = projects.filter(p => p.status === 'In Progress').length
-  const openLeads = leads.filter(l => !['Won', 'Lost'].includes(l.stage)).length
-  const avgProjectValue = projects.length > 0 ? totalRevenue / projects.length : 0
+  const totalRevenue = projects.reduce((s, p) => s + (p.contract_value ?? 0), 0);
+  const activeProjects = projects.filter((p) => p.status === 'In Progress').length;
+  const openLeads = leads.filter((l) => !['Won', 'Lost'].includes(l.stage)).length;
+  const avgProjectValue = projects.length > 0 ? totalRevenue / projects.length : 0;
 
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Back */}
-      <Link href="/customers" className="flex items-center gap-2 text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)] transition-colors text-sm">
+      <Link
+        href="/customers"
+        className="flex items-center gap-2 text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)] transition-colors text-sm"
+      >
         <ArrowLeft className="h-4 w-4" /> Customers
       </Link>
 
@@ -151,28 +193,44 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
           <div className="flex-1 space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold text-white">{customer.name}</h1>
-              <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
+              <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>
+                {customer.type}
+              </Badge>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-[var(--sg-text-2)]">
               {customer.phone && (
-                <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 hover:text-[var(--sg-sky)] transition-colors">
-                  <Phone className="h-4 w-4" />{customer.phone}
+                <a
+                  href={`tel:${customer.phone}`}
+                  className="flex items-center gap-1.5 hover:text-[var(--sg-sky)] transition-colors"
+                >
+                  <Phone className="h-4 w-4" />
+                  {customer.phone}
                 </a>
               )}
               {customer.email && (
-                <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 hover:text-[var(--sg-sky)] transition-colors">
-                  <Mail className="h-4 w-4" />{customer.email}
+                <a
+                  href={`mailto:${customer.email}`}
+                  className="flex items-center gap-1.5 hover:text-[var(--sg-sky)] transition-colors"
+                >
+                  <Mail className="h-4 w-4" />
+                  {customer.email}
                 </a>
               )}
               {(customer.city || customer.address) && (
                 <span className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4 flex-shrink-0" />
-                  <MapsLink address={[customer.address, customer.city, customer.state].filter(Boolean).join(', ')} showIcon={false} />
+                  <MapsLink
+                    address={[customer.address, customer.city, customer.state]
+                      .filter(Boolean)
+                      .join(', ')}
+                    showIcon={false}
+                  />
                 </span>
               )}
               {customer.company_name && (
                 <span className="flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4" />{customer.company_name}
+                  <Building2 className="h-4 w-4" />
+                  {customer.company_name}
                 </span>
               )}
             </div>
@@ -181,14 +239,20 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
             {proposalSelectorOpen && (
               <TemplateSelector
                 onSelect={(template: ProposalTemplate) => {
-                  setProposalSelectorOpen(false)
-                  router.push(`/proposals/new?template=${template}&customer=${customerId}`)
+                  setProposalSelectorOpen(false);
+                  router.push(`/proposals/new?template=${template}&customer=${customerId}`);
                 }}
                 onClose={() => setProposalSelectorOpen(false)}
                 customerId={customerId}
               />
             )}
-            {customer.address && <DirectionsButton address={[customer.address, customer.city, customer.state].filter(Boolean).join(', ')} />}
+            {customer.address && (
+              <DirectionsButton
+                address={[customer.address, customer.city, customer.state]
+                  .filter(Boolean)
+                  .join(', ')}
+              />
+            )}
             <Button size="sm" variant="secondary" onClick={() => setProposalSelectorOpen(true)}>
               <FileText className="h-4 w-4" /> Proposal
             </Button>
@@ -207,14 +271,36 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[var(--sg-border)]">
           {[
-            { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'text-[var(--sg-gold)]' },
-            { label: 'Active Projects', value: String(activeProjects), icon: Briefcase, color: 'text-[var(--sg-sky)]' },
-            { label: 'Open Leads', value: String(openLeads), icon: Target, color: 'text-[var(--c-sage)]' },
-            { label: 'Avg Project Value', value: formatCurrency(avgProjectValue), icon: DollarSign, color: 'text-[var(--sg-text-2)]' },
+            {
+              label: 'Total Revenue',
+              value: formatCurrency(totalRevenue),
+              icon: DollarSign,
+              color: 'text-[var(--sg-gold)]',
+            },
+            {
+              label: 'Active Projects',
+              value: String(activeProjects),
+              icon: Briefcase,
+              color: 'text-[var(--sg-sky)]',
+            },
+            {
+              label: 'Open Leads',
+              value: String(openLeads),
+              icon: Target,
+              color: 'text-[var(--c-sage)]',
+            },
+            {
+              label: 'Avg Project Value',
+              value: formatCurrency(avgProjectValue),
+              icon: DollarSign,
+              color: 'text-[var(--sg-text-2)]',
+            },
           ].map(({ label, value, color }) => (
             <div key={label} className="text-center">
-              <p className={`text-xl font-bold ${color}`}>{value}</p>
-              <p className="text-xs text-[var(--sg-text-2)] mt-0.5">{label}</p>
+              <p className={`text-lg font-medium ${color}`}>{value}</p>
+              <p className="text-xs text-[var(--sg-text-2)] mt-0.5 tracking-wide uppercase">
+                {label}
+              </p>
             </div>
           ))}
         </div>
@@ -239,7 +325,8 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                   : 'border-transparent text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]'
               )}
             >
-              <Icon className="h-4 w-4" />{label}
+              <Icon className="h-4 w-4" />
+              {label}
             </button>
           ))}
         </nav>
@@ -266,9 +353,16 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-b-[var(--sg-gold)]">
-                      {['Project', 'Status', 'Type', 'Contract', 'Payment', 'Start', 'End', ''].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider whitespace-nowrap">{h}</th>
-                      ))}
+                      {['Project', 'Status', 'Type', 'Contract', 'Payment', 'Start', 'End', ''].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider whitespace-nowrap"
+                          >
+                            {h}
+                          </th>
+                        )
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -276,15 +370,35 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                       <tr
                         key={p.id}
                         onClick={() => router.push(`/customers/${customerId}/projects/${p.id}`)}
-                        className={cn('border-b border-[var(--sg-border)] cursor-pointer transition-colors', i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]', 'hover:bg-[var(--sg-elevated)]')}
+                        className={cn(
+                          'border-b border-[var(--sg-border)] cursor-pointer transition-colors',
+                          i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]',
+                          'hover:bg-[var(--sg-elevated)]'
+                        )}
                       >
-                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-text-1)]">{p.title}</td>
-                        <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
-                        <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
-                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">{formatCurrency(p.contract_value)}</td>
-                        <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
-                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.start_date)}</td>
-                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.end_date)}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-text-1)]">
+                          {p.title}
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={p.status} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>
+                            {p.type}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">
+                          {formatCurrency(p.contract_value)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <PaymentBadge status={p.payment_status} />
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">
+                          {formatDate(p.start_date)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">
+                          {formatDate(p.end_date)}
+                        </td>
                         <td className="px-4 py-3 text-sm text-[var(--sg-sky)]">Open</td>
                       </tr>
                     ))}
@@ -299,29 +413,59 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
       {activeTab === 'leads' && (
         <div className="space-y-4">
           {leads.length === 0 ? (
-            <EmptyState icon={Target} title="No leads yet" description="No leads linked to this customer." />
+            <EmptyState
+              icon={Target}
+              title="No leads yet"
+              description="No leads linked to this customer."
+            />
           ) : (
             <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-b-[var(--sg-gold)]">
-                      {['Title', 'Stage', 'Source', 'Value', 'Follow-up', 'Added'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      {['Title', 'Stage', 'Source', 'Value', 'Follow-up', 'Added'].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider whitespace-nowrap"
+                        >
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {leads.map((l, i) => (
-                      <tr key={l.id} className={cn('border-b border-[var(--sg-border)]', i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]')}>
-                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-text-1)]">{l.title}</td>
-                        <td className="px-4 py-3"><Badge variant="default">{l.stage}</Badge></td>
+                      <tr
+                        key={l.id}
+                        className={cn(
+                          'border-b border-[var(--sg-border)]',
+                          i % 2 === 0 ? 'bg-[var(--sg-base)]' : 'bg-[var(--sg-surface)]'
+                        )}
+                      >
+                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-text-1)]">
+                          {l.title}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="default">{l.stage}</Badge>
+                        </td>
                         <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{l.source}</td>
-                        <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">{formatCurrency(l.estimated_value)}</td>
-                        <td className={cn('px-4 py-3 text-sm whitespace-nowrap', l.follow_up_date && new Date(l.follow_up_date) < new Date() ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-text-2)]')}>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">
+                          {formatCurrency(l.estimated_value)}
+                        </td>
+                        <td
+                          className={cn(
+                            'px-4 py-3 text-sm whitespace-nowrap',
+                            l.follow_up_date && new Date(l.follow_up_date) < new Date()
+                              ? 'text-[var(--sg-danger)]'
+                              : 'text-[var(--sg-text-2)]'
+                          )}
+                        >
                           {formatDate(l.follow_up_date)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(l.created_at)}</td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">
+                          {formatDate(l.created_at)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -339,29 +483,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               <Plus className="h-4 w-4" /> Log Activity
             </Button>
           </div>
-          {activities.length === 0 ? (
-            <EmptyState icon={Activity} title="No activity yet" description="Log calls, texts, and notes here." action={{ label: 'Log Activity', onClick: () => setAddActivityOpen(true) }} />
-          ) : (
-            <div className="space-y-1">
-              {activities.map((a, i) => (
-                <div key={a.id} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-[var(--sg-elevated)] flex items-center justify-center text-sm flex-shrink-0">
-                      {ACTIVITY_ICONS[a.type] ?? '📋'}
-                    </div>
-                    {i < activities.length - 1 && <div className="w-0.5 bg-[var(--sg-elevated)] flex-1 my-1" />}
-                  </div>
-                  <div className="pb-4 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-white">{a.type}</p>
-                      <span className="text-xs text-[var(--sg-text-2)]">{formatRelativeTime(a.created_at)}</span>
-                    </div>
-                    {a.content && <p className="text-sm text-[var(--sg-text-2)] mt-0.5">{a.content}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <ActivityTimeline activities={activities} />
         </div>
       )}
 
@@ -381,24 +503,37 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               { label: 'Referred By', value: customer.referred_by },
             ].map(({ label, value }) => (
               <div key={label}>
-                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">
+                  {label}
+                </p>
                 <p className="text-sm text-[var(--sg-text-1)]">{value ?? '—'}</p>
               </div>
             ))}
             {customer.tags?.length > 0 && (
               <div className="md:col-span-2">
-                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-2">Tags</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-2">
+                  Tags
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {customer.tags.map((tag: string) => (
-                    <span key={tag} className="text-xs px-2 py-1 bg-[var(--sg-elevated)] text-[var(--sg-text-1)] rounded">{tag}</span>
+                    <span
+                      key={tag}
+                      className="text-xs px-2 py-1 bg-[var(--sg-elevated)] text-[var(--sg-text-1)] rounded"
+                    >
+                      {tag}
+                    </span>
                   ))}
                 </div>
               </div>
             )}
             {customer.notes && (
               <div className="md:col-span-2">
-                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">Notes</p>
-                <p className="text-sm text-[var(--sg-text-1)] whitespace-pre-wrap">{customer.notes}</p>
+                <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">
+                  Notes
+                </p>
+                <p className="text-sm text-[var(--sg-text-1)] whitespace-pre-wrap">
+                  {customer.notes}
+                </p>
               </div>
             )}
           </div>
@@ -413,16 +548,25 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
       {/* EditCustomerModal is controlled by passing customer or null */}
       <EditCustomerModal
         customer={editOpen ? customer : null}
-        onClose={() => { setEditOpen(false); loadData() }}
+        onClose={() => {
+          setEditOpen(false);
+          loadData();
+        }}
       />
       <NewProjectModal
         open={newProjectOpen}
-        onClose={() => { setNewProjectOpen(false); loadData() }}
+        onClose={() => {
+          setNewProjectOpen(false);
+          loadData();
+        }}
         preselectedCustomerId={customerId}
       />
       <AddActivityModal
         open={addActivityOpen}
-        onClose={() => { setAddActivityOpen(false); loadData() }}
+        onClose={() => {
+          setAddActivityOpen(false);
+          loadData();
+        }}
         customerId={customerId}
       />
       <ConfirmModal
@@ -440,5 +584,5 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         customerPhone={customer.phone ?? undefined}
       />
     </div>
-  )
+  );
 }
