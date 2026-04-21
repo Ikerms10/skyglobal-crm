@@ -1,73 +1,198 @@
-'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Download, Save, Eye, EyeOff, CheckCircle, Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { toast } from 'sonner'
-import { ProposalTemplate } from '@/types'
-import { InteriorTemplate } from '@/components/proposals/templates/InteriorTemplate'
-import { ExteriorTemplate } from '@/components/proposals/templates/ExteriorTemplate'
-import { CabinetTemplate } from '@/components/proposals/templates/CabinetTemplate'
-import { CustomTemplate } from '@/components/proposals/templates/CustomTemplate'
-import { LineItem } from '@/components/proposals/EditableTable'
-import { ScopeStep } from '@/components/proposals/ScopeOfWork'
-import { downloadProposalPDF } from '@/components/proposals/ProposalPDF'
-import { format } from 'date-fns'
+'use client';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Download, Save, Eye, EyeOff, CheckCircle, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import { ProposalTemplate } from '@/types';
+import { InteriorTemplate } from '@/components/proposals/templates/InteriorTemplate';
+import { ExteriorTemplate } from '@/components/proposals/templates/ExteriorTemplate';
+import { CabinetTemplate } from '@/components/proposals/templates/CabinetTemplate';
+import { CustomTemplate } from '@/components/proposals/templates/CustomTemplate';
+import { LineItem } from '@/components/proposals/EditableTable';
+import { ScopeStep } from '@/components/proposals/ScopeOfWork';
+import { format } from 'date-fns';
 
 const TEMPLATE_LABELS: Record<ProposalTemplate, string> = {
   interior: 'Interior Painting',
   exterior: 'Exterior Painting',
   cabinet: 'Cabinet Refinishing',
   custom: 'Custom / Other',
+};
+
+function genId() {
+  return Math.random().toString(36).slice(2);
 }
 
-function genId() { return Math.random().toString(36).slice(2) }
-
 function defaultScopeSteps(template: ProposalTemplate): ScopeStep[] {
-  if (template === 'interior') return [
-    { title: 'Step 1: Preparation & Protection', bullets: ['Environment Shielding: All furniture, flooring, fixtures, and hardware fully masked and protected with professional-grade coverings.', 'Surface Cleaning: All paintable surfaces wiped clean; dust, grease, and contaminants removed prior to any application.'] },
-    { title: 'Step 2: Remediation & Priming', bullets: ['Drywall Restoration: Holes, cracks, and surface imperfections filled and sanded flush for seamless paint adhesion.', 'Priming: Stain-blocking primer applied to all repaired areas and bare surfaces ensuring lasting topcoat adhesion.'] },
-    { title: 'Step 3: Premium Application', bullets: ['Execution: Two full coats of Sherwin-Williams premium interior paint applied for complete, even, durable coverage.', 'Detailing: Clean sharp lines at all transitions — ceilings, trim, doors, windows, and outlets executed with precision.'] },
-    { title: 'Step 4: Site Restoration & Quality Control', bullets: ['Cleanup: All masking removed, surfaces wiped clean, furniture returned, and area left spotless.', 'Final Walkthrough: On-site inspection with client to verify satisfaction and address any touch-up items immediately.'] },
-  ]
-  if (template === 'exterior') return [
-    { title: 'Step 01: Power Washing — Foundation of Adhesion', bullets: ['Full exterior pressure wash at 2,500–3,500 PSI removing all surface contamination.', 'Soft Chemical Wash: mildicide solution applied to eradicate mold, mildew, and algae at the root.', 'Surfaces allowed to fully dry (24–48 hours) before any paint application.'] },
-    { title: 'Step 02: Scraping, Priming & Stabilization', bullets: ['Level 2 Prep: Hand-scraping all peeling and failing paint to create a firm, adherent surface.', 'Remediation: Cracks and gaps filled with SherMax™ elastomeric sealant; checks re-caulked.', 'Priming: All bare wood, concrete, and masonry primed with appropriate system primers.'] },
-    { title: 'Step 03: Expert Paint Application', bullets: ['Airless sprayers for uniform, millage-controlled coverage across all surfaces.', 'Full Protection: Complete masking of all windows, doors, fixtures, landscaping, and hardscape.', 'Finishing: Sherwin-Williams premium exterior coatings in HOA-approved colors — back-rolled for penetration.'] },
-    { title: 'Step 04: Final Cleanup & Quality Assurance', bullets: ['Complete removal of all masking, drop cloths, and protective materials.', 'Cleaning of plant beds, concrete, and all adjacent surfaces of any overspray.', 'Final Walkthrough: On-site inspection with client to verify satisfaction before sign-off.'] },
-  ]
-  if (template === 'cabinet') return [
-    { title: 'Phase 1: Teardown & Precision Labeling', bullets: ['Careful removal of all doors, drawer fronts, and hardware with zero damage to boxes.', 'Proprietary labeling system ensuring exact reinstallation alignment.', 'Transport to professional spray shop for controlled environment application.'] },
-    { title: 'Phase 2: Protection & Surface Prep', bullets: ['Complete Home Protection: masking of all countertops, appliances, and adjacent areas.', 'Chemical Degreasing: cooking oils, fingerprints, and contaminants fully stripped.', 'Dustless Sanding: EKASANDER orbital system for scratch pattern without airborne dust.'] },
-    { title: 'Phase 3: Industrial Primer System', bullets: ['2-Coat Bonding Primer: Renner 1K 643/648 industrial wood primer system.', 'Tannin Blocking: oil-based stain blockers prevent bleed-through on oak and pine.', 'Inter-Coat Sanding: 320 grit between all coats for glass-smooth adhesion.'] },
-    { title: 'Phase 4: Professional Topcoat & Reinstallation', bullets: ['Fine-Finish Spraying: HVLP fine-finish spray tips produce a factory smooth, drip-free finish.', 'White-Glove Delivery: all doors and drawers wrapped in film for protection during transport.', 'Reinstallation: precise mounting, hardware installation, and door alignment.'] },
-  ]
+  if (template === 'interior')
+    return [
+      {
+        title: 'Step 1: Preparation & Protection',
+        bullets: [
+          'Environment Shielding: All furniture, flooring, fixtures, and hardware fully masked and protected with professional-grade coverings.',
+          'Surface Cleaning: All paintable surfaces wiped clean; dust, grease, and contaminants removed prior to any application.',
+        ],
+      },
+      {
+        title: 'Step 2: Remediation & Priming',
+        bullets: [
+          'Drywall Restoration: Holes, cracks, and surface imperfections filled and sanded flush for seamless paint adhesion.',
+          'Priming: Stain-blocking primer applied to all repaired areas and bare surfaces ensuring lasting topcoat adhesion.',
+        ],
+      },
+      {
+        title: 'Step 3: Premium Application',
+        bullets: [
+          'Execution: Two full coats of Sherwin-Williams premium interior paint applied for complete, even, durable coverage.',
+          'Detailing: Clean sharp lines at all transitions — ceilings, trim, doors, windows, and outlets executed with precision.',
+        ],
+      },
+      {
+        title: 'Step 4: Site Restoration & Quality Control',
+        bullets: [
+          'Cleanup: All masking removed, surfaces wiped clean, furniture returned, and area left spotless.',
+          'Final Walkthrough: On-site inspection with client to verify satisfaction and address any touch-up items immediately.',
+        ],
+      },
+    ];
+  if (template === 'exterior')
+    return [
+      {
+        title: 'Step 01: Power Washing — Foundation of Adhesion',
+        bullets: [
+          'Full exterior pressure wash at 2,500–3,500 PSI removing all surface contamination.',
+          'Soft Chemical Wash: mildicide solution applied to eradicate mold, mildew, and algae at the root.',
+          'Surfaces allowed to fully dry (24–48 hours) before any paint application.',
+        ],
+      },
+      {
+        title: 'Step 02: Scraping, Priming & Stabilization',
+        bullets: [
+          'Level 2 Prep: Hand-scraping all peeling and failing paint to create a firm, adherent surface.',
+          'Remediation: Cracks and gaps filled with SherMax™ elastomeric sealant; checks re-caulked.',
+          'Priming: All bare wood, concrete, and masonry primed with appropriate system primers.',
+        ],
+      },
+      {
+        title: 'Step 03: Expert Paint Application',
+        bullets: [
+          'Airless sprayers for uniform, millage-controlled coverage across all surfaces.',
+          'Full Protection: Complete masking of all windows, doors, fixtures, landscaping, and hardscape.',
+          'Finishing: Sherwin-Williams premium exterior coatings in HOA-approved colors — back-rolled for penetration.',
+        ],
+      },
+      {
+        title: 'Step 04: Final Cleanup & Quality Assurance',
+        bullets: [
+          'Complete removal of all masking, drop cloths, and protective materials.',
+          'Cleaning of plant beds, concrete, and all adjacent surfaces of any overspray.',
+          'Final Walkthrough: On-site inspection with client to verify satisfaction before sign-off.',
+        ],
+      },
+    ];
+  if (template === 'cabinet')
+    return [
+      {
+        title: 'Phase 1: Teardown & Precision Labeling',
+        bullets: [
+          'Careful removal of all doors, drawer fronts, and hardware with zero damage to boxes.',
+          'Proprietary labeling system ensuring exact reinstallation alignment.',
+          'Transport to professional spray shop for controlled environment application.',
+        ],
+      },
+      {
+        title: 'Phase 2: Protection & Surface Prep',
+        bullets: [
+          'Complete Home Protection: masking of all countertops, appliances, and adjacent areas.',
+          'Chemical Degreasing: cooking oils, fingerprints, and contaminants fully stripped.',
+          'Dustless Sanding: EKASANDER orbital system for scratch pattern without airborne dust.',
+        ],
+      },
+      {
+        title: 'Phase 3: Industrial Primer System',
+        bullets: [
+          '2-Coat Bonding Primer: Renner 1K 643/648 industrial wood primer system.',
+          'Tannin Blocking: oil-based stain blockers prevent bleed-through on oak and pine.',
+          'Inter-Coat Sanding: 320 grit between all coats for glass-smooth adhesion.',
+        ],
+      },
+      {
+        title: 'Phase 4: Professional Topcoat & Reinstallation',
+        bullets: [
+          'Fine-Finish Spraying: HVLP fine-finish spray tips produce a factory smooth, drip-free finish.',
+          'White-Glove Delivery: all doors and drawers wrapped in film for protection during transport.',
+          'Reinstallation: precise mounting, hardware installation, and door alignment.',
+        ],
+      },
+    ];
   // custom
-  return [{ title: 'Step 1: Project Overview', bullets: ['Describe the scope of work and key deliverables here.'] }]
+  return [
+    {
+      title: 'Step 1: Project Overview',
+      bullets: ['Describe the scope of work and key deliverables here.'],
+    },
+  ];
 }
 
 function defaultLineItems(template: ProposalTemplate): LineItem[] {
   if (template === 'interior') {
     return [
-      { id: genId(), description: "Sherwin-Williams Emerald® Interior", quantity: 2, unit_price: 89, total: 178 },
-      { id: genId(), description: "ProClassic® Trim Enamel", quantity: 1, unit_price: 72, total: 72 },
-      { id: genId(), description: "Prep Materials (Tape, Plastic, Spackle)", quantity: null, unit_price: null, total: null },
-    ]
+      {
+        id: genId(),
+        description: 'Sherwin-Williams Emerald® Interior',
+        quantity: 2,
+        unit_price: 89,
+        total: 178,
+      },
+      {
+        id: genId(),
+        description: 'ProClassic® Trim Enamel',
+        quantity: 1,
+        unit_price: 72,
+        total: 72,
+      },
+      {
+        id: genId(),
+        description: 'Prep Materials (Tape, Plastic, Spackle)',
+        quantity: null,
+        unit_price: null,
+        total: null,
+      },
+    ];
   }
   if (template === 'exterior') {
     return [
-      { id: genId(), description: "Sherwin-Williams Premium Exterior Coating", quantity: 3, unit_price: 89, total: 267 },
-      { id: genId(), description: "SherMax™ Elastomeric Sealant", quantity: null, unit_price: null, total: null },
-      { id: genId(), description: "Prep Materials & Masking", quantity: null, unit_price: null, total: null },
-    ]
+      {
+        id: genId(),
+        description: 'Sherwin-Williams Premium Exterior Coating',
+        quantity: 3,
+        unit_price: 89,
+        total: 267,
+      },
+      {
+        id: genId(),
+        description: 'SherMax™ Elastomeric Sealant',
+        quantity: null,
+        unit_price: null,
+        total: null,
+      },
+      {
+        id: genId(),
+        description: 'Prep Materials & Masking',
+        quantity: null,
+        unit_price: null,
+        total: null,
+      },
+    ];
   }
-  return []
+  return [];
 }
 
 function buildInitialData(template: ProposalTemplate, customer: any) {
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const validUntil = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const validUntil = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
   const base = {
     projectName: '',
     issueDate: today,
@@ -86,57 +211,67 @@ function buildInitialData(template: ProposalTemplate, customer: any) {
     coatingTier: template === 'exterior' ? 'tier2' : template === 'cabinet' ? 'signature' : '',
     sheen: 'Satin',
     scopeOfWork: defaultScopeSteps(template),
-  }
-  return base
+  };
+  return base;
 }
 
-type EditorData = ReturnType<typeof buildInitialData>
+type EditorData = ReturnType<typeof buildInitialData>;
 
 export default function ProposalNewPage() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const template = (searchParams.get('template') ?? 'interior') as ProposalTemplate
-  const customerId = searchParams.get('customer')
-  const proposalId = searchParams.get('id')
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const template = (searchParams.get('template') ?? 'interior') as ProposalTemplate;
+  const customerId = searchParams.get('customer');
+  const proposalId = searchParams.get('id');
 
-  const [customer, setCustomer] = useState<any>(null)
-  const [data, setData] = useState<EditorData | null>(null)
-  const [proposalDbId, setProposalDbId] = useState<string | null>(proposalId)
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
-  const [pdfLoading, setPdfLoading] = useState(false)
-  const saveTimer = useRef<NodeJS.Timeout | null>(null)
-  const isFirstSave = useRef(true)
+  const [customer, setCustomer] = useState<any>(null);
+  const [data, setData] = useState<EditorData | null>(null);
+  const [proposalDbId, setProposalDbId] = useState<string | null>(proposalId);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const saveTimer = useRef<NodeJS.Timeout | null>(null);
+  const isFirstSave = useRef(true);
+  const proposalRef = useRef<HTMLDivElement>(null);
 
   // Load customer if provided
   useEffect(() => {
     if (!customerId) {
-      setData(buildInitialData(template, null))
-      return
+      setData(buildInitialData(template, null));
+      return;
     }
-    const supabase = createClient()
-    supabase.from('customers').select('*').eq('id', customerId).single()
+    const supabase = createClient();
+    supabase
+      .from('customers')
+      .select('*')
+      .eq('id', customerId)
+      .single()
       .then(({ data: cust }) => {
-        setCustomer(cust)
-        setData(buildInitialData(template, cust))
-      })
-  }, [customerId, template])
+        setCustomer(cust);
+        setData(buildInitialData(template, cust));
+      });
+  }, [customerId, template]);
 
   // Load existing proposal if editing
   useEffect(() => {
-    if (!proposalId) return
-    const supabase = createClient()
+    if (!proposalId) return;
+    const supabase = createClient();
     Promise.all([
       supabase.from('proposals').select('*, customer:customers(*)').eq('id', proposalId).single(),
-      supabase.from('proposal_line_items').select('*').eq('proposal_id', proposalId).order('sort_order'),
+      supabase
+        .from('proposal_line_items')
+        .select('*')
+        .eq('proposal_id', proposalId)
+        .order('sort_order'),
     ]).then(([{ data: p }, { data: items }]) => {
-      if (!p) return
-      setCustomer(p.customer)
-      setProposalDbId(p.id)
-      const td = p.template_data ?? {}
+      if (!p) return;
+      setCustomer(p.customer);
+      setProposalDbId(p.id);
+      const td = p.template_data ?? {};
       setData({
         projectName: p.project_name ?? '',
         issueDate: p.issue_date ?? format(new Date(), 'yyyy-MM-dd'),
-        validUntil: p.valid_until ?? format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+        validUntil:
+          p.valid_until ?? format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
         clientName: p.client_name ?? '',
         clientContact: p.client_contact ?? '',
         clientAddress: p.client_address ?? '',
@@ -145,176 +280,304 @@ export default function ProposalNewPage() {
         depositPct: p.deposit_pct,
         progressPct: p.progress_pct,
         finalPct: p.final_pct,
-        lineItems: (items ?? []).map((i: any) => ({ id: i.id, description: i.description, quantity: i.quantity, unit_price: i.unit_price, total: i.total })),
+        lineItems: (items ?? []).map((i: any) => ({
+          id: i.id,
+          description: i.description,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          total: i.total,
+        })),
         showInsurancePage: p.show_insurance_page,
         coatingTier: td.coatingTier ?? '',
         sheen: td.sheen ?? 'Satin',
         scopeOfWork: Array.isArray(td.scopeOfWork)
           ? td.scopeOfWork
-          : (td.scopeOfWork ? [{ title: 'Scope of Work', bullets: [td.scopeOfWork] }] : defaultScopeSteps(p.template as ProposalTemplate)),
-      })
-    })
-  }, [proposalId])
+          : td.scopeOfWork
+            ? [{ title: 'Scope of Work', bullets: [td.scopeOfWork] }]
+            : defaultScopeSteps(p.template as ProposalTemplate),
+      });
+    });
+  }, [proposalId]);
 
   const handleChange = useCallback((patch: Partial<EditorData>) => {
-    setData(prev => {
-      if (!prev) return prev
-      return { ...prev, ...patch }
-    })
+    setData((prev) => {
+      if (!prev) return prev;
+      return { ...prev, ...patch };
+    });
     // Debounced auto-save
-    if (saveTimer.current) clearTimeout(saveTimer.current)
+    if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      setSaveStatus('saving')
-      setData(current => {
-        if (current) scheduleSave(current)
-        return current
-      })
-    }, 2000)
-  }, [])
+      setSaveStatus('saving');
+      setData((current) => {
+        if (current) scheduleSave(current);
+        return current;
+      });
+    }, 2000);
+  }, []);
 
-  const scheduleSave = useCallback(async (d: EditorData) => {
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+  const scheduleSave = useCallback(
+    async (d: EditorData) => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const payload = {
-        user_id: user.id,
-        customer_id: customerId || null,
-        template,
-        project_name: d.projectName || null,
-        client_name: d.clientName || null,
-        client_contact: d.clientContact || null,
-        client_address: d.clientAddress || null,
-        project_scope: d.projectScope || null,
-        total_investment: d.totalInvestment,
-        issue_date: d.issueDate || null,
-        valid_until: d.validUntil || null,
-        deposit_pct: d.depositPct,
-        progress_pct: d.progressPct,
-        final_pct: d.finalPct,
-        show_insurance_page: d.showInsurancePage,
-        template_data: { coatingTier: d.coatingTier, sheen: d.sheen, scopeOfWork: d.scopeOfWork },
-        updated_at: new Date().toISOString(),
-      }
+        const payload = {
+          user_id: user.id,
+          customer_id: customerId || null,
+          template,
+          project_name: d.projectName || null,
+          client_name: d.clientName || null,
+          client_contact: d.clientContact || null,
+          client_address: d.clientAddress || null,
+          project_scope: d.projectScope || null,
+          total_investment: d.totalInvestment,
+          issue_date: d.issueDate || null,
+          valid_until: d.validUntil || null,
+          deposit_pct: d.depositPct,
+          progress_pct: d.progressPct,
+          final_pct: d.finalPct,
+          show_insurance_page: d.showInsurancePage,
+          template_data: { coatingTier: d.coatingTier, sheen: d.sheen, scopeOfWork: d.scopeOfWork },
+          updated_at: new Date().toISOString(),
+        };
 
-      let currentId = proposalDbId
-      if (!currentId) {
-        const { data: created, error } = await supabase.from('proposals').insert(payload).select('id').single()
-        if (error) throw error
-        currentId = created.id
-        setProposalDbId(currentId)
-        // Update URL without reload
-        const url = new URL(window.location.href)
-        url.searchParams.set('id', currentId!)
-        window.history.replaceState({}, '', url.toString())
-      } else {
-        const { error } = await supabase.from('proposals').update(payload).eq('id', currentId)
-        if (error) throw error
-      }
-
-      // Upsert line items
-      if (currentId) {
-        await supabase.from('proposal_line_items').delete().eq('proposal_id', currentId)
-        if (d.lineItems.length > 0) {
-          await supabase.from('proposal_line_items').insert(
-            d.lineItems.map((item, idx) => ({
-              proposal_id: currentId,
-              description: item.description,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              total: item.total,
-              sort_order: idx,
-            }))
-          )
+        let currentId = proposalDbId;
+        if (!currentId) {
+          const { data: created, error } = await supabase
+            .from('proposals')
+            .insert(payload)
+            .select('id')
+            .single();
+          if (error) throw error;
+          currentId = created.id;
+          setProposalDbId(currentId);
+          // Update URL without reload
+          const url = new URL(window.location.href);
+          url.searchParams.set('id', currentId!);
+          window.history.replaceState({}, '', url.toString());
+        } else {
+          const { error } = await supabase.from('proposals').update(payload).eq('id', currentId);
+          if (error) throw error;
         }
-      }
 
-      setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 3000)
-    } catch (err) {
-      setSaveStatus('idle')
-      toast.error('Auto-save failed')
-    }
-  }, [customerId, template, proposalDbId])
+        // Upsert line items
+        if (currentId) {
+          await supabase.from('proposal_line_items').delete().eq('proposal_id', currentId);
+          if (d.lineItems.length > 0) {
+            await supabase.from('proposal_line_items').insert(
+              d.lineItems.map((item, idx) => ({
+                proposal_id: currentId,
+                description: item.description,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                total: item.total,
+                sort_order: idx,
+              }))
+            );
+          }
+        }
+
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      } catch (err) {
+        setSaveStatus('idle');
+        toast.error('Auto-save failed');
+      }
+    },
+    [customerId, template, proposalDbId]
+  );
 
   const handleSaveNow = async () => {
-    if (!data) return
-    setSaveStatus('saving')
-    await scheduleSave(data)
-  }
+    if (!data) return;
+    setSaveStatus('saving');
+    await scheduleSave(data);
+  };
 
   const handleDownloadPDF = async () => {
-    if (!data) return
-    setPdfLoading(true)
+    if (!data || !proposalRef.current) return;
+    setPdfLoading(true);
     try {
-      const clientSlug = (data.clientName || 'Client').replace(/\s+/g, '')
-      const dateStr = format(new Date(), 'MMMd')
-      const fileName = `SkyGlobal-${TEMPLATE_LABELS[template].replace(/\s+/g, '')}-${clientSlug}-${dateStr}.pdf`
-      await downloadProposalPDF(template, data, fileName)
-      toast.success('PDF downloaded')
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
+      const canvas = await html2canvas(proposalRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        onclone: (doc) => {
+          doc.querySelectorAll('[data-page-break-label]').forEach((el) => {
+            (el as HTMLElement).style.display = 'none';
+          });
+        },
+      });
+
+      const A4_W = 210;
+      const A4_H = 297;
+      const pageHeightPx = Math.round(canvas.width * (A4_H / A4_W));
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      let yOffset = 0;
+      let pageNum = 0;
+      while (yOffset < canvas.height) {
+        if (pageNum > 0) pdf.addPage();
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = pageHeightPx;
+        const ctx = pageCanvas.getContext('2d')!;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.drawImage(canvas, 0, -yOffset);
+        pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, A4_W, A4_H);
+        yOffset += pageHeightPx;
+        pageNum++;
+      }
+
+      const clientSlug = (data.clientName || 'Client').replace(/\s+/g, '_');
+      const dateStr = format(new Date(), 'MMMd_yyyy');
+      pdf.save(`SkyGlobal_Proposal_${clientSlug}_${dateStr}.pdf`);
+      toast.success('PDF downloaded');
     } catch (err) {
-      toast.error('PDF generation failed')
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`PDF generation failed: ${msg}`);
     } finally {
-      setPdfLoading(false)
+      setPdfLoading(false);
     }
-  }
+  };
 
   const renderTemplate = () => {
-    if (!data) return null
-    const commonProps = { data: data as any, onChange: handleChange }
+    if (!data) return null;
+    const commonProps = { data: data as any, onChange: handleChange };
     switch (template) {
-      case 'interior': return <InteriorTemplate {...commonProps} />
-      case 'exterior': return <ExteriorTemplate {...commonProps} />
-      case 'cabinet': return <CabinetTemplate {...commonProps} />
-      default: return <CustomTemplate {...commonProps} />
+      case 'interior':
+        return <InteriorTemplate {...commonProps} />;
+      case 'exterior':
+        return <ExteriorTemplate {...commonProps} />;
+      case 'cabinet':
+        return <CabinetTemplate {...commonProps} />;
+      default:
+        return <CustomTemplate {...commonProps} />;
     }
-  }
+  };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--sg-base)', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--sg-base)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {/* Toolbar */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        background: 'var(--sg-surface)', borderBottom: '1px solid var(--sg-border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 20px', height: 52,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-      }}>
+      <div
+        className="proposal-toolbar"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          background: 'var(--sg-surface)',
+          borderBottom: '1px solid var(--sg-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 20px',
+          height: 52,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+        }}
+      >
         {/* Left */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Link href="/proposals" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--sg-text-2)', fontSize: 13, textDecoration: 'none', padding: '4px 8px', borderRadius: 6 }}
-            className="hover:text-white hover:bg-[var(--sg-elevated)] transition-colors">
+        <div
+          className="proposal-toolbar-left"
+          style={{ display: 'flex', alignItems: 'center', gap: 14 }}
+        >
+          <Link
+            href="/proposals"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              color: 'var(--sg-text-2)',
+              fontSize: 13,
+              textDecoration: 'none',
+              padding: '4px 8px',
+              borderRadius: 6,
+            }}
+            className="hover:text-white hover:bg-[var(--sg-elevated)] transition-colors"
+          >
             <ArrowLeft size={15} /> Back
           </Link>
           <div style={{ width: 1, height: 24, background: 'var(--sg-border)' }} />
-          <span style={{
-            background: 'var(--sg-gold)', color: '#000',
-            fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase',
-          }}>
+          <span
+            style={{
+              background: 'var(--sg-gold)',
+              color: '#000',
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '2px 10px',
+              borderRadius: 20,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}
+          >
             {TEMPLATE_LABELS[template]}
           </span>
         </div>
 
         {/* Center */}
-        <div style={{ fontSize: 12, color: 'var(--sg-text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {saveStatus === 'saving' && <><Loader2 size={13} className="animate-spin" style={{ color: 'var(--sg-gold)' }} /> Saving...</>}
-          {saveStatus === 'saved' && <><CheckCircle size={13} style={{ color: 'var(--c-sage)' }} /> Saved</>}
-          {saveStatus === 'idle' && proposalDbId && <><CheckCircle size={13} style={{ color: 'var(--sg-text-3)' }} /> Auto-save on</>}
+        <div
+          className="proposal-toolbar-center"
+          style={{
+            fontSize: 12,
+            color: 'var(--sg-text-2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          {saveStatus === 'saving' && (
+            <>
+              <Loader2 size={13} className="animate-spin" style={{ color: 'var(--sg-gold)' }} />{' '}
+              Saving...
+            </>
+          )}
+          {saveStatus === 'saved' && (
+            <>
+              <CheckCircle size={13} style={{ color: 'var(--c-sage)' }} /> Saved
+            </>
+          )}
+          {saveStatus === 'idle' && proposalDbId && (
+            <>
+              <CheckCircle size={13} style={{ color: 'var(--sg-text-3)' }} /> Auto-save on
+            </>
+          )}
         </div>
 
         {/* Right */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          className="proposal-toolbar-right"
+          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+        >
           {/* Insurance toggle */}
           {data && (
             <button
               onClick={() => handleChange({ showInsurancePage: !data.showInsurancePage })}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
                 background: data.showInsurancePage ? 'rgba(122,158,126,0.12)' : 'transparent',
                 border: `1px solid ${data.showInsurancePage ? 'var(--sg-sky)' : 'var(--sg-border)'}`,
-                borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
-                color: data.showInsurancePage ? 'var(--sg-sky)' : 'var(--sg-text-2)', fontSize: 12,
+                borderRadius: 8,
+                padding: '6px 12px',
+                cursor: 'pointer',
+                color: data.showInsurancePage ? 'var(--sg-sky)' : 'var(--sg-text-2)',
+                fontSize: 12,
               }}
             >
               {data.showInsurancePage ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -325,10 +588,17 @@ export default function ProposalNewPage() {
             onClick={handleSaveNow}
             disabled={saveStatus === 'saving'}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'transparent', border: '1px solid var(--sg-border)',
-              borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-              color: 'var(--sg-text-1)', fontSize: 13, fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'transparent',
+              border: '1px solid var(--sg-border)',
+              borderRadius: 8,
+              padding: '6px 14px',
+              cursor: 'pointer',
+              color: 'var(--sg-text-1)',
+              fontSize: 13,
+              fontWeight: 500,
             }}
             className="hover:border-[var(--sg-text-3)] transition-colors"
           >
@@ -338,10 +608,17 @@ export default function ProposalNewPage() {
             onClick={handleDownloadPDF}
             disabled={pdfLoading}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'var(--sg-gold)', border: 'none',
-              borderRadius: 8, padding: '6px 16px', cursor: pdfLoading ? 'not-allowed' : 'pointer',
-              color: '#000', fontSize: 13, fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'var(--sg-gold)',
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 16px',
+              cursor: pdfLoading ? 'not-allowed' : 'pointer',
+              color: '#000',
+              fontSize: 13,
+              fontWeight: 700,
               opacity: pdfLoading ? 0.7 : 1,
             }}
           >
@@ -352,39 +629,69 @@ export default function ProposalNewPage() {
       </div>
 
       {/* Document area */}
-      <div style={{
-        flex: 1, overflowY: 'auto',
-        padding: '40px 20px 80px',
-        display: 'flex', justifyContent: 'center',
-      }}>
+      <div
+        className="proposal-doc-scroll"
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '40px 20px 80px',
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
         {!data ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}
+          >
             <Loader2 size={28} className="animate-spin" style={{ color: 'var(--sg-gold)' }} />
           </div>
         ) : (
-          <div style={{
-            background: '#fff',
-            width: '100%',
-            maxWidth: 794,
-            padding: '48px 56px',
-            borderRadius: 2,
-            boxShadow: '0 4px 24px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3)',
-            minHeight: '100vh',
-          }}>
+          <div
+            ref={proposalRef}
+            data-proposal-content
+            style={{
+              background: '#fff',
+              width: '100%',
+              maxWidth: 794,
+              padding: '48px 56px',
+              borderRadius: 2,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3)',
+              minHeight: '100vh',
+            }}
+          >
             {/* Editable field hover hint */}
-            <div style={{
-              marginBottom: 16, padding: '6px 12px',
-              background: 'rgba(139,105,20,0.06)', border: '1px solid rgba(139,105,20,0.15)',
-              borderRadius: 4, fontSize: 11, color: 'var(--sg-text-2)', fontFamily: 'sans-serif',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
+            <div
+              style={{
+                marginBottom: 16,
+                padding: '6px 12px',
+                background: 'rgba(139,105,20,0.06)',
+                border: '1px solid rgba(139,105,20,0.15)',
+                borderRadius: 4,
+                fontSize: 11,
+                color: 'var(--sg-text-2)',
+                fontFamily: 'sans-serif',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
               <span style={{ color: 'var(--sg-gold)', fontWeight: 600 }}>✦</span>
-              Fields with <span style={{ borderBottom: '1.5px dashed var(--sg-gold)', padding: '0 4px', color: 'var(--sg-gold)' }}>gold underline</span> are editable — click to type
+              Fields with{' '}
+              <span
+                style={{
+                  borderBottom: '1.5px dashed var(--sg-gold)',
+                  padding: '0 4px',
+                  color: 'var(--sg-gold)',
+                }}
+              >
+                gold underline
+              </span>{' '}
+              are editable — click to type
             </div>
             {renderTemplate()}
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
