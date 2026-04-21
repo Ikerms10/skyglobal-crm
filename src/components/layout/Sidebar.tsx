@@ -152,10 +152,10 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* SG logomark — espresso dark background */}
+          {/* SkyGlobal logo */}
           <div style={{
-            width: 34,
-            height: 34,
+            width: 36,
+            height: 36,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -163,11 +163,9 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
             background: '#1C1209',
             borderRadius: 8,
             boxShadow: 'var(--s-sidebar-logo)',
+            overflow: 'hidden',
           }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--c-text-on-dark)" strokeWidth="1.5" fill="none"/>
-              <polyline points="9,22 9,12 15,12 15,22" stroke="var(--c-text-on-dark)" strokeWidth="1.5" fill="none"/>
-            </svg>
+            <img src="/skyglobal-logo.svg" width="30" height="30" alt="SkyGlobal" style={{ objectFit: 'contain' }} />
           </div>
           <div>
             <p style={{
