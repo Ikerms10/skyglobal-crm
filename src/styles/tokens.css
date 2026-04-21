@@ -1,75 +1,77 @@
-/* ─── SkyGlobal CRM — Dark Design Tokens ───────────────────────────────────── */
+/* ─── SkyGlobal CRM — Design Tokens ────────────────────────────────────────── */
 :root {
-  /* ─── SURFACE HIERARCHY ──────────────────────────────────────────────────
-     Dark mode: canvas is deep espresso, cards float above, sidebar recedes.
+  /* ─── LIGHT THEME (default) ────────────────────────────────────────────────
+     Warm linen: canvas is soft parchment, cards are near-white, sidebar recedes.
   ────────────────────────────────────────────────────────────────────────── */
 
-  --c-canvas: #1d1c17; /* page background — dark espresso */
-  --c-card: #252420; /* card/panel surface */
-  --c-card-hover: #2c2b25; /* card hover state */
-  --c-nested: #2d2c27; /* nested surfaces inside cards */
-  --c-sidebar: #1a1914; /* sidebar background */
-  --c-sidebar-hover: #222117; /* sidebar item hover */
-  --c-sidebar-active: #2a2920; /* sidebar active item fill */
-  --c-topnav: rgba(29, 28, 23, 0.9); /* frosted dark glass */
+  /* Surface hierarchy */
+  --c-canvas: #f5f0e8;
+  --c-card: #fffdf7;
+  --c-card-hover: #f7f2ea;
+  --c-nested: #eee8da;
+  --c-sidebar: #eee8d8;
+  --c-sidebar-hover: #e5dece;
+  --c-sidebar-active: rgba(230, 171, 53, 0.15);
+  --c-topnav: rgba(245, 240, 232, 0.92);
 
-  /* ─── BRAND ACCENTS ────────────────────────────────────────────────────── */
+  /* ─── BRAND ACCENTS — same in both themes ─────────────────────────────── */
 
-  --c-gold: #e6ab35; /* warm gold — revenue, primary CTA, money */
-  --c-gold-mid: #f0c060; /* lighter gold — secondary gold moments */
-  --c-gold-warm: #e6ab35; /* warm gold — pending/warning badges */
-  --c-gold-bg: rgba(230, 171, 53, 0.12); /* gold tint fill */
-  --c-gold-border: rgba(230, 171, 53, 0.25);
+  --c-gold: #e6ab35;
+  --c-gold-mid: #f0c060;
+  --c-gold-warm: #e6ab35;
+  --c-gold-bg: rgba(230, 171, 53, 0.12);
+  --c-gold-border: rgba(230, 171, 53, 0.3);
   --c-gold-shadow: rgba(230, 171, 53, 0.2);
 
-  --c-sage: #22c55e; /* green — success, profit, won, positive */
-  --c-sage-soft: #3583b3; /* blue — interactive elements, links */
-  --c-sage-bg: rgba(53, 131, 179, 0.12);
+  --c-sage: #16a34a;
+  --c-sage-soft: #3583b3;
+  --c-sage-bg: rgba(53, 131, 179, 0.1);
   --c-sage-border: rgba(53, 131, 179, 0.25);
 
   /* ─── SEMANTIC STATES ──────────────────────────────────────────────────── */
 
-  --c-danger: #ef4444;
-  --c-danger-bg: rgba(239, 68, 68, 0.12);
-  --c-danger-border: rgba(239, 68, 68, 0.25);
+  --c-danger: #dc2626;
+  --c-danger-bg: rgba(220, 38, 38, 0.08);
+  --c-danger-border: rgba(220, 38, 38, 0.22);
+  --c-danger-hover-bg: #f0e0dd;
 
-  --c-warning: #e6ab35;
-  --c-warning-bg: rgba(230, 171, 53, 0.12);
-  --c-warning-border: rgba(230, 171, 53, 0.25);
+  --c-warning: #d97706;
+  --c-warning-bg: rgba(217, 119, 6, 0.1);
+  --c-warning-border: rgba(217, 119, 6, 0.25);
 
-  --c-success: #22c55e;
-  --c-success-bg: rgba(34, 197, 94, 0.12);
-  --c-success-border: rgba(34, 197, 94, 0.2);
+  --c-success: #16a34a;
+  --c-success-bg: rgba(22, 163, 74, 0.1);
+  --c-success-border: rgba(22, 163, 74, 0.22);
 
   /* ─── TYPOGRAPHY ───────────────────────────────────────────────────────── */
 
-  --c-text-1: #ffffff; /* primary headings */
-  --c-text-2: #efeae2; /* cream body text */
-  --c-text-3: #bfb9ae; /* secondary labels */
-  --c-text-4: #8b857a; /* muted labels, placeholders */
-  --c-text-5: #5a5550; /* disabled, hints */
-  --c-text-sidebar: #9b9590; /* sidebar inactive nav items */
-  --c-text-on-gold: #1d1c17; /* text on gold backgrounds */
-  --c-text-on-dark: #ffffff; /* text on dark backgrounds */
+  --c-text-1: #1d1c17;
+  --c-text-2: #3a3326;
+  --c-text-3: #5c5240;
+  --c-text-4: #8b7a62;
+  --c-text-5: #b0a080;
+  --c-text-sidebar: #7a6a58;
+  --c-text-on-gold: #1d1c17;
+  --c-text-on-dark: #ffffff;
 
   /* ─── BORDERS ──────────────────────────────────────────────────────────── */
 
-  --c-border-light: rgba(255, 255, 255, 0.06);
-  --c-border: rgba(255, 255, 255, 0.09);
-  --c-border-mid: rgba(255, 255, 255, 0.13);
-  --c-border-strong: rgba(255, 255, 255, 0.2);
+  --c-border-light: rgba(0, 0, 0, 0.07);
+  --c-border: rgba(0, 0, 0, 0.1);
+  --c-border-mid: rgba(0, 0, 0, 0.15);
+  --c-border-strong: rgba(0, 0, 0, 0.24);
 
-  /* ─── SHADOWS ───────────────────────────────────────────────────────────── */
+  /* ─── SHADOWS ──────────────────────────────────────────────────────────── */
 
-  --s-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 8px rgba(0, 0, 0, 0.2);
-  --s-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --s-card-hover: 0 4px 16px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.3);
-  --s-card-hover-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --s-button: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  --s-button-hover: 0 4px 12px rgba(230, 171, 53, 0.25), 0 1px 4px rgba(0, 0, 0, 0.3);
-  --s-modal: 0 20px 60px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(0, 0, 0, 0.4);
-  --s-topnav: 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 8px rgba(0, 0, 0, 0.3);
-  --s-sidebar-logo: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --s-card: 0 1px 3px rgba(0, 0, 0, 0.09), 0 1px 6px rgba(0, 0, 0, 0.05);
+  --s-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --s-card-hover: 0 4px 16px rgba(0, 0, 0, 0.13), 0 1px 4px rgba(0, 0, 0, 0.08);
+  --s-card-hover-inset: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --s-button: 0 1px 3px rgba(0, 0, 0, 0.14), 0 1px 2px rgba(0, 0, 0, 0.09);
+  --s-button-hover: 0 4px 12px rgba(230, 171, 53, 0.3), 0 1px 4px rgba(0, 0, 0, 0.14);
+  --s-modal: 0 20px 60px rgba(0, 0, 0, 0.2), 0 4px 20px rgba(0, 0, 0, 0.12);
+  --s-topnav: 0 1px 0 rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.07);
+  --s-sidebar-logo: 0 2px 8px rgba(0, 0, 0, 0.14);
 
   /* ─── RADIUS ───────────────────────────────────────────────────────────── */
 
@@ -78,7 +80,7 @@
   --r-lg: 16px;
   --r-xl: 24px;
 
-  /* ─── TYPOGRAPHY ───────────────────────────────────────────────────────── */
+  /* ─── FONTS ────────────────────────────────────────────────────────────── */
 
   --font-display: 'Plus Jakarta Sans', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
@@ -103,9 +105,7 @@
   --z-toast: 60;
   --z-tooltip: 70;
 
-  /* ─── LEGACY ALIASES — maps old --sg-* to new dark tokens ─────────────────
-     All existing code using --sg-* automatically inherits the new palette.
-  ────────────────────────────────────────────────────────────────────────── */
+  /* ─── LEGACY ALIASES — maps --sg-* to --c-* tokens ────────────────────── */
 
   --sg-base: var(--c-canvas);
   --sg-surface: var(--c-card);
@@ -174,4 +174,62 @@
   --shadow-md: var(--s-card-hover);
   --shadow-lg: var(--s-modal);
   --shadow-xl: var(--s-modal);
+}
+
+/* ─── DARK THEME — activated when OS is set to dark mode ─────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Surface hierarchy */
+    --c-canvas: #1d1c17;
+    --c-card: #252420;
+    --c-card-hover: #2c2b25;
+    --c-nested: #2d2c27;
+    --c-sidebar: #1a1914;
+    --c-sidebar-hover: #222117;
+    --c-sidebar-active: #2a2920;
+    --c-topnav: rgba(29, 28, 23, 0.9);
+
+    /* Semantic states */
+    --c-sage: #22c55e;
+
+    --c-danger: #ef4444;
+    --c-danger-bg: rgba(239, 68, 68, 0.12);
+    --c-danger-border: rgba(239, 68, 68, 0.25);
+    --c-danger-hover-bg: rgba(185, 74, 58, 0.25);
+
+    --c-warning: #e6ab35;
+    --c-warning-bg: rgba(230, 171, 53, 0.12);
+    --c-warning-border: rgba(230, 171, 53, 0.25);
+
+    --c-success: #22c55e;
+    --c-success-bg: rgba(34, 197, 94, 0.12);
+    --c-success-border: rgba(34, 197, 94, 0.2);
+
+    /* Typography */
+    --c-text-1: #ffffff;
+    --c-text-2: #efeae2;
+    --c-text-3: #bfb9ae;
+    --c-text-4: #8b857a;
+    --c-text-5: #5a5550;
+    --c-text-sidebar: #9b9590;
+    --c-text-on-gold: #1d1c17;
+    --c-text-on-dark: #ffffff;
+
+    /* Borders */
+    --c-border-light: rgba(255, 255, 255, 0.06);
+    --c-border: rgba(255, 255, 255, 0.09);
+    --c-border-mid: rgba(255, 255, 255, 0.13);
+    --c-border-strong: rgba(255, 255, 255, 0.2);
+
+    /* Shadows */
+    --s-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 8px rgba(0, 0, 0, 0.2);
+    --s-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --s-card-hover: 0 4px 16px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.3);
+    --s-card-hover-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --s-button: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --s-button-hover: 0 4px 12px rgba(230, 171, 53, 0.25), 0 1px 4px rgba(0, 0, 0, 0.3);
+    --s-modal: 0 20px 60px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(0, 0, 0, 0.4);
+    --s-topnav: 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --s-sidebar-logo: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
 }

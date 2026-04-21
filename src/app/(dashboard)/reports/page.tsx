@@ -405,23 +405,23 @@ export default function ReportsPage() {
             <CartesianGrid strokeDasharray="3 3" stroke="var(--sg-border)" vertical={false} />
             <XAxis
               dataKey="month"
-              tick={{ fill: '#8b857a', fontSize: 11 }}
+              tick={{ fill: 'var(--c-text-4)', fontSize: 11 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: '#8b857a', fontSize: 11 }}
+              tick={{ fill: 'var(--c-text-4)', fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#252420',
-                border: '1px solid rgba(255,255,255,0.12)',
+                backgroundColor: 'var(--c-card)',
+                border: '1px solid var(--c-border-mid)',
                 borderRadius: 8,
               }}
-              labelStyle={{ color: '#ffffff', fontWeight: 600 }}
+              labelStyle={{ color: 'var(--c-text-1)', fontWeight: 600 }}
               formatter={(v: any, name: string) => [
                 formatCurrency(Number(v)),
                 name.charAt(0).toUpperCase() + name.slice(1),
