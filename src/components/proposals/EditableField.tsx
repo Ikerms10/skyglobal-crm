@@ -1,18 +1,18 @@
-'use client'
-import { useState, useRef, useEffect } from 'react'
+'use client';
+import { useState, useRef, useEffect } from 'react';
 
 interface EditableFieldProps {
-  value: string
-  onChange: (val: string) => void
-  placeholder?: string
-  multiline?: boolean
-  className?: string
-  style?: React.CSSProperties
-  inputStyle?: React.CSSProperties
-  type?: 'text' | 'date' | 'number'
-  prefix?: string
-  suffix?: string
-  locked?: boolean
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  multiline?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  inputStyle?: React.CSSProperties;
+  type?: 'text' | 'date' | 'number';
+  prefix?: string;
+  suffix?: string;
+  locked?: boolean;
 }
 
 export function EditableField({
@@ -28,43 +28,47 @@ export function EditableField({
   suffix,
   locked = false,
 }: EditableFieldProps) {
-  const [editing, setEditing] = useState(false)
-  const [localVal, setLocalVal] = useState(value)
-  const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
+  const [editing, setEditing] = useState(false);
+  const [localVal, setLocalVal] = useState(value);
+  const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
 
-  useEffect(() => { setLocalVal(value) }, [value])
+  useEffect(() => {
+    setLocalVal(value);
+  }, [value]);
 
   const handleClick = () => {
-    if (locked) return
-    setEditing(true)
-  }
+    if (locked) return;
+    setEditing(true);
+  };
 
   const handleBlur = () => {
-    setEditing(false)
-    if (localVal !== value) onChange(localVal)
-  }
+    setEditing(false);
+    if (localVal !== value) onChange(localVal);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !multiline) {
-      e.preventDefault()
-      ;(e.target as HTMLElement).blur()
+      e.preventDefault();
+      (e.target as HTMLElement).blur();
     }
     if (e.key === 'Escape') {
-      setLocalVal(value)
-      setEditing(false)
+      setLocalVal(value);
+      setEditing(false);
     }
-  }
+  };
 
   useEffect(() => {
-    if (editing && inputRef.current) inputRef.current.focus()
-  }, [editing])
+    if (editing && inputRef.current) inputRef.current.focus();
+  }, [editing]);
 
   if (locked) {
     return (
       <span className={className} style={style}>
-        {prefix}{value || placeholder}{suffix}
+        {prefix}
+        {value || placeholder}
+        {suffix}
       </span>
-    )
+    );
   }
 
   const hoverStyle: React.CSSProperties = {
@@ -72,7 +76,7 @@ export function EditableField({
     borderBottom: '1.5px dashed var(--sg-gold)',
     paddingBottom: 1,
     transition: 'border-color 0.15s',
-  }
+  };
 
   const activeStyle: React.CSSProperties = {
     outline: 'none',
@@ -86,7 +90,7 @@ export function EditableField({
     color: 'inherit',
     lineHeight: 'inherit',
     ...inputStyle,
-  }
+  };
 
   if (editing) {
     if (multiline) {
@@ -94,14 +98,20 @@ export function EditableField({
         <textarea
           ref={inputRef as any}
           value={localVal}
-          onChange={e => setLocalVal(e.target.value)}
+          rows={2}
+          onChange={(e) => {
+            setLocalVal(e.target.value);
+            const el = e.target;
+            el.style.height = 'auto';
+            el.style.height = `${el.scrollHeight}px`;
+          }}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          style={{ ...activeStyle, resize: 'vertical', minHeight: 80 }}
+          style={{ ...activeStyle, resize: 'none', minHeight: 48, overflow: 'hidden' }}
           className={className}
         />
-      )
+      );
     }
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
@@ -110,7 +120,7 @@ export function EditableField({
           ref={inputRef}
           type={type}
           value={localVal}
-          onChange={e => setLocalVal(e.target.value)}
+          onChange={(e) => setLocalVal(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -119,7 +129,7 @@ export function EditableField({
         />
         {suffix && <span>{suffix}</span>}
       </span>
-    )
+    );
   }
 
   return (
@@ -137,22 +147,28 @@ export function EditableField({
       </span>
       {suffix}
     </span>
-  )
+  );
 }
 
 interface EditableSelectProps {
-  value: string
-  onChange: (val: string) => void
-  options: string[]
-  className?: string
-  style?: React.CSSProperties
+  value: string;
+  onChange: (val: string) => void;
+  options: string[];
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-export function EditableSelect({ value, onChange, options, className = '', style = {} }: EditableSelectProps) {
+export function EditableSelect({
+  value,
+  onChange,
+  options,
+  className = '',
+  style = {},
+}: EditableSelectProps) {
   return (
     <select
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value)}
       className={className}
       style={{
         background: 'transparent',
@@ -167,9 +183,15 @@ export function EditableSelect({ value, onChange, options, className = '', style
         ...style,
       }}
     >
-      {options.map(opt => (
-        <option key={opt} value={opt} style={{ background: 'var(--sg-surface)', color: 'var(--sg-text-1)' }}>{opt}</option>
+      {options.map((opt) => (
+        <option
+          key={opt}
+          value={opt}
+          style={{ background: 'var(--sg-surface)', color: 'var(--sg-text-1)' }}
+        >
+          {opt}
+        </option>
       ))}
     </select>
-  )
+  );
 }

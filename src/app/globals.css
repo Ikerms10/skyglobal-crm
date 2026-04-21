@@ -480,6 +480,44 @@ textarea:focus {
   }
 }
 
+/* ─── PROPOSAL EDITOR — RESPONSIVE ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .proposal-toolbar {
+    height: auto !important;
+    min-height: 52px;
+    flex-wrap: wrap;
+    padding: 8px 12px !important;
+    gap: 6px;
+    align-items: center;
+  }
+  .proposal-toolbar-left {
+    order: 1;
+    flex: 1;
+    min-width: 0;
+  }
+  .proposal-toolbar-center {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    padding-bottom: 4px;
+  }
+  .proposal-toolbar-right {
+    order: 2;
+    flex-shrink: 0;
+    gap: 6px !important;
+  }
+  .proposal-toolbar-right button span {
+    display: none;
+  }
+  .proposal-doc-scroll {
+    padding: 16px 8px 60px !important;
+    overflow-x: auto;
+  }
+  .proposal-doc-scroll > div {
+    min-width: 600px;
+  }
+}
+
 /* ─── REDUCED MOTION ─────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
