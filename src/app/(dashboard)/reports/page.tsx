@@ -1,250 +1,343 @@
-'use client'
-import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { formatCurrency, exportToCSV } from '@/lib/utils'
-import { TableSkeleton } from '@/components/ui/Skeleton'
-import { Button } from '@/components/ui/Button'
-import { Download } from 'lucide-react'
+'use client';
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { formatCurrency, exportToCSV } from '@/lib/utils';
+import { TableSkeleton } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
+import { Download } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-} from 'recharts'
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
 import {
-  startOfMonth, endOfMonth, startOfYear, endOfYear,
-  subMonths, format, parseISO, eachMonthOfInterval,
-  startOfDay, endOfDay, subMonths as subM,
-} from 'date-fns'
-import { useEffect, useRef } from 'react'
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  subMonths,
+  format,
+  parseISO,
+  eachMonthOfInterval,
+  startOfDay,
+  endOfDay,
+  subMonths as subM,
+} from 'date-fns';
+import { useEffect, useRef } from 'react';
 
-type Timeframe = 'this_month' | 'last_month' | 'this_year' | 'all_time'
+type Timeframe = 'this_month' | 'last_month' | 'this_year' | 'all_time';
 
 const SOURCE_COLORS: Record<string, string> = {
-  Thumbtack: '#7A9E7E',
-  Referral: '#4A6741',
-  Google: '#8B6914',
-  Instagram: '#A07850',
-  'Door Knock': '#D4A853',
-  Facebook: '#CFC4B4',
-  Yelp: '#B94A3A',
-  Other: '#7A6652',
-}
+  Thumbtack: '#3583b3',
+  Referral: '#22c55e',
+  Google: '#e6ab35',
+  Instagram: '#a78bfa',
+  'Door Knock': '#f0c060',
+  Facebook: '#60a5fa',
+  Yelp: '#ef4444',
+  Other: '#8b857a',
+};
 
-const EXPENSE_COLORS = ['#8B6914','#7A9E7E','#4A6741','#B94A3A','#A07850','#D4A853','#CFC4B4','#7A6652']
+const EXPENSE_COLORS = [
+  '#e6ab35',
+  '#3583b3',
+  '#22c55e',
+  '#ef4444',
+  '#a78bfa',
+  '#f0c060',
+  '#60a5fa',
+  '#8b857a',
+];
 
 export default function ReportsPage() {
-  const router = useRouter()
-  const [timeframe, setTimeframe] = useState<Timeframe>('this_year')
-  const [loading, setLoading] = useState(true)
-  const [projects, setProjects] = useState<any[]>([])
-  const [leads, setLeads] = useState<any[]>([])
-  const [expenses, setExpenses] = useState<any[]>([])
-  const [projExpenses, setProjExpenses] = useState<any[]>([])
-  const [projExpByProject, setProjExpByProject] = useState<any[]>([])
-  const mounted = useRef(true)
+  const router = useRouter();
+  const [timeframe, setTimeframe] = useState<Timeframe>('this_year');
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [projExpenses, setProjExpenses] = useState<any[]>([]);
+  const [projExpByProject, setProjExpByProject] = useState<any[]>([]);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    mounted.current = true
-    return () => { mounted.current = false }
-  }, [])
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
     async function load() {
-      setLoading(true)
+      setLoading(true);
       try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user || cancelled) return
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
 
         const [p, l, e, pe] = await Promise.all([
-          supabase.from('projects')
-            .select('id, title, contract_value, amount_paid, lead_cost, type, status, customer_id, start_date, created_at, customers(name, id)')
-            .eq('user_id', user.id).is('deleted_at', null),
-          supabase.from('leads')
+          supabase
+            .from('projects')
+            .select(
+              'id, title, contract_value, amount_paid, lead_cost, type, status, customer_id, start_date, created_at, customers(name, id)'
+            )
+            .eq('user_id', user.id)
+            .is('deleted_at', null),
+          supabase
+            .from('leads')
             .select('id, stage, source, estimated_value, customer_id, created_at')
-            .eq('user_id', user.id).is('deleted_at', null),
-          supabase.from('expenses')
+            .eq('user_id', user.id)
+            .is('deleted_at', null),
+          supabase
+            .from('expenses')
             .select('id, amount, category, date')
-            .eq('user_id', user.id).is('deleted_at', null),
-          supabase.from('project_expenses')
+            .eq('user_id', user.id)
+            .is('deleted_at', null),
+          supabase
+            .from('project_expenses')
             .select('id, amount, category, date, project_id')
             .eq('user_id', user.id),
-        ])
+        ]);
 
         if (!cancelled) {
-          setProjects(p.data ?? [])
-          setLeads(l.data ?? [])
-          setExpenses(e.data ?? [])
+          setProjects(p.data ?? []);
+          setLeads(l.data ?? []);
+          setExpenses(e.data ?? []);
           // Same data used for both expense totals and per-project lookup
-          setProjExpenses(pe.data ?? [])
-          setProjExpByProject(pe.data ?? [])
+          setProjExpenses(pe.data ?? []);
+          setProjExpByProject(pe.data ?? []);
         }
       } catch (_) {}
-      if (!cancelled) setLoading(false)
+      if (!cancelled) setLoading(false);
     }
-    load()
-    return () => { cancelled = true }
-  }, [])
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const { dateStart, dateEnd } = useMemo(() => {
-    const now = new Date()
-    if (timeframe === 'this_month') return { dateStart: startOfMonth(now), dateEnd: endOfMonth(now) }
-    if (timeframe === 'last_month') { const lm = subMonths(now, 1); return { dateStart: startOfMonth(lm), dateEnd: endOfMonth(lm) } }
-    if (timeframe === 'this_year') return { dateStart: startOfYear(now), dateEnd: endOfYear(now) }
-    return { dateStart: new Date(2000, 0, 1), dateEnd: now }
-  }, [timeframe])
+    const now = new Date();
+    if (timeframe === 'this_month')
+      return { dateStart: startOfMonth(now), dateEnd: endOfMonth(now) };
+    if (timeframe === 'last_month') {
+      const lm = subMonths(now, 1);
+      return { dateStart: startOfMonth(lm), dateEnd: endOfMonth(lm) };
+    }
+    if (timeframe === 'this_year') return { dateStart: startOfYear(now), dateEnd: endOfYear(now) };
+    return { dateStart: new Date(2000, 0, 1), dateEnd: now };
+  }, [timeframe]);
 
   const filteredProjects = useMemo(() => {
-    const s = dateStart.toISOString()
-    const e = dateEnd.toISOString()
-    return projects.filter(p => {
-      const d = p.start_date ?? p.created_at
-      return d >= s && d <= e
-    })
-  }, [projects, dateStart, dateEnd])
+    const s = dateStart.toISOString();
+    const e = dateEnd.toISOString();
+    return projects.filter((p) => {
+      const d = p.start_date ?? p.created_at;
+      return d >= s && d <= e;
+    });
+  }, [projects, dateStart, dateEnd]);
 
   const filteredExpenses = useMemo(() => {
-    const s = format(dateStart, 'yyyy-MM-dd')
-    const e = format(dateEnd, 'yyyy-MM-dd')
-    return expenses.filter(x => x.date >= s && x.date <= e)
-  }, [expenses, dateStart, dateEnd])
+    const s = format(dateStart, 'yyyy-MM-dd');
+    const e = format(dateEnd, 'yyyy-MM-dd');
+    return expenses.filter((x) => x.date >= s && x.date <= e);
+  }, [expenses, dateStart, dateEnd]);
 
   const filteredProjExp = useMemo(() => {
-    const s = format(dateStart, 'yyyy-MM-dd')
-    const e = format(dateEnd, 'yyyy-MM-dd')
-    return projExpenses.filter(x => x.date >= s && x.date <= e)
-  }, [projExpenses, dateStart, dateEnd])
+    const s = format(dateStart, 'yyyy-MM-dd');
+    const e = format(dateEnd, 'yyyy-MM-dd');
+    return projExpenses.filter((x) => x.date >= s && x.date <= e);
+  }, [projExpenses, dateStart, dateEnd]);
 
   const filteredLeads = useMemo(() => {
-    const s = dateStart.toISOString()
-    const e = dateEnd.toISOString()
-    return leads.filter(l => l.created_at >= s && l.created_at <= e)
-  }, [leads, dateStart, dateEnd])
+    const s = dateStart.toISOString();
+    const e = dateEnd.toISOString();
+    return leads.filter((l) => l.created_at >= s && l.created_at <= e);
+  }, [leads, dateStart, dateEnd]);
 
   // KPI calculations
   const kpi = useMemo(() => {
     const revenue = filteredProjects
-      .filter(p => p.status === 'In Progress' || p.status === 'Completed')
-      .reduce((s, p) => s + (p.contract_value ?? 0), 0)
-    const totalExp = filteredExpenses.reduce((s, e) => s + e.amount, 0)
-      + filteredProjExp.reduce((s, e) => s + e.amount, 0)
-    const profit = revenue - totalExp
-    const margin = revenue > 0 ? (profit / revenue) * 100 : 0
-    return { revenue, totalExp, profit, margin }
-  }, [filteredProjects, filteredExpenses, filteredProjExp])
+      .filter((p) => p.status === 'In Progress' || p.status === 'Completed')
+      .reduce((s, p) => s + (p.contract_value ?? 0), 0);
+    const totalExp =
+      filteredExpenses.reduce((s, e) => s + e.amount, 0) +
+      filteredProjExp.reduce((s, e) => s + e.amount, 0);
+    const profit = revenue - totalExp;
+    const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+    return { revenue, totalExp, profit, margin };
+  }, [filteredProjects, filteredExpenses, filteredProjExp]);
 
   // Monthly chart data
   const monthlyData = useMemo(() => {
-    const months = eachMonthOfInterval({ start: dateStart, end: dateEnd })
-    return months.map(m => {
-      const ms = format(startOfMonth(m), 'yyyy-MM-dd')
-      const me = format(endOfMonth(m), 'yyyy-MM-dd')
-      const msi = startOfMonth(m).toISOString()
-      const mei = endOfMonth(m).toISOString()
+    const months = eachMonthOfInterval({ start: dateStart, end: dateEnd });
+    return months.map((m) => {
+      const ms = format(startOfMonth(m), 'yyyy-MM-dd');
+      const me = format(endOfMonth(m), 'yyyy-MM-dd');
+      const msi = startOfMonth(m).toISOString();
+      const mei = endOfMonth(m).toISOString();
 
       const rev = filteredProjects
-        .filter(p => {
-          const d = (p.start_date ?? p.created_at ?? '').substring(0, 10)
-          return d >= ms && d <= me
+        .filter((p) => {
+          const d = (p.start_date ?? p.created_at ?? '').substring(0, 10);
+          return d >= ms && d <= me;
         })
-        .reduce((s, p) => s + (p.contract_value ?? 0), 0)
+        .reduce((s, p) => s + (p.contract_value ?? 0), 0);
 
       const genExp = filteredExpenses
-        .filter(e => e.date >= ms && e.date <= me)
-        .reduce((s, e) => s + e.amount, 0)
+        .filter((e) => e.date >= ms && e.date <= me)
+        .reduce((s, e) => s + e.amount, 0);
       const prjExp = filteredProjExp
-        .filter(e => e.date >= ms && e.date <= me)
-        .reduce((s, e) => s + e.amount, 0)
-      const exp = genExp + prjExp
+        .filter((e) => e.date >= ms && e.date <= me)
+        .reduce((s, e) => s + e.amount, 0);
+      const exp = genExp + prjExp;
 
-      return { month: format(m, 'MMM'), revenue: Math.round(rev), expenses: Math.round(exp), profit: Math.round(rev - exp) }
-    })
-  }, [filteredProjects, filteredExpenses, filteredProjExp, dateStart, dateEnd])
+      return {
+        month: format(m, 'MMM'),
+        revenue: Math.round(rev),
+        expenses: Math.round(exp),
+        profit: Math.round(rev - exp),
+      };
+    });
+  }, [filteredProjects, filteredExpenses, filteredProjExp, dateStart, dateEnd]);
 
   // Lead source donut
   const sourceData = useMemo(() => {
-    const map: Record<string, number> = {}
-    filteredLeads.forEach(l => { map[l.source] = (map[l.source] ?? 0) + 1 })
-    return Object.entries(map).map(([source, count]) => ({ name: source, value: count }))
-  }, [filteredLeads])
+    const map: Record<string, number> = {};
+    filteredLeads.forEach((l) => {
+      map[l.source] = (map[l.source] ?? 0) + 1;
+    });
+    return Object.entries(map).map(([source, count]) => ({ name: source, value: count }));
+  }, [filteredLeads]);
 
   // Lead stage funnel
-  const STAGES = ['New Lead', 'Estimate Sent', 'Follow-up', 'Negotiating', 'Won', 'Lost']
-  const stageData = useMemo(() =>
-    STAGES.map(stage => ({ stage, count: filteredLeads.filter(l => l.stage === stage).length })),
+  const STAGES = ['New Lead', 'Estimate Sent', 'Follow-up', 'Negotiating', 'Won', 'Lost'];
+  const stageData = useMemo(
+    () =>
+      STAGES.map((stage) => ({
+        stage,
+        count: filteredLeads.filter((l) => l.stage === stage).length,
+      })),
     [filteredLeads]
-  )
+  );
 
   // Expenses breakdown by category
   const expBreakdown = useMemo(() => {
-    const map: Record<string, number> = {}
-    filteredExpenses.forEach(e => { map[e.category] = (map[e.category] ?? 0) + e.amount })
-    filteredProjExp.forEach(e => { map[e.category] = (map[e.category] ?? 0) + e.amount })
+    const map: Record<string, number> = {};
+    filteredExpenses.forEach((e) => {
+      map[e.category] = (map[e.category] ?? 0) + e.amount;
+    });
+    filteredProjExp.forEach((e) => {
+      map[e.category] = (map[e.category] ?? 0) + e.amount;
+    });
     return Object.entries(map)
       .map(([name, value]) => ({ name, value: Math.round(value) }))
-      .sort((a, b) => b.value - a.value)
-  }, [filteredExpenses, filteredProjExp])
+      .sort((a, b) => b.value - a.value);
+  }, [filteredExpenses, filteredProjExp]);
 
   // Monthly P&L table (all months in timeframe)
   const plTable = useMemo(() => {
-    return monthlyData.map(row => ({
+    return monthlyData.map((row) => ({
       ...row,
       margin: row.revenue > 0 ? Math.round((row.profit / row.revenue) * 100) : 0,
-    }))
-  }, [monthlyData])
+    }));
+  }, [monthlyData]);
 
   const plTotals = useMemo(() => {
-    const revenue = plTable.reduce((s, r) => s + r.revenue, 0)
-    const expenses = plTable.reduce((s, r) => s + r.expenses, 0)
-    const profit = revenue - expenses
-    const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
-    return { revenue, expenses, profit, margin }
-  }, [plTable])
+    const revenue = plTable.reduce((s, r) => s + r.revenue, 0);
+    const expenses = plTable.reduce((s, r) => s + r.expenses, 0);
+    const profit = revenue - expenses;
+    const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
+    return { revenue, expenses, profit, margin };
+  }, [plTable]);
 
   // Top customers
   const topCustomers = useMemo(() => {
-    const map: Record<string, { name: string; id: string; revenue: number; projects: number; lastProject: string }> = {}
-    filteredProjects.forEach(p => {
-      const cust = (Array.isArray(p.customers) ? p.customers[0] : p.customers) as { name: string; id: string } | null
-      if (!cust) return
-      if (!map[cust.id]) map[cust.id] = { name: cust.name, id: cust.id, revenue: 0, projects: 0, lastProject: '' }
-      map[cust.id].revenue += (p.contract_value ?? 0)
-      map[cust.id].projects += 1
-      const d = (p.start_date ?? p.created_at ?? '').substring(0, 10)
-      if (d > map[cust.id].lastProject) map[cust.id].lastProject = d
-    })
-    return Object.values(map).sort((a, b) => b.revenue - a.revenue).slice(0, 10)
-  }, [filteredProjects])
+    const map: Record<
+      string,
+      { name: string; id: string; revenue: number; projects: number; lastProject: string }
+    > = {};
+    filteredProjects.forEach((p) => {
+      const cust = (Array.isArray(p.customers) ? p.customers[0] : p.customers) as {
+        name: string;
+        id: string;
+      } | null;
+      if (!cust) return;
+      if (!map[cust.id])
+        map[cust.id] = { name: cust.name, id: cust.id, revenue: 0, projects: 0, lastProject: '' };
+      map[cust.id].revenue += p.contract_value ?? 0;
+      map[cust.id].projects += 1;
+      const d = (p.start_date ?? p.created_at ?? '').substring(0, 10);
+      if (d > map[cust.id].lastProject) map[cust.id].lastProject = d;
+    });
+    return Object.values(map)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+  }, [filteredProjects]);
 
   // Project performance table
   const projectPerf = useMemo(() => {
-    return filteredProjects.map(p => {
-      const costs = projExpByProject
-        .filter(e => e.project_id === p.id)
-        .reduce((s: number, e: any) => s + e.amount, 0)
-      const profit = (p.contract_value ?? 0) - (p.lead_cost ?? 0) - costs
-      const margin = (p.contract_value ?? 0) > 0 ? Math.round((profit / p.contract_value) * 100) : 0
-      const cust = (Array.isArray(p.customers) ? p.customers[0] : p.customers) as { name: string; id: string } | null
-      const days = p.start_date
-        ? Math.round((new Date().getTime() - new Date(p.start_date).getTime()) / (1000 * 60 * 60 * 24))
-        : null
-      return { ...p, customerName: cust?.name ?? '—', costs: Math.round(costs), profit: Math.round(profit), margin }
-    }).sort((a, b) => b.profit - a.profit)
-  }, [filteredProjects, projExpByProject])
+    return filteredProjects
+      .map((p) => {
+        const costs = projExpByProject
+          .filter((e) => e.project_id === p.id)
+          .reduce((s: number, e: any) => s + e.amount, 0);
+        const profit = (p.contract_value ?? 0) - (p.lead_cost ?? 0) - costs;
+        const margin =
+          (p.contract_value ?? 0) > 0 ? Math.round((profit / p.contract_value) * 100) : 0;
+        const cust = (Array.isArray(p.customers) ? p.customers[0] : p.customers) as {
+          name: string;
+          id: string;
+        } | null;
+        const days = p.start_date
+          ? Math.round(
+              (new Date().getTime() - new Date(p.start_date).getTime()) / (1000 * 60 * 60 * 24)
+            )
+          : null;
+        return {
+          ...p,
+          customerName: cust?.name ?? '—',
+          costs: Math.round(costs),
+          profit: Math.round(profit),
+          margin,
+        };
+      })
+      .sort((a, b) => b.profit - a.profit);
+  }, [filteredProjects, projExpByProject]);
 
   const handleExportPL = () => {
-    exportToCSV(plTable.map(r => ({
-      Month: r.month, Revenue: r.revenue, Expenses: r.expenses,
-      'Gross Profit': r.profit, 'Margin %': r.margin + '%',
-    })), `SkyGlobal-PL-${format(dateStart, 'yyyy')}`)
-  }
+    exportToCSV(
+      plTable.map((r) => ({
+        Month: r.month,
+        Revenue: r.revenue,
+        Expenses: r.expenses,
+        'Gross Profit': r.profit,
+        'Margin %': r.margin + '%',
+      })),
+      `SkyGlobal-PL-${format(dateStart, 'yyyy')}`
+    );
+  };
 
-  if (loading) return (
-    <div className="p-4 md:p-6 space-y-6">
-      <TableSkeleton /><TableSkeleton /><TableSkeleton />
-    </div>
-  )
+  if (loading)
+    return (
+      <div className="p-4 md:p-6 space-y-6">
+        <TableSkeleton />
+        <TableSkeleton />
+        <TableSkeleton />
+      </div>
+    );
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -255,9 +348,19 @@ export default function ReportsPage() {
           <p className="text-[var(--sg-text-2)] text-sm">Business analytics and insights</p>
         </div>
         <div className="flex items-center gap-1 bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg p-1">
-          {([['this_month','This Month'],['last_month','Last Month'],['this_year','This Year'],['all_time','All Time']] as [Timeframe, string][]).map(([val, label]) => (
-            <button key={val} onClick={() => setTimeframe(val)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${timeframe === val ? 'bg-[var(--sg-sky)] text-[var(--sg-base)]' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]'}`}>
+          {(
+            [
+              ['this_month', 'This Month'],
+              ['last_month', 'Last Month'],
+              ['this_year', 'This Year'],
+              ['all_time', 'All Time'],
+            ] as [Timeframe, string][]
+          ).map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setTimeframe(val)}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${timeframe === val ? 'bg-[var(--sg-sky)] text-[var(--sg-base)]' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]'}`}
+            >
               {label}
             </button>
           ))}
@@ -267,14 +370,29 @@ export default function ReportsPage() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: formatCurrency(kpi.revenue), color: '#8B6914' },
-          { label: 'Total Expenses', value: formatCurrency(kpi.totalExp), color: '#B94A3A' },
-          { label: 'Gross Profit', value: formatCurrency(kpi.profit), color: kpi.profit >= 0 ? '#4A6741' : '#B94A3A' },
-          { label: 'Profit Margin', value: `${kpi.margin.toFixed(1)}%`, color: kpi.margin >= 20 ? '#4A6741' : kpi.margin < 0 ? '#B94A3A' : '#8B6914' },
-        ].map(card => (
-          <div key={card.label} className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-5">
-            <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">{card.label}</p>
-            <p className="text-2xl font-bold" style={{ color: card.color }}>{card.value}</p>
+          { label: 'Total Revenue', value: formatCurrency(kpi.revenue), color: '#e6ab35' },
+          { label: 'Total Expenses', value: formatCurrency(kpi.totalExp), color: '#ef4444' },
+          {
+            label: 'Gross Profit',
+            value: formatCurrency(kpi.profit),
+            color: kpi.profit >= 0 ? '#22c55e' : '#ef4444',
+          },
+          {
+            label: 'Profit Margin',
+            value: `${kpi.margin.toFixed(1)}%`,
+            color: kpi.margin >= 20 ? '#22c55e' : kpi.margin < 0 ? '#ef4444' : '#e6ab35',
+          },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-5"
+          >
+            <p className="text-xs text-[var(--sg-text-2)] uppercase tracking-wider mb-1">
+              {card.label}
+            </p>
+            <p className="text-2xl font-bold" style={{ color: card.color }}>
+              {card.value}
+            </p>
           </div>
         ))}
       </div>
@@ -285,20 +403,41 @@ export default function ReportsPage() {
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={monthlyData} barCategoryGap="25%">
             <CartesianGrid strokeDasharray="3 3" stroke="var(--sg-border)" vertical={false} />
-            <XAxis dataKey="month" tick={{ fill: '#A07850', fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: '#A07850', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#FEFCF8', border: '1px solid #E0D5C7', borderRadius: 8 }}
-              labelStyle={{ color: 'var(--sg-text-1)', fontWeight: 600 }}
-              formatter={(v: any, name: string) => [formatCurrency(Number(v)), name.charAt(0).toUpperCase() + name.slice(1)]}
+            <XAxis
+              dataKey="month"
+              tick={{ fill: '#8b857a', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
             />
-            <Bar dataKey="revenue" name="revenue" fill="#8B6914" radius={[4,4,0,0]} />
-            <Bar dataKey="expenses" name="expenses" fill="#B94A3A" radius={[4,4,0,0]} />
-            <Bar dataKey="profit" name="profit" fill="#4A6741" radius={[4,4,0,0]} />
+            <YAxis
+              tick={{ fill: '#8b857a', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#252420',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+              }}
+              labelStyle={{ color: '#ffffff', fontWeight: 600 }}
+              formatter={(v: any, name: string) => [
+                formatCurrency(Number(v)),
+                name.charAt(0).toUpperCase() + name.slice(1),
+              ]}
+            />
+            <Bar dataKey="revenue" name="revenue" fill="#e6ab35" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expenses" name="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="profit" name="profit" fill="#22c55e" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
         <div className="flex items-center gap-6 mt-2 justify-center">
-          {[['Revenue','#8B6914'],['Expenses','#B94A3A'],['Profit','#4A6741']].map(([l,c]) => (
+          {[
+            ['Revenue', '#e6ab35'],
+            ['Expenses', '#ef4444'],
+            ['Profit', '#22c55e'],
+          ].map(([l, c]) => (
             <div key={l} className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: c }} />
               <span className="text-xs text-[var(--sg-text-2)]">{l}</span>
@@ -316,25 +455,46 @@ export default function ReportsPage() {
             <>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
-                  <Pie data={sourceData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={2}>
+                  <Pie
+                    data={sourceData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    dataKey="value"
+                    paddingAngle={2}
+                  >
                     {sourceData.map((entry, i) => (
                       <Cell key={i} fill={SOURCE_COLORS[entry.name] ?? '#475569'} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: 'var(--sg-elevated)', border: '1px solid var(--sg-border-md)', borderRadius: 8 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--sg-elevated)',
+                      border: '1px solid var(--sg-border-md)',
+                      borderRadius: 8,
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
-                {sourceData.map(s => (
+                {sourceData.map((s) => (
                   <div key={s.name} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_COLORS[s.name] ?? '#475569' }} />
-                    <span className="text-xs text-[var(--sg-text-2)]">{s.name}: {s.value}</span>
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: SOURCE_COLORS[s.name] ?? '#475569' }}
+                    />
+                    <span className="text-xs text-[var(--sg-text-2)]">
+                      {s.name}: {s.value}
+                    </span>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-[220px] text-[var(--sg-text-2)] text-sm">No leads yet</div>
+            <div className="flex items-center justify-center h-[220px] text-[var(--sg-text-2)] text-sm">
+              No leads yet
+            </div>
           )}
         </div>
 
@@ -342,10 +502,11 @@ export default function ReportsPage() {
         <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
           <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Lead Stage Funnel</h3>
           <div className="space-y-3 mt-2">
-            {stageData.map(s => {
-              const maxCount = Math.max(...stageData.map(x => x.count), 1)
-              const pct = (s.count / maxCount) * 100
-              const color = s.stage === 'Won' ? '#4A6741' : s.stage === 'Lost' ? '#B94A3A' : '#7A9E7E'
+            {stageData.map((s) => {
+              const maxCount = Math.max(...stageData.map((x) => x.count), 1);
+              const pct = (s.count / maxCount) * 100;
+              const color =
+                s.stage === 'Won' ? '#22c55e' : s.stage === 'Lost' ? '#ef4444' : '#3583b3';
               return (
                 <div key={s.stage}>
                   <div className="flex justify-between text-xs mb-1">
@@ -353,10 +514,13 @@ export default function ReportsPage() {
                     <span className="text-[var(--sg-text-1)] font-medium">{s.count}</span>
                   </div>
                   <div className="h-2 bg-[var(--sg-base)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: color }}
+                    />
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -370,30 +534,54 @@ export default function ReportsPage() {
             <div className="flex-shrink-0">
               <ResponsiveContainer width={240} height={240}>
                 <PieChart>
-                  <Pie data={expBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" paddingAngle={2}>
-                    {expBreakdown.map((_, i) => <Cell key={i} fill={EXPENSE_COLORS[i % EXPENSE_COLORS.length]} />)}
+                  <Pie
+                    data={expBreakdown}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    dataKey="value"
+                    paddingAngle={2}
+                  >
+                    {expBreakdown.map((_, i) => (
+                      <Cell key={i} fill={EXPENSE_COLORS[i % EXPENSE_COLORS.length]} />
+                    ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: 'var(--sg-elevated)', border: '1px solid var(--sg-border-md)', borderRadius: 8 }} formatter={(v: any) => [formatCurrency(Number(v)), '']} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--sg-elevated)',
+                      border: '1px solid var(--sg-border-md)',
+                      borderRadius: 8,
+                    }}
+                    formatter={(v: any) => [formatCurrency(Number(v)), '']}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="flex-1 space-y-2 w-full">
               {expBreakdown.map((cat, i) => {
-                const total = expBreakdown.reduce((s, c) => s + c.value, 0)
-                const pct = total > 0 ? Math.round((cat.value / total) * 100) : 0
+                const total = expBreakdown.reduce((s, c) => s + c.value, 0);
+                const pct = total > 0 ? Math.round((cat.value / total) * 100) : 0;
                 return (
                   <div key={cat.name} className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length] }} />
+                    <div
+                      className="w-3 h-3 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length] }}
+                    />
                     <span className="text-sm text-[var(--sg-text-2)] flex-1">{cat.name}</span>
-                    <span className="text-sm text-[var(--sg-text-1)]">{formatCurrency(cat.value)}</span>
+                    <span className="text-sm text-[var(--sg-text-1)]">
+                      {formatCurrency(cat.value)}
+                    </span>
                     <span className="text-xs text-[var(--sg-text-2)] w-10 text-right">{pct}%</span>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-[180px] text-[var(--sg-text-2)] text-sm">No expenses recorded</div>
+          <div className="flex items-center justify-center h-[180px] text-[var(--sg-text-2)] text-sm">
+            No expenses recorded
+          </div>
         )}
       </div>
 
@@ -409,21 +597,39 @@ export default function ReportsPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
-                {['Month','Revenue','Expenses','Gross Profit','Margin %'].map(h => (
-                  <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider">{h}</th>
+                {['Month', 'Revenue', 'Expenses', 'Gross Profit', 'Margin %'].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider"
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {plTable.map((row, i) => (
-                <tr key={row.month} className="data-table border-b border-[var(--sg-border)] bg-[var(--sg-surface)]">
-                  <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium">{row.month}</td>
-                  <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">{formatCurrency(row.revenue)}</td>
-                  <td className="px-4 py-3 text-sm text-[var(--sg-danger)]">{formatCurrency(row.expenses)}</td>
-                  <td className={`px-4 py-3 text-sm font-medium ${row.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}>
+                <tr
+                  key={row.month}
+                  className="data-table border-b border-[var(--sg-border)] bg-[var(--sg-surface)]"
+                >
+                  <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium">
+                    {row.month}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">
+                    {formatCurrency(row.revenue)}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[var(--sg-danger)]">
+                    {formatCurrency(row.expenses)}
+                  </td>
+                  <td
+                    className={`px-4 py-3 text-sm font-medium ${row.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}
+                  >
                     {formatCurrency(row.profit)}
                   </td>
-                  <td className={`px-4 py-3 text-sm ${row.margin >= 20 ? 'text-[var(--sg-success)]' : row.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}>
+                  <td
+                    className={`px-4 py-3 text-sm ${row.margin >= 20 ? 'text-[var(--sg-success)]' : row.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}
+                  >
                     {row.margin}%
                   </td>
                 </tr>
@@ -431,12 +637,20 @@ export default function ReportsPage() {
               {/* Totals row */}
               <tr className="bg-[var(--sg-elevated)] border-t border-[var(--sg-border-md)]">
                 <td className="px-4 py-3 text-sm font-bold text-[var(--sg-text-1)]">TOTALS</td>
-                <td className="px-4 py-3 text-sm font-bold text-[var(--sg-gold)]">{formatCurrency(plTotals.revenue)}</td>
-                <td className="px-4 py-3 text-sm font-bold text-[var(--sg-danger)]">{formatCurrency(plTotals.expenses)}</td>
-                <td className={`px-4 py-3 text-sm font-bold ${plTotals.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}>
+                <td className="px-4 py-3 text-sm font-bold text-[var(--sg-gold)]">
+                  {formatCurrency(plTotals.revenue)}
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-[var(--sg-danger)]">
+                  {formatCurrency(plTotals.expenses)}
+                </td>
+                <td
+                  className={`px-4 py-3 text-sm font-bold ${plTotals.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}
+                >
                   {formatCurrency(plTotals.profit)}
                 </td>
-                <td className={`px-4 py-3 text-sm font-bold ${plTotals.margin >= 20 ? 'text-[var(--sg-success)]' : plTotals.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}>
+                <td
+                  className={`px-4 py-3 text-sm font-bold ${plTotals.margin >= 20 ? 'text-[var(--sg-success)]' : plTotals.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}
+                >
                   {plTotals.margin}%
                 </td>
               </tr>
@@ -447,27 +661,47 @@ export default function ReportsPage() {
 
       {/* Top Customers Table */}
       <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
-        <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Top Customers by Revenue</h3>
+        <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">
+          Top Customers by Revenue
+        </h3>
         {topCustomers.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
-                  {['#','Customer','Projects','Revenue','Avg Project','Last Project'].map(h => (
-                    <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider">{h}</th>
-                  ))}
+                  {['#', 'Customer', 'Projects', 'Revenue', 'Avg Project', 'Last Project'].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider"
+                      >
+                        {h}
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {topCustomers.map((c, i) => (
-                  <tr key={c.id} onClick={() => router.push(`/customers/${c.id}`)}
-                    className="data-table border-b border-[var(--sg-border)] cursor-pointer transition-colors bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]">
+                  <tr
+                    key={c.id}
+                    onClick={() => router.push(`/customers/${c.id}`)}
+                    className="data-table border-b border-[var(--sg-border)] cursor-pointer transition-colors bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]"
+                  >
                     <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{i + 1}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium">{c.name}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium">
+                      {c.name}
+                    </td>
                     <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{c.projects}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">{formatCurrency(c.revenue)}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{c.projects > 0 ? formatCurrency(c.revenue / c.projects) : '—'}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{c.lastProject || '—'}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">
+                      {formatCurrency(c.revenue)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">
+                      {c.projects > 0 ? formatCurrency(c.revenue / c.projects) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">
+                      {c.lastProject || '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -486,31 +720,58 @@ export default function ReportsPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
-                  {['Project','Customer','Status','Contract','Costs','Profit','Margin'].map(h => (
-                    <th key={h} className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider">{h}</th>
-                  ))}
+                  {['Project', 'Customer', 'Status', 'Contract', 'Costs', 'Profit', 'Margin'].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="text-left px-4 py-2 text-xs font-medium text-[var(--sg-text-1)] uppercase tracking-wider"
+                      >
+                        {h}
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {projectPerf.map((p, i) => (
-                  <tr key={p.id} onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)}
-                    className="data-table border-b border-[var(--sg-border)] cursor-pointer transition-colors bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]">
-                    <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium max-w-[180px] truncate">{p.title}</td>
+                  <tr
+                    key={p.id}
+                    onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)}
+                    className="data-table border-b border-[var(--sg-border)] cursor-pointer transition-colors bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]"
+                  >
+                    <td className="px-4 py-3 text-sm text-[var(--sg-text-1)] font-medium max-w-[180px] truncate">
+                      {p.title}
+                    </td>
                     <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{p.customerName}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        p.status === 'Completed' ? 'bg-[rgba(74,103,65,0.12)] text-[var(--sg-success)]' :
-                        p.status === 'In Progress' ? 'bg-[rgba(139,105,20,0.12)] text-[var(--sg-gold)]' :
-                        p.status === 'Cancelled' ? 'bg-[rgba(185,74,58,0.12)] text-[var(--sg-danger)]' :
-                        'bg-[rgba(122,158,126,0.10)] text-[var(--sg-sky)]'
-                      }`}>{p.status}</span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          p.status === 'Completed'
+                            ? 'bg-[rgba(74,103,65,0.12)] text-[var(--sg-success)]'
+                            : p.status === 'In Progress'
+                              ? 'bg-[rgba(139,105,20,0.12)] text-[var(--sg-gold)]'
+                              : p.status === 'Cancelled'
+                                ? 'bg-[rgba(185,74,58,0.12)] text-[var(--sg-danger)]'
+                                : 'bg-[rgba(122,158,126,0.10)] text-[var(--sg-sky)]'
+                        }`}
+                      >
+                        {p.status}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">{formatCurrency(p.contract_value ?? 0)}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-danger)]">{formatCurrency(p.costs)}</td>
-                    <td className={`px-4 py-3 text-sm font-medium ${p.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-gold)]">
+                      {formatCurrency(p.contract_value ?? 0)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[var(--sg-danger)]">
+                      {formatCurrency(p.costs)}
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-sm font-medium ${p.profit >= 0 ? 'text-[var(--sg-success)]' : 'text-[var(--sg-danger)]'}`}
+                    >
                       {formatCurrency(p.profit)}
                     </td>
-                    <td className={`px-4 py-3 text-sm ${p.margin >= 20 ? 'text-[var(--sg-success)]' : p.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}>
+                    <td
+                      className={`px-4 py-3 text-sm ${p.margin >= 20 ? 'text-[var(--sg-success)]' : p.margin < 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-gold)]'}`}
+                    >
                       {p.margin}%
                     </td>
                   </tr>
@@ -523,5 +784,5 @@ export default function ReportsPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
