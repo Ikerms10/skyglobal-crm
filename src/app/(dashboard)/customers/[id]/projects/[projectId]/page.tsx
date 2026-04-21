@@ -19,8 +19,10 @@ import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink'
 import dynamic from 'next/dynamic'
 import {
   ArrowLeft, Calendar, MapPin, Plus, Trash2, Upload,
-  Edit2, X, Check, ChevronDown, ChevronLeft, ChevronRight, Image as ImageIcon
+  Edit2, X, Check, ChevronDown, ChevronLeft, ChevronRight, Image as ImageIcon, FileText
 } from 'lucide-react'
+import { TemplateSelector } from '@/components/proposals/TemplateSelector'
+import { ProposalTemplate } from '@/types'
 
 const DownloadEstimateButton = dynamic(
   () => import('@/components/pdf/EstimatePDFContent').then(m => m.DownloadEstimateButton),
@@ -32,18 +34,108 @@ const DownloadProjectReportButton = dynamic(
   { ssr: false, loading: () => <span className="text-xs text-[var(--sg-text-2)]">Loading…</span> }
 )
 
+function CustomerTypeModal({ open, customerName, onSelect, onClose }: {
+  open: boolean
+  customerName: string | null
+  onSelect: (existing: boolean) => void
+  onClose: () => void
+}) {
+  const [hovered, setHovered] = useState<'existing' | 'new' | null>(null)
+  if (!open) return null
+
+  const options = [
+    {
+      id: 'existing' as const,
+      icon: '👤',
+      title: 'Existing Customer',
+      desc: customerName ? `Pre-fill with ${customerName}` : 'Use a customer already in your CRM',
+    },
+    {
+      id: 'new' as const,
+      icon: '✨',
+      title: 'New Customer',
+      desc: 'Leave customer fields blank to fill in manually',
+    },
+  ]
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 999,
+        background: 'rgba(0,0,0,0.78)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{
+        background: '#1d1c17',
+        border: '1px solid #3a3830',
+        borderRadius: 16,
+        width: '100%',
+        maxWidth: 480,
+        padding: '32px 32px 36px',
+        position: 'relative',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+      }}>
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 14, right: 14,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#6b6760', padding: 6, borderRadius: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#efeae2' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#6b6760' }}
+        >
+          <X size={18} />
+        </button>
+
+        <p style={{ fontSize: 11, fontWeight: 600, color: '#e6ab35', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8, fontFamily: 'sans-serif' }}>
+          New Proposal
+        </p>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#efeae2', marginBottom: 6, lineHeight: 1.2 }}>
+          Who is this proposal for?
+        </h2>
+        <p style={{ fontSize: 13, color: '#9a9585', marginBottom: 28, lineHeight: 1.5 }}>
+          Choose whether to link this proposal to an existing customer or start fresh.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {options.map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => onSelect(opt.id === 'existing')}
+              onMouseEnter={() => setHovered(opt.id)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                background: hovered === opt.id ? 'rgba(230,171,53,0.06)' : '#252319',
+                border: `2px solid ${hovered === opt.id ? '#e6ab35' : '#3a3830'}`,
+                borderRadius: 12,
+                padding: '22px 18px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s ease',
+                transform: hovered === opt.id ? 'translateY(-2px)' : 'none',
+              }}
+            >
+              <div style={{ fontSize: 26, marginBottom: 10 }}>{opt.icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#efeae2', marginBottom: 5 }}>{opt.title}</div>
+              <div style={{ fontSize: 12, color: '#9a9585', lineHeight: 1.4 }}>{opt.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PDFButtons({ project, lineItems, projectId }: { project: any; lineItems: any[]; projectId: string }) {
   if (!project) return null
   const customer = project.customers ?? {}
   return (
     <div className="flex gap-2 flex-wrap">
-      <DownloadEstimateButton
-        type="estimate"
-        project={project}
-        customer={customer}
-        lineItems={lineItems}
-        projectId={projectId}
-      />
       <DownloadEstimateButton
         type="invoice"
         project={project}
@@ -93,6 +185,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
   const [addActivityOpen, setAddActivityOpen] = useState(false)
   const [lightboxPhoto, setLightboxPhoto] = useState<any>(null)
   const [showCompletedTasks, setShowCompletedTasks] = useState(false)
+  const [customerTypeModalOpen, setCustomerTypeModalOpen] = useState(false)
+  const [proposalForExisting, setProposalForExisting] = useState<boolean | null>(null)
+  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false)
 
   // Lead cost edit
   const [editingLeadCost, setEditingLeadCost] = useState(false)
@@ -388,6 +483,19 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
     }
   }
 
+  const handleCustomerTypeSelect = (existing: boolean) => {
+    setProposalForExisting(existing)
+    setCustomerTypeModalOpen(false)
+    setTemplateSelectorOpen(true)
+  }
+
+  const handleTemplateSelect = (template: ProposalTemplate) => {
+    setTemplateSelectorOpen(false)
+    const params = new URLSearchParams({ template })
+    if (proposalForExisting && customerId) params.set('customer', customerId)
+    router.push(`/proposals/new?${params.toString()}`)
+  }
+
   const saveManagement = async () => {
     setMgmtSaving(true)
     try {
@@ -593,6 +701,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
               project, customer: project.customers ?? {},
               lineItems, expenses, photos,
             }} />
+            <Button size="sm" variant="secondary" onClick={() => setCustomerTypeModalOpen(true)}>
+              <FileText className="h-4 w-4" /> Create Proposal
+            </Button>
             <Button size="sm" variant="secondary" onClick={() => setAddActivityOpen(true)}>
               <Plus className="h-4 w-4" /> Log
             </Button>
@@ -1227,6 +1338,18 @@ export default function ProjectDetailPage({ params }: { params: { id: string; pr
         title="Delete Project"
         description={`Delete "${project.title}"? This cannot be undone.`}
       />
+      <CustomerTypeModal
+        open={customerTypeModalOpen}
+        customerName={project.customers?.name ?? null}
+        onSelect={handleCustomerTypeSelect}
+        onClose={() => setCustomerTypeModalOpen(false)}
+      />
+      {templateSelectorOpen && (
+        <TemplateSelector
+          onSelect={handleTemplateSelect}
+          onClose={() => setTemplateSelectorOpen(false)}
+        />
+      )}
     </div>
   )
 }
