@@ -29,31 +29,35 @@ function defaultScopeSteps(template: ProposalTemplate): ScopeStep[] {
   if (template === 'interior')
     return [
       {
-        title: 'Step 1: Preparation & Protection',
+        title: 'Step 1: Protection & Site Preparation',
         bullets: [
-          'Environment Shielding: All furniture, flooring, fixtures, and hardware fully masked and protected with professional-grade coverings.',
-          'Surface Cleaning: All paintable surfaces wiped clean; dust, grease, and contaminants removed prior to any application.',
+          'Full environment shielding: all furniture, flooring, fixtures, and hardware fully masked and protected with professional-grade drop cloths and plastic sheeting.',
+          'Surface cleaning: all paintable surfaces wiped clean; dust, grease, and contaminants removed prior to any application.',
+          'Tape and masking of all trim, outlets, windows, and doors for razor-sharp edge lines.',
         ],
       },
       {
-        title: 'Step 2: Remediation & Priming',
+        title: 'Step 2: Surface Remediation & Priming',
         bullets: [
-          'Drywall Restoration: Holes, cracks, and surface imperfections filled and sanded flush for seamless paint adhesion.',
-          'Priming: Stain-blocking primer applied to all repaired areas and bare surfaces ensuring lasting topcoat adhesion.',
+          'Drywall restoration: holes, cracks, nail pops, and surface imperfections filled, sanded flush, and feathered for seamless adhesion.',
+          'Caulking: all gaps at trim, baseboards, and window frames sealed with professional paintable caulk.',
+          'Stain-blocking primer applied to all repaired areas, bare surfaces, and where needed for full color coverage.',
         ],
       },
       {
-        title: 'Step 3: Premium Application',
+        title: 'Step 3: Premium Paint Application',
         bullets: [
-          'Execution: Two full coats of Sherwin-Williams premium interior paint applied for complete, even, durable coverage.',
-          'Detailing: Clean sharp lines at all transitions — ceilings, trim, doors, windows, and outlets executed with precision.',
+          'Two full coats of Sherwin-Williams premium interior paint applied using professional-grade rollers and brushes.',
+          'Cut-in technique used at all transitions — ceilings, trim, doors, windows, and outlets — for clean sharp lines.',
+          'Each coat allowed full dry time before the next is applied; no shortcuts.',
         ],
       },
       {
         title: 'Step 4: Site Restoration & Quality Control',
         bullets: [
-          'Cleanup: All masking removed, surfaces wiped clean, furniture returned, and area left spotless.',
-          'Final Walkthrough: On-site inspection with client to verify satisfaction and address any touch-up items immediately.',
+          'All masking, tape, and drop cloths removed carefully to avoid damage.',
+          'Surfaces wiped clean; furniture returned to original positions; work area left spotless.',
+          'Final walkthrough with client: on-site inspection to verify satisfaction and address any touch-up items immediately before team departs.',
         ],
       },
     ];
@@ -405,14 +409,86 @@ export default function ProposalNewPage() {
         import('jspdf'),
       ]);
 
-      const canvas = await html2canvas(proposalRef.current, {
-        scale: 2,
+      const el = proposalRef.current;
+      const SCALE = 2;
+
+      // Measure page-break Y positions from the live DOM before onclone modifies it.
+      // We use scrollTop-aware offsetTop accumulation so scroll position doesn't skew values.
+      const getRelativeOffsetTop = (child: HTMLElement, parent: HTMLElement): number => {
+        let top = 0;
+        let cur: HTMLElement | null = child;
+        while (cur && cur !== parent) {
+          top += cur.offsetTop;
+          cur = cur.offsetParent as HTMLElement;
+        }
+        return top;
+      };
+      const breakYsInCanvas: number[] = Array.from(el.querySelectorAll('[data-page-break]'))
+        .map((node) => Math.round(getRelativeOffsetTop(node as HTMLElement, el) * SCALE))
+        .filter((y) => y > 100);
+
+      const canvas = await html2canvas(el, {
+        scale: SCALE,
         useCORS: true,
-        logging: false,
+        allowTaint: false,
         backgroundColor: '#ffffff',
+        logging: false,
+        windowWidth: 1200,
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        scrollX: 0,
+        scrollY: -window.scrollY,
         onclone: (doc) => {
-          doc.querySelectorAll('[data-page-break-label]').forEach((el) => {
-            (el as HTMLElement).style.display = 'none';
+          // Hide UI chrome: instruction banner, locked badges, page-break decorators
+          doc.querySelectorAll('[data-pdf-hide], [data-page-break-label]').forEach((node) => {
+            (node as HTMLElement).style.display = 'none';
+          });
+          // Hide the page-break dashed divider itself (we handle breaks via canvas slicing)
+          doc.querySelectorAll('[data-page-break]').forEach((node) => {
+            (node as HTMLElement).style.borderTopColor = 'transparent';
+            (node as HTMLElement).style.margin = '16px 0';
+          });
+          // Hide all buttons (Add Step, Add Row, Remove, ✕ etc.)
+          doc.querySelectorAll('button').forEach((node) => {
+            (node as HTMLElement).style.display = 'none';
+          });
+          // Replace every <input> with a plain <span> so no input chrome appears
+          doc.querySelectorAll('input').forEach((node) => {
+            const input = node as HTMLInputElement;
+            const span = doc.createElement('span');
+            span.textContent = input.value;
+            span.style.fontFamily = 'Georgia, "Times New Roman", serif';
+            span.style.fontSize = input.style.fontSize || 'inherit';
+            span.style.color = input.style.color || 'inherit';
+            span.style.fontWeight = input.style.fontWeight || 'inherit';
+            span.style.textAlign = input.style.textAlign || 'left';
+            span.style.display = 'inline';
+            input.parentNode?.replaceChild(span, input);
+          });
+          // Replace every <select> with a plain <span>
+          doc.querySelectorAll('select').forEach((node) => {
+            const select = node as HTMLSelectElement;
+            const span = doc.createElement('span');
+            span.textContent = select.options[select.selectedIndex]?.text ?? select.value;
+            span.style.fontFamily = 'inherit';
+            span.style.fontSize = 'inherit';
+            select.parentNode?.replaceChild(span, select);
+          });
+          // Remove hover/focus dashed underlines from editable field display spans
+          doc.querySelectorAll('.hover-underline').forEach((node) => {
+            (node as HTMLElement).style.borderBottom = 'none';
+          });
+          // Strip any contenteditable attributes and styling (ScopeOfWork inputs)
+          doc.querySelectorAll('[contenteditable]').forEach((node) => {
+            const el2 = node as HTMLElement;
+            el2.style.outline = 'none';
+            el2.style.borderBottom = 'none';
+            el2.style.boxShadow = 'none';
+            el2.removeAttribute('contenteditable');
+          });
+          // Ensure percentage warning banner is hidden
+          doc.querySelectorAll('[class*="warn"], [class*="alert"]').forEach((node) => {
+            (node as HTMLElement).style.display = 'none';
           });
         },
       });
@@ -420,23 +496,56 @@ export default function ProposalNewPage() {
       const A4_W = 210;
       const A4_H = 297;
       const pageHeightPx = Math.round(canvas.width * (A4_H / A4_W));
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const MIN_PAGE_FILL = 0.15; // skip trailing page if less than 15% full
 
-      let yOffset = 0;
-      let pageNum = 0;
-      while (yOffset < canvas.height) {
-        if (pageNum > 0) pdf.addPage();
+      // Build page start positions, breaking at semantic positions where available.
+      // When a [data-page-break] element is within the current A4 page, close the
+      // page there so the next section starts fresh at the top of a new page.
+      const sortedBreaks = [...breakYsInCanvas].sort((a, b) => a - b);
+      const pageStarts: number[] = [0];
+      let cursor = 0;
+      let bIdx = 0;
+
+      while (cursor < canvas.height) {
+        // Advance break index past breaks we've already passed
+        while (bIdx < sortedBreaks.length && sortedBreaks[bIdx] <= cursor) bIdx++;
+
+        const naturalNext = cursor + pageHeightPx;
+
+        // Use semantic break if it falls before natural end AND leaves a meaningful page (≥30%)
+        if (
+          bIdx < sortedBreaks.length &&
+          sortedBreaks[bIdx] < naturalNext &&
+          sortedBreaks[bIdx] - cursor > pageHeightPx * 0.3
+        ) {
+          cursor = sortedBreaks[bIdx];
+          bIdx++;
+        } else {
+          cursor = naturalNext;
+        }
+
+        if (cursor >= canvas.height) break;
+        pageStarts.push(cursor);
+      }
+
+      // Render each page
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      pageStarts.forEach((startY, idx) => {
+        const contentRemaining = canvas.height - startY;
+        // Skip nearly-empty trailing page
+        if (idx > 0 && contentRemaining / pageHeightPx < MIN_PAGE_FILL) return;
+
+        if (idx > 0) pdf.addPage();
+
         const pageCanvas = document.createElement('canvas');
         pageCanvas.width = canvas.width;
         pageCanvas.height = pageHeightPx;
         const ctx = pageCanvas.getContext('2d')!;
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        ctx.drawImage(canvas, 0, -yOffset);
+        ctx.drawImage(canvas, 0, -startY);
         pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, A4_W, A4_H);
-        yOffset += pageHeightPx;
-        pageNum++;
-      }
+      });
 
       const clientSlug = (data.clientName || 'Client').replace(/\s+/g, '_');
       const dateStr = format(new Date(), 'MMMd_yyyy');
@@ -661,6 +770,7 @@ export default function ProposalNewPage() {
           >
             {/* Editable field hover hint */}
             <div
+              data-pdf-hide
               style={{
                 marginBottom: 16,
                 padding: '6px 12px',
