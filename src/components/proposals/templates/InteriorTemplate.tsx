@@ -54,7 +54,7 @@ const S = {
 
 function LockedBadge() {
   return (
-    <span style={S.staticNote}>
+    <span data-pdf-hide style={S.staticNote}>
       <Lock size={10} /> Static — edit in Settings
     </span>
   );
@@ -62,7 +62,10 @@ function LockedBadge() {
 
 function PageBreak() {
   return (
-    <div style={{ borderTop: '3px dashed #E0D5C7', margin: '32px 0', position: 'relative' }}>
+    <div
+      data-page-break
+      style={{ borderTop: '3px dashed #E0D5C7', margin: '32px 0', position: 'relative' }}
+    >
       <span
         data-page-break-label
         style={{
