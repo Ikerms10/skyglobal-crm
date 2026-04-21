@@ -140,7 +140,10 @@ export function EditableField({
       title="Click to edit"
     >
       {prefix}
-      <span style={value ? {} : { color: 'var(--sg-text-2)', fontStyle: 'italic' }}>
+      <span
+        {...(!value ? { 'data-pdf-placeholder': '' } : {})}
+        style={value ? {} : { color: 'var(--sg-text-2)', fontStyle: 'italic' }}
+      >
         <span style={hoverStyle} className="hover-underline">
           {value || placeholder}
         </span>
