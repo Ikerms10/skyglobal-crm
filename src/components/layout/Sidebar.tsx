@@ -160,7 +160,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            background: '#1C1209',
+            background: '#FFFFFF',
             borderRadius: 8,
             boxShadow: 'var(--s-sidebar-logo)',
             overflow: 'hidden',
