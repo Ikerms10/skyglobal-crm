@@ -114,7 +114,7 @@ export function InteriorTemplate({ data, onChange }: Props) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
           <div style={{
-            width: 64, height: 64, background: '#1C1209', borderRadius: 10,
+            width: 64, height: 64, background: '#FFFFFF', borderRadius: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4,
           }}>
             <img src="/skyglobal-logo.svg" width="40" height="40" alt="SkyGlobal" />
