@@ -194,6 +194,255 @@ function defaultLineItems(template: ProposalTemplate): LineItem[] {
   return [];
 }
 
+// ─── PDF HTML generator ───────────────────────────────────────────────────────
+// Generates a fully self-contained HTML string from the proposal data state.
+// No CSS variables, no Tailwind, no external stylesheets — everything inline.
+// This is rendered in an isolated off-screen container so html2canvas has a
+// clean, fully-painted DOM with no overflow clipping or scroll offset issues.
+function buildProposalHTML(
+  d: ReturnType<typeof buildInitialData>,
+  tmpl: ProposalTemplate,
+  logoSrc: string
+): string {
+  const esc = (s: string | null | undefined) =>
+    (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const fmt = (n: number | null | undefined) =>
+    n != null
+      ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
+      : '—';
+
+  const dep = d.totalInvestment != null ? d.totalInvestment * (d.depositPct / 100) : null;
+  const pro = d.totalInvestment != null ? d.totalInvestment * (d.progressPct / 100) : null;
+  const fin = d.totalInvestment != null ? d.totalInvestment * (d.finalPct / 100) : null;
+
+  const secHead = (title: string) => `
+    <div style="font-size:10px;font-weight:700;color:#b8860b;letter-spacing:0.12em;text-transform:uppercase;border-bottom:2px solid #d4a843;padding-bottom:5px;margin-bottom:14px;margin-top:22px;font-family:Georgia,serif;">
+      ${title}
+    </div>`;
+
+  const sectionIIITitle =
+    tmpl === 'interior'
+      ? 'Section III — The SkyGlobal Interior Process'
+      : tmpl === 'exterior'
+        ? 'Section III — The SkyGlobal Exterior Process'
+        : tmpl === 'cabinet'
+          ? 'Section III — The SkyGlobal Cabinet Process'
+          : 'Section III — Scope of Work';
+
+  const scopeHTML = d.scopeOfWork
+    .map(
+      (step, i) => `
+    <div style="margin-bottom:14px;">
+      <div style="font-weight:700;font-size:11px;color:#1c1209;margin-bottom:6px;font-family:Georgia,serif;">
+        ${i + 1}. ${esc(step.title)}
+      </div>
+      ${step.bullets
+        .map(
+          (b) => `
+        <div style="padding-left:18px;font-size:10.5px;color:#3d3530;margin-bottom:3px;line-height:1.5;">
+          &bull;&nbsp;${esc(b)}
+        </div>`
+        )
+        .join('')}
+    </div>`
+    )
+    .join('');
+
+  const lineItemsHTML =
+    d.lineItems.length > 0
+      ? `
+    <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
+      <thead>
+        <tr style="background:#8b6914;">
+          <th style="padding:7px 10px;text-align:left;color:#fff;font-weight:600;font-size:10px;letter-spacing:0.04em;">Material / Description</th>
+          <th style="padding:7px 10px;text-align:center;color:#fff;font-weight:600;font-size:10px;width:52px;">Qty</th>
+          <th style="padding:7px 10px;text-align:right;color:#fff;font-weight:600;font-size:10px;width:88px;">Unit Price</th>
+          <th style="padding:7px 10px;text-align:right;color:#fff;font-weight:600;font-size:10px;width:88px;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${d.lineItems
+          .map(
+            (item, i) => `
+          <tr style="background:${i % 2 === 0 ? '#fefcf8' : '#f5ecd8'};">
+            <td style="padding:7px 10px;border:1px solid #e0d5c7;">${esc(item.description)}</td>
+            <td style="padding:7px 10px;text-align:center;border:1px solid #e0d5c7;">${item.quantity ?? '—'}</td>
+            <td style="padding:7px 10px;text-align:right;border:1px solid #e0d5c7;">${fmt(item.unit_price)}</td>
+            <td style="padding:7px 10px;text-align:right;border:1px solid #e0d5c7;">${fmt(item.total)}</td>
+          </tr>`
+          )
+          .join('')}
+      </tbody>
+    </table>`
+      : `<div style="font-size:10px;color:#a07850;font-style:italic;">No materials listed.</div>`;
+
+  const insurancePage = d.showInsurancePage
+    ? `
+    <div style="margin-top:40px;padding-top:20px;border-top:3px solid #e0d5c7;">
+      ${secHead('Certificate of Insurance')}
+      <div style="border:1px solid #e0d5c7;border-left:3px solid #4a6741;border-radius:6px;padding:18px;font-size:10.5px;line-height:1.8;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:3px 0;width:50%;"><strong>Insured:</strong> SkyGlobal Renovations LLC</td>
+            <td style="padding:3px 0;"><strong>Effective Date:</strong> On file</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;"><strong>Policy Number:</strong> CEG-00312198-00</td>
+            <td style="padding:3px 0;"><strong>Expiration Date:</strong> On file</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;"><strong>Coverage Type:</strong> General Liability</td>
+            <td style="padding:3px 0;"><strong>Phone:</strong> 352-782-2460</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;"><strong>Coverage Limit:</strong> $2,000,000</td>
+            <td style="padding:3px 0;"><strong>Email:</strong> skyglobalsvcs@gmail.com</td>
+          </tr>
+        </table>
+        <div style="margin-top:10px;padding:8px 12px;background:#f5ecd8;border-radius:4px;font-style:italic;color:#a07850;font-size:10px;">
+          A full Certificate of Insurance (COI) is available upon request and can be sent directly to the client, property manager, or HOA.
+        </div>
+      </div>
+    </div>`
+    : '';
+
+  return `
+<div style="width:794px;background:#fefcf8;font-family:Georgia,'Times New Roman',serif;color:#1c1209;font-size:11px;line-height:1.6;padding:48px 52px;box-sizing:border-box;">
+
+  <!-- HEADER -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+    <div>
+      <div style="width:60px;height:60px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid #e0d5c7;">
+        ${logoSrc ? `<img src="${logoSrc}" width="38" height="38" alt="SkyGlobal" style="display:block;" />` : ''}
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:21px;font-weight:700;color:#1c1209;letter-spacing:-0.02em;">SkyGlobal Renovations LLC</div>
+      <div style="font-size:11px;color:#a07850;margin-top:3px;">Professional Renovation Services</div>
+    </div>
+  </div>
+
+  <!-- TITLE BANNER -->
+  <div style="background:#f0eae0;border-top:3px solid #8b6914;border-bottom:3px solid #8b6914;padding:13px 24px;margin-bottom:16px;text-align:center;">
+    <span style="color:#8b6914;font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">
+      ${esc(d.projectName) || 'PROJECT NAME / NUMBER'}
+    </span>
+    <span style="color:#a07850;font-weight:400;">&nbsp;| PROFESSIONAL SERVICE PROPOSAL</span>
+  </div>
+
+  <!-- META ROW -->
+  <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;">
+    <div>
+      <strong>SkyGlobal Renovations LLC</strong>
+    </div>
+    <div style="text-align:right;">
+      <div><strong>Date of Issuance:</strong> ${esc(d.issueDate)}</div>
+      <div><strong>Proposal Valid Until:</strong> ${esc(d.validUntil)}</div>
+    </div>
+  </div>
+
+  <!-- CONFIDENTIAL -->
+  <div style="background:#f5ecd8;border:1px solid #e8d5a3;border-left:3px solid #d4a853;border-radius:4px;padding:8px 12px;margin-bottom:6px;font-size:10px;color:#a07850;font-style:italic;line-height:1.5;">
+    <strong style="font-style:normal;color:#5c4a38;">CONFIDENTIAL:</strong> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC. This document may not be reproduced, distributed, or used without written authorization.
+  </div>
+
+  <!-- SECTION I — BUSINESS CONTACT -->
+  ${secHead('Section I — Business Contact')}
+  <table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <tr>
+      <td style="padding:3px 0;width:50%;"><strong>Phone:</strong> 352-782-2460 | 470-469-9961</td>
+      <td style="padding:3px 0;"><strong>Instagram &amp; Facebook:</strong> @skyglobalp</td>
+    </tr>
+    <tr>
+      <td style="padding:3px 0;"><strong>Email:</strong> skyglobalsvcs@gmail.com</td>
+      <td style="padding:3px 0;"><strong>Credentials:</strong> Thumbtack Profile — 75+ Verified Reviews</td>
+    </tr>
+    <tr>
+      <td style="padding:3px 0;"><strong>Web:</strong> skyglobalsvcs.com</td>
+      <td></td>
+    </tr>
+  </table>
+
+  <!-- SECTION II — CLIENT & PROJECT SUMMARY -->
+  ${secHead('Section II — Client &amp; Project Summary')}
+  <table style="width:100%;border-collapse:collapse;font-size:11px;">
+    ${[
+      ['Client Name', esc(d.clientName) || '—'],
+      ['Contact Info', esc(d.clientContact) || '—'],
+      ['Project Address', esc(d.clientAddress) || '—'],
+      ['Project Scope', esc(d.projectScope) || '—'],
+      ['Total Investment', fmt(d.totalInvestment)],
+    ]
+      .map(
+        ([label, val], i) => `
+      <tr style="background:${i % 2 === 0 ? '#f5ecd8' : '#fefcf8'};">
+        <td style="padding:7px 10px;font-weight:600;width:35%;color:#5c4a38;border:1px solid #e0d5c7;">${label}</td>
+        <td style="padding:7px 10px;border:1px solid #e0d5c7;">${val}</td>
+      </tr>`
+      )
+      .join('')}
+  </table>
+
+  <!-- SECTION III — PROCESS -->
+  ${secHead(sectionIIITitle)}
+  ${scopeHTML}
+
+  <!-- SECTION IV — MATERIAL SPECIFICATIONS -->
+  ${secHead('Section IV — Material Specifications')}
+  <p style="font-size:10.5px;color:#5c4a38;margin-bottom:10px;font-style:italic;">
+    We use exclusively <strong style="font-style:normal;">Sherwin-Williams</strong> products. Our partnership discounts are passed directly to you with <strong style="font-style:normal;">Zero Material Markup.</strong>
+  </p>
+  ${lineItemsHTML}
+
+  <!-- SECTION V — PAYMENT SCHEDULE -->
+  ${secHead('Section V — Investment &amp; Payment Schedule')}
+  <p style="font-size:10.5px;color:#5c4a38;margin-bottom:10px;">
+    The following payment schedule reflects our commitment to project alignment and financial transparency:
+  </p>
+  <table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <tr style="background:#f5ecd8;">
+      <td style="padding:8px 12px;border:1px solid #e0d5c7;">Initial Deposit (${d.depositPct}%) — Due 48 hours prior to project start</td>
+      <td style="padding:8px 12px;border:1px solid #e0d5c7;text-align:right;font-weight:700;">${fmt(dep)}</td>
+    </tr>
+    <tr style="background:#fefcf8;">
+      <td style="padding:8px 12px;border:1px solid #e0d5c7;">Progress Payment (${d.progressPct}%) — Due upon 50% project completion</td>
+      <td style="padding:8px 12px;border:1px solid #e0d5c7;text-align:right;font-weight:700;">${fmt(pro)}</td>
+    </tr>
+    <tr style="background:#f5ecd8;">
+      <td style="padding:8px 12px;border:1px solid #e0d5c7;">Final Balance (${d.finalPct}%) — Due upon project completion &amp; walkthrough</td>
+      <td style="padding:8px 12px;border:1px solid #e0d5c7;text-align:right;font-weight:700;">${fmt(fin)}</td>
+    </tr>
+  </table>
+  <div style="margin-top:8px;font-size:9.5px;color:#a07850;font-style:italic;">
+    SkyGlobal Renovations operates with full financial transparency. All material costs are invoiced at direct Sherwin-Williams contractor pricing with zero markup.
+  </div>
+
+  <!-- SECTION VI — WARRANTY -->
+  ${secHead('Section VI — Warranty &amp; Provisions')}
+  <div style="font-size:11px;line-height:1.7;">
+    <p style="margin:0 0 8px;"><strong>1. White Glove Cleanup:</strong> 30–45 minutes of dedicated site cleanup performed at the end of each work day. SkyGlobal leaves your home as clean as we found it — every day.</p>
+    <p style="margin:0 0 8px;"><strong>2. 5-Year Workmanship Warranty:</strong> SkyGlobal Renovations LLC provides a 5-year warranty on all workmanship. Any defects in application, adhesion, or finish will be remediated at no cost within this period.</p>
+    <p style="margin:0;"><strong>3. Insurance Coverage:</strong> SkyGlobal Renovations LLC carries $2,000,000 General Liability Insurance. Policy No. CEG-00312198-00. Certificate of Insurance available upon request.</p>
+  </div>
+
+  <!-- SIGNATURE -->
+  <div style="display:flex;gap:48px;margin-top:28px;padding-top:16px;border-top:1px solid #e0d5c7;">
+    <div style="flex:2;">
+      <div style="border-bottom:1.5px solid #1c1209;height:36px;margin-bottom:5px;"></div>
+      <div style="font-size:10px;color:#a07850;">Client Acceptance Signature</div>
+    </div>
+    <div style="flex:1;">
+      <div style="border-bottom:1.5px solid #1c1209;height:36px;margin-bottom:5px;"></div>
+      <div style="font-size:10px;color:#a07850;">Date</div>
+    </div>
+  </div>
+
+  ${insurancePage}
+
+</div>`;
+}
+
 function buildInitialData(template: ProposalTemplate, customer: any) {
   const today = format(new Date(), 'yyyy-MM-dd');
   const validUntil = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
@@ -401,216 +650,146 @@ export default function ProposalNewPage() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!data || !proposalRef.current) return;
+    if (!data) return;
     setPdfLoading(true);
+    let container: HTMLDivElement | null = null;
     try {
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
         import('html2canvas'),
         import('jspdf'),
       ]);
 
-      const el = proposalRef.current;
-      const SCALE = 2;
+      // ── Step 1: Fetch logo as base64 so it renders in the isolated container ──
+      let logoSrc = '';
+      try {
+        const resp = await fetch('/skyglobal-logo.svg');
+        const blob = await resp.blob();
+        logoSrc = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        // logo fetch failed — continue without it
+      }
 
-      // Accumulate offsetTop relative to a given ancestor (scroll-position-independent).
-      const getRelativeOffsetTop = (child: HTMLElement, parent: HTMLElement): number => {
-        let top = 0;
-        let cur: HTMLElement | null = child;
-        while (cur && cur !== parent) {
-          top += cur.offsetTop;
-          cur = cur.offsetParent as HTMLElement;
-        }
-        return top;
-      };
+      // ── Step 2: Generate clean self-contained HTML from data state ────────────
+      // This bypasses all live-DOM issues: CSS var resolution, overflow clipping,
+      // scroll position, React portals, animated opacity states, etc.
+      const html = buildProposalHTML(data, template, logoSrc);
 
-      // Measure semantic page-break Y positions BEFORE any DOM mutations so layout is accurate.
-      // We keep [data-page-break] divs visible-but-transparent in onclone so layout doesn't shift.
-      const breakYsInCanvas: number[] = Array.from(el.querySelectorAll('[data-page-break]'))
-        .map((node) => Math.round(getRelativeOffsetTop(node as HTMLElement, el) * SCALE))
-        .filter((y) => y > 100);
+      // ── Step 3: Mount in an isolated off-screen container ─────────────────────
+      // Fixed 794px width (A4 at 96dpi), off-screen via top:-9999px so it is
+      // painted by the browser but not visible to the user.
+      container = document.createElement('div');
+      container.style.cssText = [
+        'position:fixed',
+        'top:-99999px',
+        'left:0',
+        'width:794px',
+        'background:#ffffff',
+        'z-index:99999',
+        'pointer-events:none',
+        'font-family:Georgia,"Times New Roman",serif',
+      ].join(';');
+      container.innerHTML = html;
+      document.body.appendChild(container);
 
-      // Temporarily strip minHeight + box-shadow so canvas = actual content height, no blank tail.
-      const savedMinHeight = el.style.minHeight;
-      const savedBoxShadow = el.style.boxShadow;
-      const savedOverflow = el.style.overflow;
-      el.style.minHeight = 'auto';
-      el.style.boxShadow = 'none';
-      el.style.overflow = 'visible';
+      // ── Step 4: Let images paint ───────────────────────────────────────────────
+      const imgs = Array.from(container.querySelectorAll('img'));
+      await Promise.all(
+        imgs.map((img) =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise<void>((res) => {
+                img.onload = () => res();
+                img.onerror = () => res();
+                setTimeout(res, 3000);
+              })
+        )
+      );
+      // One rAF tick to ensure browser has laid out the new DOM
+      await new Promise<void>((res) => requestAnimationFrame(() => res()));
 
-      const canvas = await html2canvas(el, {
-        scale: SCALE,
+      // ── Step 5: Capture ────────────────────────────────────────────────────────
+      const canvas = await html2canvas(container, {
+        scale: 2,
         useCORS: true,
-        allowTaint: false,
+        allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
-        windowWidth: Math.max(1400, el.scrollWidth + 200),
-        width: el.scrollWidth,
-        height: el.scrollHeight,
+        width: 794,
+        height: container.scrollHeight,
+        windowWidth: 794,
         scrollX: 0,
-        scrollY: -window.scrollY,
-        onclone: (doc) => {
-          // ── A. CSS rule injection — guaranteed override, handles inherited vars too ──
-          const styleEl = doc.createElement('style');
-          styleEl.textContent = `
-            [data-pdf-hide]         { display: none !important; }
-            [data-pdf-placeholder]  { display: none !important; }
-            [data-page-break-label] { display: none !important; }
-            [data-page-break]       { border-top-color: transparent !important; }
-            button                  { display: none !important; }
-            .hover-underline        { border-bottom: none !important; text-decoration: none !important; }
-            *::placeholder          { color: transparent !important; }
-          `;
-          doc.head.appendChild(styleEl);
-
-          // ── B. Text-content sweep — belt-and-suspenders for unlabelled UI chrome ──
-          doc.querySelectorAll('span, div, p').forEach((node) => {
-            const el2 = node as HTMLElement;
-            // Only check leaf-ish nodes to avoid nuking whole sections
-            if (el2.children.length > 3) return;
-            const txt = el2.textContent?.trim() ?? '';
-            if (
-              (txt.includes('Static') && txt.includes('edit in Settings')) ||
-              (txt.includes('Fields with') && txt.includes('editable')) ||
-              txt.includes('click to type') ||
-              txt === '+ Add Step' ||
-              txt === '+ Add Row' ||
-              txt === 'page break' ||
-              (txt.includes('Percentages total') && txt.includes('%'))
-            ) {
-              el2.style.display = 'none';
-            }
-          });
-
-          // ── C. Replace every <input> with a plain inline <span> ──────────────
-          doc.querySelectorAll('input').forEach((node) => {
-            const input = node as HTMLInputElement;
-            const span = doc.createElement('span');
-            span.textContent = input.value;
-            span.style.fontFamily = 'Georgia, "Times New Roman", serif';
-            span.style.fontSize = input.style.fontSize || '12px';
-            span.style.color = input.style.color || '#1a1a1a';
-            span.style.fontWeight = input.style.fontWeight || 'normal';
-            span.style.textAlign = input.style.textAlign || 'left';
-            span.style.display = 'inline';
-            span.style.border = 'none';
-            span.style.background = 'transparent';
-            input.parentNode?.replaceChild(span, input);
-          });
-
-          // ── D. Replace every <textarea> with a plain block <span> ───────────
-          doc.querySelectorAll('textarea').forEach((node) => {
-            const ta = node as HTMLTextAreaElement;
-            const span = doc.createElement('span');
-            span.textContent = ta.value;
-            span.style.whiteSpace = 'pre-wrap';
-            span.style.display = 'block';
-            span.style.fontFamily = 'inherit';
-            span.style.fontSize = 'inherit';
-            ta.parentNode?.replaceChild(span, ta);
-          });
-
-          // ── E. Replace every <select> with a plain inline <span> ────────────
-          doc.querySelectorAll('select').forEach((node) => {
-            const select = node as HTMLSelectElement;
-            const span = doc.createElement('span');
-            span.textContent = select.options[select.selectedIndex]?.text ?? select.value;
-            span.style.fontFamily = 'inherit';
-            span.style.fontSize = 'inherit';
-            select.parentNode?.replaceChild(span, select);
-          });
-
-          // ── F. Strip contenteditable chrome ─────────────────────────────────
-          doc.querySelectorAll('[contenteditable]').forEach((node) => {
-            const el2 = node as HTMLElement;
-            el2.style.outline = 'none';
-            el2.style.border = 'none';
-            el2.style.borderBottom = 'none';
-            el2.style.boxShadow = 'none';
-            el2.removeAttribute('contenteditable');
-          });
-        },
+        scrollY: 0,
       });
 
-      // Restore element styles
-      el.style.minHeight = savedMinHeight;
-      el.style.boxShadow = savedBoxShadow;
-      el.style.overflow = savedOverflow;
+      // ── Step 6: Validate ───────────────────────────────────────────────────────
+      if (canvas.width === 0 || canvas.height === 0) {
+        throw new Error('html2canvas returned empty canvas');
+      }
 
-      // ── Page slicing ─────────────────────────────────────────────────────────
-      const A4_W = 210;
-      const A4_H = 297;
-      const pageHeightPx = Math.round(canvas.width * (A4_H / A4_W));
-      const MIN_PAGE_FILL = 0.15;
+      // ── Step 7: Slice into A4 pages ────────────────────────────────────────────
+      // 794px wide @ 2× scale → 1588px canvas width; A4 ratio 297/210
+      const pageW = canvas.width;
+      const pageH = Math.round(pageW * (297 / 210));
+      const totalPages = Math.ceil(canvas.height / pageH);
 
-      // Build page start Y positions. Prefer semantic breaks when they fall within
-      // the current A4 page AND leave ≥30% fill on that page.
-      const sortedBreaks = [...breakYsInCanvas].sort((a, b) => a - b);
-      const pageStarts: number[] = [0];
-      let cursor = 0;
-      let bIdx = 0;
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [794, Math.round(794 * (297 / 210))],
+        compress: true,
+      });
 
-      while (cursor < canvas.height) {
-        while (bIdx < sortedBreaks.length && sortedBreaks[bIdx] <= cursor) bIdx++;
-        const naturalNext = cursor + pageHeightPx;
+      for (let i = 0; i < totalPages; i++) {
+        if (i > 0) pdf.addPage();
 
-        if (
-          bIdx < sortedBreaks.length &&
-          sortedBreaks[bIdx] < naturalNext &&
-          sortedBreaks[bIdx] - cursor > pageHeightPx * 0.3
-        ) {
-          cursor = sortedBreaks[bIdx];
-          bIdx++;
-        } else {
-          cursor = naturalNext;
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = pageW;
+        sliceCanvas.height = pageH;
+        const ctx = sliceCanvas.getContext('2d')!;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, pageW, pageH);
+        ctx.drawImage(canvas, 0, -(i * pageH));
+
+        // Skip nearly-blank trailing pages (< 5% non-white pixels is a rough proxy)
+        if (i > 0) {
+          const imgd = ctx.getImageData(0, 0, pageW, Math.min(40, pageH));
+          const hasContent = imgd.data.some((v, idx) => idx % 4 !== 3 && v < 250);
+          if (!hasContent) break;
         }
 
-        if (cursor >= canvas.height) break;
-        pageStarts.push(cursor);
-      }
-
-      // ── Render PDF pages ─────────────────────────────────────────────────────
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      let renderedPages = 0;
-
-      pageStarts.forEach((startY, idx) => {
-        // Skip nearly-blank trailing pages
-        if (idx > 0 && (canvas.height - startY) / pageHeightPx < MIN_PAGE_FILL) return;
-
-        if (renderedPages > 0) pdf.addPage();
-
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = pageHeightPx;
-        const ctx = pageCanvas.getContext('2d')!;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        ctx.drawImage(canvas, 0, -startY);
-        pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, A4_W, A4_H);
-        renderedPages++;
-      });
-
-      // ── Page numbers ─────────────────────────────────────────────────────────
-      const totalPdfPages = pdf.getNumberOfPages();
-      for (let i = 1; i <= totalPdfPages; i++) {
-        pdf.setPage(i);
-        pdf.setFontSize(9);
-        pdf.setTextColor(160, 150, 130);
-        pdf.text(
-          `Page ${i} of ${totalPdfPages}`,
-          pdf.internal.pageSize.getWidth() - 12,
-          pdf.internal.pageSize.getHeight() - 8,
-          { align: 'right' }
+        pdf.addImage(
+          sliceCanvas.toDataURL('image/jpeg', 0.92),
+          'JPEG',
+          0,
+          0,
+          794,
+          Math.round(794 * (297 / 210))
         );
+
+        // Page number
+        pdf.setFontSize(8);
+        pdf.setTextColor(160, 150, 130);
+        pdf.text(`Page ${i + 1} of ${totalPages}`, 794 - 12, Math.round(794 * (297 / 210)) - 10, {
+          align: 'right',
+        });
       }
 
-      const clientSlug = (data.clientName || 'Client').replace(/\s+/g, '_');
+      // ── Step 8: Save ───────────────────────────────────────────────────────────
+      const slug = (data.clientName || 'Client').replace(/\s+/g, '_');
       const dateStr = format(new Date(), 'MMMd_yyyy');
-      pdf.save(`SkyGlobal_Proposal_${clientSlug}_${dateStr}.pdf`);
+      pdf.save(`SkyGlobal_Proposal_${slug}_${dateStr}.pdf`);
       toast.success('PDF downloaded');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      toast.error(`PDF generation failed: ${msg}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[PDF]', err);
+      toast.error(`PDF failed: ${msg}`);
     } finally {
+      if (container && document.body.contains(container)) document.body.removeChild(container);
       setPdfLoading(false);
     }
   };
