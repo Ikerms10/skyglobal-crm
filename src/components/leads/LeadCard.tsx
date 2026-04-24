@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Lead } from '@/types'
@@ -93,6 +94,8 @@ function FollowUpRow({ date, stage }: { date: string; stage: string }) {
 }
 
 export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps) {
+  const [isHovered, setIsHovered] = useState(false)
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lead.id,
     data: { lead },
@@ -106,9 +109,9 @@ export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    borderLeft: `3px solid ${tier.color}`,
+    borderLeft: isHovered && !isDragging ? '3px solid #e6ab35' : `3px solid ${tier.color}`,
     boxShadow: isDragOverlay
-      ? `0 8px 40px rgba(28,18,9,0.15), 0 0 20px ${tier.glow}`
+      ? `0 12px 48px rgba(28,18,9,0.25), 0 0 20px ${tier.glow}`
       : 'none',
   }
 
@@ -119,7 +122,7 @@ export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps
     padding: '12px 14px',
     cursor: 'pointer',
     opacity: isDragging ? 0.5 : 1,
-    transform: isDragOverlay ? 'scale(1.04) rotate(1.5deg)' : undefined,
+    transform: isDragOverlay ? 'scale(1.02)' : undefined,
     transition: 'border-color 150ms, box-shadow 150ms, transform 150ms, background 150ms',
     boxShadow: 'var(--s-card)',
   }
@@ -137,18 +140,18 @@ export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps
         onClick={() => onClick(lead)}
         onMouseEnter={e => {
           if (isDragging || isDragOverlay) return
+          setIsHovered(true)
           const el = e.currentTarget as HTMLDivElement
           el.style.borderColor = 'var(--c-border-mid)'
           el.style.transform = 'translateY(-2px)'
           el.style.boxShadow = `var(--s-card-hover), 0 0 12px ${tier.glow}`
-          el.style.background = 'var(--c-card)'
         }}
         onMouseLeave={e => {
+          setIsHovered(false)
           const el = e.currentTarget as HTMLDivElement
           el.style.borderColor = 'var(--c-border-light)'
           el.style.transform = 'translateY(0)'
           el.style.boxShadow = 'var(--s-card)'
-          el.style.background = 'var(--c-card)'
         }}
       >
         {/* Row 1: Title */}

@@ -17,7 +17,8 @@ import { useLocalStorageDraft } from '@/lib/hooks/useLocalStorageDraft'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Phone, Mail, FileText } from 'lucide-react'
+import { Phone, Mail, FileText, MessageSquare } from 'lucide-react'
+import { ContactModal } from '@/components/ui/ContactModal'
 
 const schema = z.object({
   title: z.string().min(1, 'Required'),
@@ -43,6 +44,7 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
   const queryClient = useQueryClient()
   const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [contactOpen, setContactOpen] = useState(false)
 
   const getDefaults = (l: Lead | null): FormData => ({
     title: l?.title ?? '',
@@ -132,7 +134,7 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
             ) : (
               <p className="text-sm font-medium text-white">{customer.name}</p>
             )}
-            <div className="mt-2 flex gap-3 flex-wrap">
+            <div className="mt-2 flex gap-3 flex-wrap items-center">
               {customer.phone && (
                 <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-xs text-[var(--sg-sky)] hover:text-[var(--sg-text-1)]">
                   <Phone className="h-3 w-3" />
@@ -144,6 +146,15 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
                   <Mail className="h-3 w-3" />
                   {customer.email}
                 </a>
+              )}
+              {(customer.phone || customer.email) && (
+                <button
+                  onClick={() => setContactOpen(true)}
+                  className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-[var(--sg-gold-dim)] text-[var(--sg-gold)] border border-[var(--sg-gold-border)] hover:bg-[var(--sg-gold)] hover:text-black transition-colors"
+                >
+                  <MessageSquare className="h-3 w-3" />
+                  Contact
+                </button>
               )}
             </div>
           </div>
@@ -229,6 +240,17 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
         loading={deleteMutation.isPending}
         title="Delete Lead"
         description={`Delete "${lead?.title}"? This cannot be undone.`}
+      />
+
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        name={customer?.name ?? ''}
+        phone={customer?.phone}
+        email={customer?.email}
+        status={lead?.stage}
+        resourceType="lead"
+        resourceId={lead?.id ?? ''}
       />
     </Drawer>
   )

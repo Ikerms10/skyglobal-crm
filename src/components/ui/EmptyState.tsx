@@ -10,14 +10,56 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div
+      className="animate-fadeIn"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '64px 24px',
+        textAlign: 'center',
+      }}
+    >
       {Icon && (
-        <div className="p-4 bg-[var(--sg-surface)] rounded-full mb-4">
-          <Icon className="h-8 w-8 text-[var(--sg-gold)]" />
+        <div
+          style={{
+            padding: 20,
+            background: 'var(--c-nested)',
+            borderRadius: '50%',
+            marginBottom: 20,
+            border: '1px solid var(--c-border)',
+          }}
+        >
+          <Icon style={{ width: 48, height: 48, color: 'var(--c-gold)' }} strokeWidth={1.5} />
         </div>
       )}
-      <h3 className="text-lg font-medium text-white mb-2">{title}</h3>
-      {description && <p className="text-[var(--sg-text-2)] text-sm mb-6 max-w-sm">{description}</p>}
+      <h3
+        style={{
+          fontSize: 18,
+          fontWeight: 700,
+          color: 'var(--c-text-1)',
+          marginBottom: 8,
+          margin: '0 0 8px',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        {title}
+      </h3>
+      {description && (
+        <p
+          style={{
+            color: 'var(--c-text-3)',
+            fontSize: 14,
+            maxWidth: 360,
+            marginBottom: 24,
+            lineHeight: 1.6,
+            margin: '0 0 24px',
+          }}
+        >
+          {description}
+        </p>
+      )}
       {action && <Button onClick={action.onClick}>{action.label}</Button>}
     </div>
   )
