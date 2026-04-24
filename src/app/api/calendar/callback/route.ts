@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { rateLimit, getClientIp } from '@/lib/ratelimit'
+
+// 10 OAuth callbacks per minute per IP
+const RATE_LIMIT = 10
+const RATE_WINDOW_MS = 60 * 1000
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request)
+  if (!rateLimit(`calendar-callback:${ip}`, RATE_LIMIT, RATE_WINDOW_MS)) {
+    return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
+  }
+
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')

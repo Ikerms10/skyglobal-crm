@@ -194,32 +194,36 @@ function defaultLineItems(template: ProposalTemplate): LineItem[] {
   return [];
 }
 
-// ─── PDF HTML generator ───────────────────────────────────────────────────────
-// Generates a fully self-contained HTML string from the proposal data state.
-// No CSS variables, no Tailwind, no external stylesheets — everything inline.
-// This is rendered in an isolated off-screen container so html2canvas has a
-// clean, fully-painted DOM with no overflow clipping or scroll offset issues.
-function buildProposalHTML(
+// ─── PDF helpers (module-level, shared across segment builders) ────────────────
+const escHtml = (s: string | null | undefined) =>
+  (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const fmtCurrency = (n: number | null | undefined) =>
+  n != null
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
+    : '—';
+
+// Shows TBD when investment is unset/zero — avoids $0.00 or — in payment rows
+const fmtPayment = (n: number | null | undefined) =>
+  n != null && n > 0 ? fmtCurrency(n) : 'TBD';
+
+const pdfSecHead = (title: string) => `
+  <div style="font-size:10px;font-weight:700;color:#b8860b;letter-spacing:0.12em;text-transform:uppercase;border-bottom:2px solid #d4a843;padding-bottom:6px;margin-bottom:16px;margin-top:32px;font-family:Georgia,serif;">
+    ${title}
+  </div>`;
+
+const PDF_WRAP =
+  'width:794px;background:#fefcf8;font-family:Georgia,"Times New Roman",serif;color:#1c1209;font-size:11px;line-height:1.6;padding:56px;box-sizing:border-box;';
+
+// ─── Segment 1: Header + Section I + II + III ─────────────────────────────────
+function buildSegment1HTML(
   d: ReturnType<typeof buildInitialData>,
   tmpl: ProposalTemplate,
   logoSrc: string
 ): string {
-  const esc = (s: string | null | undefined) =>
-    (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  const fmt = (n: number | null | undefined) =>
-    n != null
-      ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
-      : '—';
-
-  const dep = d.totalInvestment != null ? d.totalInvestment * (d.depositPct / 100) : null;
-  const pro = d.totalInvestment != null ? d.totalInvestment * (d.progressPct / 100) : null;
-  const fin = d.totalInvestment != null ? d.totalInvestment * (d.finalPct / 100) : null;
-
-  const secHead = (title: string) => `
-    <div style="font-size:10px;font-weight:700;color:#b8860b;letter-spacing:0.12em;text-transform:uppercase;border-bottom:2px solid #d4a843;padding-bottom:5px;margin-bottom:14px;margin-top:22px;font-family:Georgia,serif;">
-      ${title}
-    </div>`;
+  const projectTitle = d.projectName
+    ? `${escHtml(d.projectName)}&nbsp;|&nbsp;PROFESSIONAL SERVICE PROPOSAL`
+    : 'PROFESSIONAL SERVICE PROPOSAL';
 
   const sectionIIITitle =
     tmpl === 'interior'
@@ -232,16 +236,16 @@ function buildProposalHTML(
 
   const scopeHTML = d.scopeOfWork
     .map(
-      (step, i) => `
-    <div style="margin-bottom:14px;">
+      (step) => `
+    <div style="margin-bottom:16px;">
       <div style="font-weight:700;font-size:11px;color:#1c1209;margin-bottom:6px;font-family:Georgia,serif;">
-        ${i + 1}. ${esc(step.title)}
+        ${escHtml(step.title)}
       </div>
       ${step.bullets
         .map(
           (b) => `
-        <div style="padding-left:18px;font-size:10.5px;color:#3d3530;margin-bottom:3px;line-height:1.5;">
-          &bull;&nbsp;${esc(b)}
+        <div style="padding-left:18px;font-size:10.5px;color:#3d3530;margin-bottom:4px;line-height:1.55;">
+          &bull;&nbsp;${escHtml(b)}
         </div>`
         )
         .join('')}
@@ -249,96 +253,33 @@ function buildProposalHTML(
     )
     .join('');
 
-  const lineItemsHTML =
-    d.lineItems.length > 0
-      ? `
-    <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
-      <thead>
-        <tr style="background:#8b6914;">
-          <th style="padding:7px 10px;text-align:left;color:#fff;font-weight:600;font-size:10px;letter-spacing:0.04em;">Material / Description</th>
-          <th style="padding:7px 10px;text-align:center;color:#fff;font-weight:600;font-size:10px;width:52px;">Qty</th>
-          <th style="padding:7px 10px;text-align:right;color:#fff;font-weight:600;font-size:10px;width:88px;">Unit Price</th>
-          <th style="padding:7px 10px;text-align:right;color:#fff;font-weight:600;font-size:10px;width:88px;">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${d.lineItems
-          .map(
-            (item, i) => `
-          <tr style="background:${i % 2 === 0 ? '#fefcf8' : '#f5ecd8'};">
-            <td style="padding:7px 10px;border:1px solid #e0d5c7;">${esc(item.description)}</td>
-            <td style="padding:7px 10px;text-align:center;border:1px solid #e0d5c7;">${item.quantity ?? '—'}</td>
-            <td style="padding:7px 10px;text-align:right;border:1px solid #e0d5c7;">${fmt(item.unit_price)}</td>
-            <td style="padding:7px 10px;text-align:right;border:1px solid #e0d5c7;">${fmt(item.total)}</td>
-          </tr>`
-          )
-          .join('')}
-      </tbody>
-    </table>`
-      : `<div style="font-size:10px;color:#a07850;font-style:italic;">No materials listed.</div>`;
-
-  const insurancePage = d.showInsurancePage
-    ? `
-    <div style="margin-top:40px;padding-top:20px;border-top:3px solid #e0d5c7;">
-      ${secHead('Certificate of Insurance')}
-      <div style="border:1px solid #e0d5c7;border-left:3px solid #4a6741;border-radius:6px;padding:18px;font-size:10.5px;line-height:1.8;">
-        <table style="width:100%;border-collapse:collapse;">
-          <tr>
-            <td style="padding:3px 0;width:50%;"><strong>Insured:</strong> SkyGlobal Renovations LLC</td>
-            <td style="padding:3px 0;"><strong>Effective Date:</strong> On file</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;"><strong>Policy Number:</strong> CEG-00312198-00</td>
-            <td style="padding:3px 0;"><strong>Expiration Date:</strong> On file</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;"><strong>Coverage Type:</strong> General Liability</td>
-            <td style="padding:3px 0;"><strong>Phone:</strong> 352-782-2460</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;"><strong>Coverage Limit:</strong> $2,000,000</td>
-            <td style="padding:3px 0;"><strong>Email:</strong> skyglobalsvcs@gmail.com</td>
-          </tr>
-        </table>
-        <div style="margin-top:10px;padding:8px 12px;background:#f5ecd8;border-radius:4px;font-style:italic;color:#a07850;font-size:10px;">
-          A full Certificate of Insurance (COI) is available upon request and can be sent directly to the client, property manager, or HOA.
-        </div>
-      </div>
-    </div>`
-    : '';
-
   return `
-<div style="width:794px;background:#fefcf8;font-family:Georgia,'Times New Roman',serif;color:#1c1209;font-size:11px;line-height:1.6;padding:48px 52px;box-sizing:border-box;">
+<div style="${PDF_WRAP}">
 
   <!-- HEADER -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
     <div>
-      <div style="width:60px;height:60px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid #e0d5c7;">
-        ${logoSrc ? `<img src="${logoSrc}" width="38" height="38" alt="SkyGlobal" style="display:block;" />` : ''}
+      <div style="width:68px;height:68px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid #e0d5c7;">
+        ${logoSrc ? `<img src="${logoSrc}" width="44" height="44" alt="SkyGlobal" style="display:block;" />` : ''}
       </div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:21px;font-weight:700;color:#1c1209;letter-spacing:-0.02em;">SkyGlobal Renovations LLC</div>
-      <div style="font-size:11px;color:#a07850;margin-top:3px;">Professional Renovation Services</div>
+      <div style="font-size:26px;font-weight:800;color:#1c1209;letter-spacing:-0.02em;">SkyGlobal Renovations LLC</div>
+      <div style="font-size:10.5px;color:#a07850;margin-top:4px;">Licensed &amp; Insured &nbsp;|&nbsp; Orlando, FL &nbsp;|&nbsp; Atlanta, GA</div>
     </div>
   </div>
 
   <!-- TITLE BANNER -->
-  <div style="background:#f0eae0;border-top:3px solid #8b6914;border-bottom:3px solid #8b6914;padding:13px 24px;margin-bottom:16px;text-align:center;">
-    <span style="color:#8b6914;font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">
-      ${esc(d.projectName) || 'PROJECT NAME / NUMBER'}
-    </span>
-    <span style="color:#a07850;font-weight:400;">&nbsp;| PROFESSIONAL SERVICE PROPOSAL</span>
+  <div style="background:#f0eae0;border-top:4px solid #8b6914;border-bottom:4px solid #8b6914;padding:14px 24px;margin-bottom:18px;text-align:center;">
+    <span style="color:#8b6914;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">${projectTitle}</span>
   </div>
 
   <!-- META ROW -->
-  <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;">
-    <div>
-      <strong>SkyGlobal Renovations LLC</strong>
-    </div>
+  <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px;">
+    <div><strong>SkyGlobal Renovations LLC</strong></div>
     <div style="text-align:right;">
-      <div><strong>Date of Issuance:</strong> ${esc(d.issueDate)}</div>
-      <div><strong>Proposal Valid Until:</strong> ${esc(d.validUntil)}</div>
+      <div><strong>Date of Issuance:</strong> ${escHtml(d.issueDate)}</div>
+      <div><strong>Proposal Valid Until:</strong> ${escHtml(d.validUntil)}</div>
     </div>
   </div>
 
@@ -347,32 +288,32 @@ function buildProposalHTML(
     <strong style="font-style:normal;color:#5c4a38;">CONFIDENTIAL:</strong> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC. This document may not be reproduced, distributed, or used without written authorization.
   </div>
 
-  <!-- SECTION I — BUSINESS CONTACT -->
-  ${secHead('Section I — Business Contact')}
+  <!-- SECTION I -->
+  ${pdfSecHead('Section I — Business Contact')}
   <table style="width:100%;border-collapse:collapse;font-size:11px;">
     <tr>
-      <td style="padding:3px 0;width:50%;"><strong>Phone:</strong> 352-782-2460 | 470-469-9961</td>
-      <td style="padding:3px 0;"><strong>Instagram &amp; Facebook:</strong> @skyglobalp</td>
+      <td style="padding:4px 0;width:50%;"><strong>Phone:</strong> 352-782-2460 | 470-469-9961</td>
+      <td style="padding:4px 0;"><strong>Instagram &amp; Facebook:</strong> @skyglobalp</td>
     </tr>
     <tr>
-      <td style="padding:3px 0;"><strong>Email:</strong> skyglobalsvcs@gmail.com</td>
-      <td style="padding:3px 0;"><strong>Credentials:</strong> Thumbtack Profile — 75+ Verified Reviews</td>
+      <td style="padding:4px 0;"><strong>Email:</strong> skyglobalsvcs@gmail.com</td>
+      <td style="padding:4px 0;"><strong>Credentials:</strong> Thumbtack Profile — 75+ Verified Reviews</td>
     </tr>
     <tr>
-      <td style="padding:3px 0;"><strong>Web:</strong> skyglobalsvcs.com</td>
+      <td style="padding:4px 0;"><strong>Web:</strong> skyglobalsvcs.com</td>
       <td></td>
     </tr>
   </table>
 
-  <!-- SECTION II — CLIENT & PROJECT SUMMARY -->
-  ${secHead('Section II — Client &amp; Project Summary')}
+  <!-- SECTION II -->
+  ${pdfSecHead('Section II — Client &amp; Project Summary')}
   <table style="width:100%;border-collapse:collapse;font-size:11px;">
     ${[
-      ['Client Name', esc(d.clientName) || '—'],
-      ['Contact Info', esc(d.clientContact) || '—'],
-      ['Project Address', esc(d.clientAddress) || '—'],
-      ['Project Scope', esc(d.projectScope) || '—'],
-      ['Total Investment', fmt(d.totalInvestment)],
+      ['Client Name', escHtml(d.clientName) || '—'],
+      ['Contact Info', escHtml(d.clientContact) || '—'],
+      ['Project Address', escHtml(d.clientAddress) || '—'],
+      ['Project Scope', escHtml(d.projectScope) || '—'],
+      ['Total Investment', fmtCurrency(d.totalInvestment)],
     ]
       .map(
         ([label, val], i) => `
@@ -384,61 +325,146 @@ function buildProposalHTML(
       .join('')}
   </table>
 
-  <!-- SECTION III — PROCESS -->
-  ${secHead(sectionIIITitle)}
+  <!-- SECTION III -->
+  ${pdfSecHead(sectionIIITitle)}
   ${scopeHTML}
 
-  <!-- SECTION IV — MATERIAL SPECIFICATIONS -->
-  ${secHead('Section IV — Material Specifications')}
-  <p style="font-size:10.5px;color:#5c4a38;margin-bottom:10px;font-style:italic;">
+</div>`;
+}
+
+// ─── Segment 2: Section IV + V + VI + Signature ───────────────────────────────
+function buildSegment2HTML(d: ReturnType<typeof buildInitialData>): string {
+  const dep = d.totalInvestment != null ? d.totalInvestment * (d.depositPct / 100) : null;
+  const pro = d.totalInvestment != null ? d.totalInvestment * (d.progressPct / 100) : null;
+  const fin = d.totalInvestment != null ? d.totalInvestment * (d.finalPct / 100) : null;
+
+  const lineItemsHTML =
+    d.lineItems.length > 0
+      ? `
+    <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
+      <thead>
+        <tr style="background:#8b6914;">
+          <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:600;font-size:10px;letter-spacing:0.04em;">Material / Description</th>
+          <th style="padding:8px 10px;text-align:center;color:#fff;font-weight:600;font-size:10px;width:52px;">Qty</th>
+          <th style="padding:8px 10px;text-align:right;color:#fff;font-weight:600;font-size:10px;width:88px;">Unit Price</th>
+          <th style="padding:8px 10px;text-align:right;color:#fff;font-weight:600;font-size:10px;width:88px;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${d.lineItems
+          .map(
+            (item, i) => `
+          <tr style="background:${i % 2 === 0 ? '#fefcf8' : '#f5ecd8'};">
+            <td style="padding:7px 10px;border:1px solid #e0d5c7;">${escHtml(item.description)}</td>
+            <td style="padding:7px 10px;text-align:center;border:1px solid #e0d5c7;">${item.quantity ?? '—'}</td>
+            <td style="padding:7px 10px;text-align:right;border:1px solid #e0d5c7;">${fmtCurrency(item.unit_price)}</td>
+            <td style="padding:7px 10px;text-align:right;border:1px solid #e0d5c7;">${fmtCurrency(item.total)}</td>
+          </tr>`
+          )
+          .join('')}
+      </tbody>
+    </table>`
+      : `<div style="font-size:10px;color:#a07850;font-style:italic;">No materials listed.</div>`;
+
+  return `
+<div style="${PDF_WRAP}">
+
+  ${pdfSecHead('Section IV — Material Specifications')}
+  <p style="font-size:10.5px;color:#5c4a38;margin:0 0 10px;font-style:italic;">
     We use exclusively <strong style="font-style:normal;">Sherwin-Williams</strong> products. Our partnership discounts are passed directly to you with <strong style="font-style:normal;">Zero Material Markup.</strong>
   </p>
   ${lineItemsHTML}
 
-  <!-- SECTION V — PAYMENT SCHEDULE -->
-  ${secHead('Section V — Investment &amp; Payment Schedule')}
-  <p style="font-size:10.5px;color:#5c4a38;margin-bottom:10px;">
+  ${pdfSecHead('Section V — Investment &amp; Payment Schedule')}
+  <p style="font-size:10.5px;color:#5c4a38;margin:0 0 12px;">
     The following payment schedule reflects our commitment to project alignment and financial transparency:
   </p>
-  <table style="width:100%;border-collapse:collapse;font-size:11px;">
-    <tr style="background:#f5ecd8;">
-      <td style="padding:8px 12px;border:1px solid #e0d5c7;">Initial Deposit (${d.depositPct}%) — Due 48 hours prior to project start</td>
-      <td style="padding:8px 12px;border:1px solid #e0d5c7;text-align:right;font-weight:700;">${fmt(dep)}</td>
-    </tr>
-    <tr style="background:#fefcf8;">
-      <td style="padding:8px 12px;border:1px solid #e0d5c7;">Progress Payment (${d.progressPct}%) — Due upon 50% project completion</td>
-      <td style="padding:8px 12px;border:1px solid #e0d5c7;text-align:right;font-weight:700;">${fmt(pro)}</td>
-    </tr>
-    <tr style="background:#f5ecd8;">
-      <td style="padding:8px 12px;border:1px solid #e0d5c7;">Final Balance (${d.finalPct}%) — Due upon project completion &amp; walkthrough</td>
-      <td style="padding:8px 12px;border:1px solid #e0d5c7;text-align:right;font-weight:700;">${fmt(fin)}</td>
-    </tr>
-  </table>
+  <div style="border:1px solid #e0d5c7;border-radius:6px;overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <tr style="background:#f5ecd8;">
+        <td style="padding:10px 14px;border-bottom:1px solid #e0d5c7;">
+          <div style="font-weight:600;color:#5c4a38;">Initial Deposit (${d.depositPct}%)</div>
+          <div style="font-size:9.5px;color:#a07850;margin-top:2px;">Due 48 hours prior to project start</div>
+        </td>
+        <td style="padding:10px 14px;text-align:right;border-bottom:1px solid #e0d5c7;font-weight:700;font-size:13px;color:#8b6914;">${fmtPayment(dep)}</td>
+      </tr>
+      <tr style="background:#fefcf8;">
+        <td style="padding:10px 14px;border-bottom:1px solid #e0d5c7;">
+          <div style="font-weight:600;color:#5c4a38;">Progress Payment (${d.progressPct}%)</div>
+          <div style="font-size:9.5px;color:#a07850;margin-top:2px;">Due upon 50% project completion</div>
+        </td>
+        <td style="padding:10px 14px;text-align:right;border-bottom:1px solid #e0d5c7;font-weight:700;font-size:13px;color:#8b6914;">${fmtPayment(pro)}</td>
+      </tr>
+      <tr style="background:#f5ecd8;">
+        <td style="padding:10px 14px;">
+          <div style="font-weight:600;color:#5c4a38;">Final Balance (${d.finalPct}%)</div>
+          <div style="font-size:9.5px;color:#a07850;margin-top:2px;">Due upon project completion &amp; walkthrough</div>
+        </td>
+        <td style="padding:10px 14px;text-align:right;font-weight:700;font-size:13px;color:#8b6914;">${fmtPayment(fin)}</td>
+      </tr>
+    </table>
+  </div>
   <div style="margin-top:8px;font-size:9.5px;color:#a07850;font-style:italic;">
     SkyGlobal Renovations operates with full financial transparency. All material costs are invoiced at direct Sherwin-Williams contractor pricing with zero markup.
   </div>
 
-  <!-- SECTION VI — WARRANTY -->
-  ${secHead('Section VI — Warranty &amp; Provisions')}
+  ${pdfSecHead('Section VI — Warranty &amp; Provisions')}
   <div style="font-size:11px;line-height:1.7;">
-    <p style="margin:0 0 8px;"><strong>1. White Glove Cleanup:</strong> 30–45 minutes of dedicated site cleanup performed at the end of each work day. SkyGlobal leaves your home as clean as we found it — every day.</p>
-    <p style="margin:0 0 8px;"><strong>2. 5-Year Workmanship Warranty:</strong> SkyGlobal Renovations LLC provides a 5-year warranty on all workmanship. Any defects in application, adhesion, or finish will be remediated at no cost within this period.</p>
-    <p style="margin:0;"><strong>3. Insurance Coverage:</strong> SkyGlobal Renovations LLC carries $2,000,000 General Liability Insurance. Policy No. CEG-00312198-00. Certificate of Insurance available upon request.</p>
+    <p style="margin:0 0 10px;"><strong style="color:#8b6914;">1. White Glove Cleanup:</strong> 30–45 minutes of dedicated site cleanup performed at the end of each work day. SkyGlobal leaves your home as clean as we found it — every day.</p>
+    <p style="margin:0 0 10px;"><strong style="color:#8b6914;">2. 5-Year Workmanship Warranty:</strong> SkyGlobal Renovations LLC provides a 5-year warranty on all workmanship. Any defects in application, adhesion, or finish will be remediated at no cost within this period.</p>
+    <p style="margin:0;"><strong style="color:#8b6914;">3. Insurance Coverage:</strong> SkyGlobal Renovations LLC carries $2,000,000 General Liability Insurance. Policy No. CEG-00312198-00. Certificate of Insurance available upon request.</p>
   </div>
 
   <!-- SIGNATURE -->
-  <div style="display:flex;gap:48px;margin-top:28px;padding-top:16px;border-top:1px solid #e0d5c7;">
-    <div style="flex:2;">
-      <div style="border-bottom:1.5px solid #1c1209;height:36px;margin-bottom:5px;"></div>
-      <div style="font-size:10px;color:#a07850;">Client Acceptance Signature</div>
+  <div style="margin-top:32px;padding:20px 24px;border:1px solid #e0d5c7;border-radius:6px;background:#fefcf8;">
+    <div style="font-size:10px;font-weight:700;color:#b8860b;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">Client Acceptance</div>
+    <div style="display:flex;gap:48px;">
+      <div style="flex:2;">
+        <div style="border-bottom:1.5px solid #1c1209;height:40px;margin-bottom:6px;"></div>
+        <div style="font-size:10px;color:#a07850;">Client Acceptance Signature</div>
+      </div>
+      <div style="flex:1;">
+        <div style="border-bottom:1.5px solid #1c1209;height:40px;margin-bottom:6px;"></div>
+        <div style="font-size:10px;color:#a07850;">Date</div>
+      </div>
     </div>
-    <div style="flex:1;">
-      <div style="border-bottom:1.5px solid #1c1209;height:36px;margin-bottom:5px;"></div>
-      <div style="font-size:10px;color:#a07850;">Date</div>
+    <div style="margin-top:12px;font-size:10px;color:#a07850;font-style:italic;">
+      By signing above, client acknowledges having read and agreed to all terms, scope, and pricing outlined in this proposal.
     </div>
   </div>
 
-  ${insurancePage}
+</div>`;
+}
+
+// ─── Segment 3: Certificate of Insurance ──────────────────────────────────────
+function buildSegment3HTML(): string {
+  return `
+<div style="${PDF_WRAP}">
+
+  ${pdfSecHead('Certificate of Insurance')}
+  <div style="border:1px solid #e0d5c7;border-left:4px solid #d4a843;border-radius:6px;padding:20px 22px;font-size:10.5px;line-height:1.9;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="padding:4px 0;width:50%;"><strong>Insured:</strong> SkyGlobal Renovations LLC</td>
+        <td style="padding:4px 0;"><strong>Effective Date:</strong> On file</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><strong>Policy Number:</strong> CEG-00312198-00</td>
+        <td style="padding:4px 0;"><strong>Expiration Date:</strong> On file</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><strong>Coverage Type:</strong> General Liability</td>
+        <td style="padding:4px 0;"><strong>Phone:</strong> 352-782-2460</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><strong>Coverage Limit:</strong> $2,000,000</td>
+        <td style="padding:4px 0;"><strong>Email:</strong> skyglobalsvcs@gmail.com</td>
+      </tr>
+    </table>
+    <div style="margin-top:14px;padding:10px 14px;background:#f5ecd8;border-radius:4px;font-style:italic;color:#a07850;font-size:10px;">
+      A full Certificate of Insurance (COI) is available upon request and can be sent directly to the client, property manager, or HOA.
+    </div>
+  </div>
 
 </div>`;
 }
@@ -652,14 +678,14 @@ export default function ProposalNewPage() {
   const handleDownloadPDF = async () => {
     if (!data) return;
     setPdfLoading(true);
-    let container: HTMLDivElement | null = null;
+    const containers: HTMLDivElement[] = [];
     try {
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
         import('html2canvas'),
         import('jspdf'),
       ]);
 
-      // ── Step 1: Fetch logo as base64 so it renders in the isolated container ──
+      // ── Step 1: Fetch logo as base64 ──────────────────────────────────────────
       let logoSrc = '';
       try {
         const resp = await fetch('/skyglobal-logo.svg');
@@ -674,112 +700,130 @@ export default function ProposalNewPage() {
         // logo fetch failed — continue without it
       }
 
-      // ── Step 2: Generate clean self-contained HTML from data state ────────────
-      // This bypasses all live-DOM issues: CSS var resolution, overflow clipping,
-      // scroll position, React portals, animated opacity states, etc.
-      const html = buildProposalHTML(data, template, logoSrc);
+      // ── Step 2: Build segments ─────────────────────────────────────────────────
+      // Three segments keep sections self-contained — no orphaned headers across
+      // page breaks from arbitrary canvas slicing.
+      const segmentHTMLs = [
+        buildSegment1HTML(data, template, logoSrc),
+        buildSegment2HTML(data),
+      ];
+      if (data.showInsurancePage) segmentHTMLs.push(buildSegment3HTML());
 
-      // ── Step 3: Mount in an isolated off-screen container ─────────────────────
-      // Fixed 794px width (A4 at 96dpi), off-screen via top:-9999px so it is
-      // painted by the browser but not visible to the user.
-      container = document.createElement('div');
-      container.style.cssText = [
-        'position:fixed',
-        'top:-99999px',
-        'left:0',
-        'width:794px',
-        'background:#ffffff',
-        'z-index:99999',
-        'pointer-events:none',
-        'font-family:Georgia,"Times New Roman",serif',
-      ].join(';');
-      container.innerHTML = html;
-      document.body.appendChild(container);
+      // ── Step 3: Capture each segment ──────────────────────────────────────────
+      const PAGE_W = 794;
+      const PAGE_H = Math.round(PAGE_W * (297 / 210));
+      const SCALE = 2;
+      const scaledPageH = PAGE_H * SCALE;
 
-      // ── Step 4: Let images paint ───────────────────────────────────────────────
-      const imgs = Array.from(container.querySelectorAll('img'));
-      await Promise.all(
-        imgs.map((img) =>
-          img.complete
-            ? Promise.resolve()
-            : new Promise<void>((res) => {
-                img.onload = () => res();
-                img.onerror = () => res();
-                setTimeout(res, 3000);
-              })
-        )
-      );
-      // One rAF tick to ensure browser has laid out the new DOM
-      await new Promise<void>((res) => requestAnimationFrame(() => res()));
+      const captures: Array<{ canvas: HTMLCanvasElement; pageCount: number }> = [];
 
-      // ── Step 5: Capture ────────────────────────────────────────────────────────
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: 794,
-        height: container.scrollHeight,
-        windowWidth: 794,
-        scrollX: 0,
-        scrollY: 0,
-      });
+      for (const html of segmentHTMLs) {
+        const container = document.createElement('div');
+        container.style.cssText = [
+          'position:fixed',
+          'top:-99999px',
+          'left:0',
+          'width:794px',
+          'background:#ffffff',
+          'z-index:99999',
+          'pointer-events:none',
+        ].join(';');
+        container.innerHTML = html;
+        document.body.appendChild(container);
+        containers.push(container);
 
-      // ── Step 6: Validate ───────────────────────────────────────────────────────
-      if (canvas.width === 0 || canvas.height === 0) {
-        throw new Error('html2canvas returned empty canvas');
+        const imgs = Array.from(container.querySelectorAll('img'));
+        await Promise.all(
+          imgs.map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((res) => {
+                  img.onload = () => res();
+                  img.onerror = () => res();
+                  setTimeout(res, 3000);
+                })
+          )
+        );
+        await new Promise<void>((res) => requestAnimationFrame(() => res()));
+
+        const canvas = await html2canvas(container, {
+          scale: SCALE,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          width: PAGE_W,
+          height: container.scrollHeight,
+          windowWidth: PAGE_W,
+          scrollX: 0,
+          scrollY: 0,
+        });
+
+        if (canvas.width === 0 || canvas.height === 0) {
+          throw new Error('html2canvas returned empty canvas');
+        }
+
+        captures.push({ canvas, pageCount: Math.ceil(canvas.height / scaledPageH) });
       }
 
-      // ── Step 7: Slice into A4 pages ────────────────────────────────────────────
-      // 794px wide @ 2× scale → 1588px canvas width; A4 ratio 297/210
-      const pageW = canvas.width;
-      const pageH = Math.round(pageW * (297 / 210));
-      const totalPages = Math.ceil(canvas.height / pageH);
+      // ── Step 4: Build PDF ──────────────────────────────────────────────────────
+      const totalPages = captures.reduce((sum, c) => sum + c.pageCount, 0);
 
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
-        format: [794, Math.round(794 * (297 / 210))],
+        format: [PAGE_W, PAGE_H],
         compress: true,
       });
 
-      for (let i = 0; i < totalPages; i++) {
-        if (i > 0) pdf.addPage();
+      let pageNum = 0;
+      for (const { canvas, pageCount } of captures) {
+        const scaledW = canvas.width;
 
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = pageW;
-        sliceCanvas.height = pageH;
-        const ctx = sliceCanvas.getContext('2d')!;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, pageW, pageH);
-        ctx.drawImage(canvas, 0, -(i * pageH));
+        for (let i = 0; i < pageCount; i++) {
+          if (pageNum > 0) pdf.addPage();
+          pageNum++;
 
-        // Skip nearly-blank trailing pages (< 5% non-white pixels is a rough proxy)
-        if (i > 0) {
-          const imgd = ctx.getImageData(0, 0, pageW, Math.min(40, pageH));
-          const hasContent = imgd.data.some((v, idx) => idx % 4 !== 3 && v < 250);
-          if (!hasContent) break;
+          const sliceCanvas = document.createElement('canvas');
+          sliceCanvas.width = scaledW;
+          sliceCanvas.height = scaledPageH;
+          const ctx = sliceCanvas.getContext('2d')!;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, scaledW, scaledPageH);
+          ctx.drawImage(canvas, 0, -(i * scaledPageH));
+
+          // Skip blank trailing pages within a segment
+          if (i > 0) {
+            const imgd = ctx.getImageData(0, 0, scaledW, Math.min(40, scaledPageH));
+            const hasContent = imgd.data.some((v, idx) => idx % 4 !== 3 && v < 250);
+            if (!hasContent) {
+              pageNum--;
+              break;
+            }
+          }
+
+          pdf.addImage(
+            sliceCanvas.toDataURL('image/jpeg', 0.92),
+            'JPEG',
+            0,
+            0,
+            PAGE_W,
+            PAGE_H
+          );
+
+          // Footer
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(160, 150, 130);
+          pdf.text(
+            `SkyGlobal Renovations LLC  |  Page ${pageNum} of ${totalPages}`,
+            PAGE_W / 2,
+            PAGE_H - 10,
+            { align: 'center' }
+          );
         }
-
-        pdf.addImage(
-          sliceCanvas.toDataURL('image/jpeg', 0.92),
-          'JPEG',
-          0,
-          0,
-          794,
-          Math.round(794 * (297 / 210))
-        );
-
-        // Page number
-        pdf.setFontSize(8);
-        pdf.setTextColor(160, 150, 130);
-        pdf.text(`Page ${i + 1} of ${totalPages}`, 794 - 12, Math.round(794 * (297 / 210)) - 10, {
-          align: 'right',
-        });
       }
 
-      // ── Step 8: Save ───────────────────────────────────────────────────────────
+      // ── Step 5: Save ───────────────────────────────────────────────────────────
       const slug = (data.clientName || 'Client').replace(/\s+/g, '_');
       const dateStr = format(new Date(), 'MMMd_yyyy');
       pdf.save(`SkyGlobal_Proposal_${slug}_${dateStr}.pdf`);
@@ -789,7 +833,9 @@ export default function ProposalNewPage() {
       console.error('[PDF]', err);
       toast.error(`PDF failed: ${msg}`);
     } finally {
-      if (container && document.body.contains(container)) document.body.removeChild(container);
+      for (const c of containers) {
+        if (document.body.contains(c)) document.body.removeChild(c);
+      }
       setPdfLoading(false);
     }
   };

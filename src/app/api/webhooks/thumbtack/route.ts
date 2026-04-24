@@ -1,58 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, getClientIp } from '@/lib/ratelimit'
+import { logAuditEvent } from '@/lib/audit'
+import { ThumbtackWebhookSchema } from '@/lib/validations'
 
 // Thumbtack → Zapier → this webhook
 // Creates a customer + lead from the Thumbtack lead payload
 // Required header: x-webhook-secret: <THUMBTACK_WEBHOOK_SECRET>
 
+// 30 lead ingestions per minute per IP
+const RATE_LIMIT = 30
+const RATE_WINDOW_MS = 60 * 1000
+
 export async function POST(request: NextRequest) {
-  // Validate webhook secret
+  // ── Rate limiting ──────────────────────────────────────────────────────────
+  const ip = getClientIp(request)
+  if (!rateLimit(`thumbtack:${ip}`, RATE_LIMIT, RATE_WINDOW_MS)) {
+    return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
+  }
+
+  // ── Webhook secret validation ──────────────────────────────────────────────
   const secret = request.headers.get('x-webhook-secret')
   if (secret !== process.env.THUMBTACK_WEBHOOK_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: Record<string, unknown>
+  // ── Parse & validate body ──────────────────────────────────────────────────
+  let rawBody: unknown
   try {
-    body = await request.json()
+    rawBody = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  // Extract fields from Thumbtack/Zapier payload
-  // Thumbtack typically sends: name, phone, email, request_title, zip_code, city, request_details
-  // Adjust field names based on your actual Zapier mapping
-  const name = String(body.name ?? body.customer_name ?? 'Unknown Customer')
-  const phone = String(body.phone ?? body.phone_number ?? '')
-  const email = String(body.email ?? '')
-  const jobTitle = String(body.request_title ?? body.title ?? body.job_type ?? 'Thumbtack Lead')
-  const city = String(body.city ?? '')
-  const zip = String(body.zip_code ?? body.zip ?? '')
-  const notes = String(body.request_details ?? body.description ?? body.notes ?? '')
-  const userId = String(body.user_id ?? '') // Pass the Supabase user_id in the Zapier payload
-
-  if (!userId) {
-    return NextResponse.json({ error: 'user_id is required in payload' }, { status: 400 })
+  const parsed = ThumbtackWebhookSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', details: parsed.error.flatten() },
+      { status: 422 }
+    )
   }
 
-  // Use service role key to bypass RLS for webhook inserts
+  const body = parsed.data
+
+  // Extract fields from Thumbtack/Zapier payload
+  const name = (body.name ?? body.customer_name ?? 'Unknown Customer').trim()
+  const phone = (body.phone ?? body.phone_number ?? '').trim() || null
+  const email = (body.email ?? '').trim() || null
+  const jobTitle = (body.request_title ?? body.title ?? body.job_type ?? 'Thumbtack Lead').trim()
+  const city = (body.city ?? '').trim() || null
+  const zip = (body.zip_code ?? body.zip ?? '').trim() || null
+  const notes = (body.request_details ?? body.description ?? body.notes ?? '').trim() || null
+
+  // user_id from env var only — never trusted from payload
+  const userId = process.env.THUMBTACK_USER_ID ?? process.env.ZAPIER_USER_ID
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'Server misconfiguration: THUMBTACK_USER_ID not set' },
+      { status: 500 }
+    )
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
   try {
-    // Create or find customer
-    let customerId: string
-
-    // Try to find existing customer by phone or email
+    // Deduplicate by phone or email
     const { data: existingCustomer } = await supabase
       .from('customers')
       .select('id')
       .eq('user_id', userId)
       .is('deleted_at', null)
-      .or(`phone.eq.${phone},email.eq.${email}`)
+      .or(
+        [phone ? `phone.eq.${phone}` : null, email ? `email.eq.${email}` : null]
+          .filter(Boolean)
+          .join(',') || 'id.is.null'
+      )
       .maybeSingle()
+
+    let customerId: string
 
     if (existingCustomer) {
       customerId = existingCustomer.id
@@ -62,10 +90,10 @@ export async function POST(request: NextRequest) {
         .insert({
           user_id: userId,
           name,
-          phone: phone || null,
-          email: email || null,
-          city: city || null,
-          zip: zip || null,
+          phone,
+          email,
+          city,
+          zip,
           type: 'Residential',
           referred_by: 'Thumbtack',
           tags: ['Thumbtack'],
@@ -77,7 +105,6 @@ export async function POST(request: NextRequest) {
       customerId = newCustomer.id
     }
 
-    // Create lead
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .insert({
@@ -86,20 +113,28 @@ export async function POST(request: NextRequest) {
         title: jobTitle,
         source: 'Thumbtack',
         stage: 'New Lead',
-        notes: notes || null,
+        notes,
       })
       .select('id')
       .single()
 
     if (leadError) throw leadError
 
-    // Log activity
     await supabase.from('activities').insert({
       user_id: userId,
       customer_id: customerId,
       lead_id: lead.id,
       type: 'Note',
       content: `Lead imported from Thumbtack: ${jobTitle}`,
+    })
+
+    await logAuditEvent(supabase, {
+      userId,
+      action: 'CREATE',
+      resourceType: 'lead',
+      resourceId: lead.id,
+      newValues: { source: 'thumbtack', customer_id: customerId, title: jobTitle },
+      request,
     })
 
     return NextResponse.json({ success: true, customer_id: customerId, lead_id: lead.id })

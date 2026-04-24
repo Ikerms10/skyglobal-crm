@@ -23,9 +23,14 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname.startsWith('/login/')
   const isWebhook = pathname.startsWith('/api/webhooks/')
-  if (!user && !isAuthRoute && !isWebhook) {
+  // Public share links — proposals sent to clients don't require login
+  const isPublicProposalView = pathname.startsWith('/proposals/view/')
+
+  if (!user && !isAuthRoute && !isWebhook && !isPublicProposalView) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    // Preserve the original destination so login can redirect back
+    url.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(url)
   }
   if (user && isAuthRoute) {
