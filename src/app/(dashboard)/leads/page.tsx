@@ -10,9 +10,10 @@ import { LeadDrawer } from '@/components/leads/LeadDrawer'
 import { AddLeadDrawer } from '@/components/leads/AddLeadDrawer'
 import { CreateProjectModal } from '@/components/leads/CreateProjectModal'
 import { LostReasonModal } from '@/components/leads/LostReasonModal'
-import { Plus, Search, Filter } from 'lucide-react'
+import { Plus, Search, List, Columns } from 'lucide-react'
 import { toast } from 'sonner'
 import { useDebounce } from '@/lib/hooks/useDebounce'
+import { fireWinConfetti } from '@/lib/confetti'
 import {
   DndContext,
   DragEndEvent,
@@ -122,11 +123,85 @@ function KanbanColumn({
 }
 
 type FilterMode = 'all' | 'overdue' | 'high-value'
+type ViewMode = 'board' | 'list'
+
+function LeadListView({ leads, onCardClick }: { leads: Lead[]; onCardClick: (lead: Lead) => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {leads.map(lead => {
+        const customer = lead.customer as { name?: string; phone?: string; type?: string } | null
+        const stageConfig = STAGE_CONFIG[lead.stage]
+        return (
+          <div
+            key={lead.id}
+            onClick={() => onCardClick(lead)}
+            style={{
+              background: 'var(--c-card)',
+              border: '1px solid var(--c-border-light)',
+              borderLeft: `3px solid ${stageConfig.headerColor}`,
+              borderRadius: 10,
+              padding: '12px 16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              transition: 'background 150ms, box-shadow 150ms',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLDivElement
+              el.style.background = 'var(--c-card-hover)'
+              el.style.boxShadow = 'var(--s-card-hover)'
+              el.style.borderLeftColor = '#e6ab35'
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLDivElement
+              el.style.background = 'var(--c-card)'
+              el.style.boxShadow = 'none'
+              el.style.borderLeftColor = stageConfig.headerColor
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {customer?.name ?? lead.title}
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--c-text-4)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {lead.title}
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {lead.estimated_value != null && lead.estimated_value > 0 && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-gold)', fontFamily: "'DM Mono', monospace" }}>
+                  {formatCurrency(lead.estimated_value)}
+                </span>
+              )}
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 7px',
+                borderRadius: 4,
+                background: `${stageConfig.glow}`,
+                color: stageConfig.headerColor,
+                border: `1px solid ${stageConfig.headerColor}40`,
+                fontFamily: "'DM Mono', monospace",
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+              }}>
+                {lead.stage}
+              </span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function LeadsPage() {
   const [search, setSearch] = useState('')
   const [filterSource, setFilterSource] = useState('')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [addLeadOpen, setAddLeadOpen] = useState(false)
@@ -202,6 +277,8 @@ export default function LeadsPage() {
     if (newStage === 'Won') {
       setWonLead({ ...lead, stage: newStage })
       updateStageMutation.mutate({ leadId: lead.id, stage: newStage })
+      fireWinConfetti()
+      toast.success('🎉 Lead won! Consider creating a project.')
     } else if (newStage === 'Lost') {
       setLostLead({ lead, prevStage: lead.stage })
     } else {
@@ -391,6 +468,36 @@ export default function LeadsPage() {
             <option value="">All Sources</option>
             {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          {/* List / Board toggle */}
+          <div style={{ display: 'flex', background: 'var(--c-nested)', border: '1px solid var(--c-border)', borderRadius: 8, padding: 2, gap: 2 }}>
+            <button
+              onClick={() => setViewMode('list')}
+              aria-label="List view"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                background: viewMode === 'list' ? 'var(--c-gold)' : 'transparent',
+                color: viewMode === 'list' ? 'var(--c-text-on-gold)' : 'var(--c-text-3)',
+                transition: 'background 150ms, color 150ms',
+              }}
+            >
+              <List size={13} aria-hidden="true" /> List
+            </button>
+            <button
+              onClick={() => setViewMode('board')}
+              aria-label="Board view"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                background: viewMode === 'board' ? 'var(--c-gold)' : 'transparent',
+                color: viewMode === 'board' ? 'var(--c-text-on-gold)' : 'var(--c-text-3)',
+                transition: 'background 150ms, color 150ms',
+              }}
+            >
+              <Columns size={13} aria-hidden="true" /> Board
+            </button>
+          </div>
+
           <Button
             onClick={() => setAddLeadOpen(true)}
             style={{
@@ -405,8 +512,19 @@ export default function LeadsPage() {
         </div>
       </div>
 
+      {/* List view */}
+      {viewMode === 'list' && (
+        <LeadListView
+          leads={filteredLeads}
+          onCardClick={lead => {
+            setSelectedLead(lead)
+            setDrawerOpen(true)
+          }}
+        />
+      )}
+
       {/* Kanban board */}
-      <DndContext
+      {viewMode === 'board' && <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
@@ -453,7 +571,7 @@ export default function LeadsPage() {
           ) : null}
         </DragOverlay>
         </div>{/* end relative wrapper */}
-      </DndContext>
+      </DndContext>}
 
       {/* Drawers & Modals */}
       <LeadDrawer

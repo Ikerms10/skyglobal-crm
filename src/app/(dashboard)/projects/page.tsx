@@ -152,7 +152,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* Summary bar */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[var(--sg-surface)] border-l-4 border-l-[var(--sg-gold)] border border-[var(--sg-border)] rounded-xl p-4">
           <p className="text-xs text-[var(--sg-text-2)]">Active</p>
           <p className="text-2xl font-bold text-[var(--sg-gold)]">{activeCount}</p>

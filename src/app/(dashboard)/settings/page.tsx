@@ -1,91 +1,51 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+'use client'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import {
-  User,
-  Lock,
-  Building2,
-  Calendar,
-  Database,
-  ExternalLink,
-  Check,
-  Sun,
-  Moon,
-  Monitor,
-  Palette,
-} from 'lucide-react';
-import { useTheme, type ThemePreference } from '@/components/providers/ThemeProvider';
+  User, Lock, Building2, Calendar, Database,
+  ExternalLink, Check, Sun, Moon, Monitor, Palette,
+  Bell, Shield, TrendingUp, ChevronRight,
+} from 'lucide-react'
+import { useTheme } from '@/components/providers/ThemeProvider'
 
-// ─── Section wrapper ────────────────────────────────────────────────────────
-function Section({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: React.ElementType;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        background: 'var(--sg-surface)',
-        border: '1px solid var(--sg-border)',
-        borderRadius: 'var(--r-lg)',
-        padding: '24px',
-        boxShadow: 'var(--shadow-sm)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: 'var(--sg-gold-dim)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Icon size={16} style={{ color: 'var(--sg-gold)' }} />
-        </div>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--sg-text-1)', margin: 0 }}>
-          {title}
-        </h2>
-      </div>
-      {children}
-    </div>
-  );
+// ─── Sidebar nav ─────────────────────────────────────────────────────────────
+
+type Section = 'profile' | 'appearance' | 'business' | 'integrations' | 'data' | 'security'
+
+interface NavItem { id: Section; icon: React.ElementType; label: string }
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'profile',      icon: User,      label: 'Profile' },
+  { id: 'appearance',   icon: Palette,   label: 'Appearance' },
+  { id: 'business',     icon: Building2, label: 'Business Info' },
+  { id: 'integrations', icon: Calendar,  label: 'Integrations' },
+  { id: 'data',         icon: Database,  label: 'Data & Backups' },
+  { id: 'security',     icon: Shield,    label: 'Security' },
+]
+
+// ─── Appearance cards ─────────────────────────────────────────────────────────
+
+type ThemePreference = 'light' | 'dark' | 'system'
+
+interface ThemeCardProps {
+  label: string
+  icon: React.ElementType
+  preview: React.ReactNode
+  active: boolean
+  onClick: () => void
 }
 
-// ─── Appearance option card ─────────────────────────────────────────────────
-function ThemeCard({
-  label,
-  icon: Icon,
-  preview,
-  active,
-  onClick,
-}: {
-  label: string;
-  icon: React.ElementType;
-  preview: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}) {
+function ThemeCard({ label, icon: Icon, preview, active, onClick }: ThemeCardProps) {
   return (
     <button
       onClick={onClick}
       style={{
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 10,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
         padding: '16px 12px 12px',
         borderRadius: 12,
         border: active ? '2px solid var(--c-gold)' : '2px solid var(--c-border-mid)',
@@ -96,728 +56,523 @@ function ThemeCard({
       }}
     >
       {active && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            width: 18,
-            height: 18,
-            borderRadius: '50%',
-            background: 'var(--c-gold)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+        <div style={{
+          position: 'absolute', top: 8, right: 8,
+          width: 18, height: 18, borderRadius: '50%', background: 'var(--c-gold)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
           <Check size={11} color="#1d1c17" strokeWidth={3} />
         </div>
       )}
-      <div
-        style={{
-          width: '100%',
-          height: 52,
-          borderRadius: 8,
-          overflow: 'hidden',
-          border: '1px solid var(--c-border)',
-        }}
-      >
+      <div style={{ width: '100%', height: 52, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--c-border)' }}>
         {preview}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
         <Icon size={13} style={{ color: active ? 'var(--c-gold)' : 'var(--c-text-4)' }} />
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: active ? 600 : 500,
-            color: active ? 'var(--c-gold)' : 'var(--c-text-3)',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-          }}
-        >
+        <span style={{
+          fontSize: 12, fontWeight: active ? 600 : 500,
+          color: active ? 'var(--c-gold)' : 'var(--c-text-3)',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}>
           {label}
         </span>
       </div>
     </button>
-  );
+  )
 }
 
+// ─── Field row ────────────────────────────────────────────────────────────────
+
+function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--c-text-3)', marginBottom: 7, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+// ─── Section heading ──────────────────────────────────────────────────────────
+
+function SectionHead({ title, description }: { title: string; description?: string }) {
+  return (
+    <div style={{ marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid var(--c-border)' }}>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        {title}
+      </h2>
+      {description && (
+        <p style={{ fontSize: 14, color: 'var(--c-text-3)', margin: '4px 0 0', lineHeight: 1.5 }}>
+          {description}
+        </p>
+      )}
+    </div>
+  )
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'var(--c-nested)',
+  border: '1px solid var(--c-border)',
+  color: 'var(--c-text-1)',
+  borderRadius: 8,
+  padding: '10px 12px',
+  fontSize: 15,
+  outline: 'none',
+  fontFamily: "'Plus Jakarta Sans', sans-serif",
+  boxSizing: 'border-box',
+  transition: 'border-color 150ms',
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 export default function SettingsPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const supabase = createClient();
-  const { preference, setTheme } = useTheme();
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const supabase = createClient()
+  const { preference, setTheme } = useTheme()
+
+  const [activeSection, setActiveSection] = useState<Section>('profile')
 
   // Profile
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [profileLoading, setProfileLoading] = useState(false);
+  const [displayName, setDisplayName] = useState('')
+  const [email, setEmail] = useState('')
+  const [profileLoading, setProfileLoading] = useState(false)
 
   // Password
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
 
   // Business
-  const [businessName, setBusinessName] = useState('');
-  const [businessPhone, setBusinessPhone] = useState('');
-  const [businessEmail, setBusinessEmail] = useState('');
-  const [businessAddress, setBusinessAddress] = useState('');
-  const [businessLoading, setBusinessLoading] = useState(false);
+  const [businessName, setBusinessName] = useState('')
+  const [businessPhone, setBusinessPhone] = useState('')
+  const [businessEmail, setBusinessEmail] = useState('')
+  const [businessAddress, setBusinessAddress] = useState('')
+  const [businessLoading, setBusinessLoading] = useState(false)
 
   // Google Calendar
-  const [calendarConnected, setCalendarConnected] = useState(false);
-  const [calendarEmail, setCalendarEmail] = useState<string | null>(null);
-  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarConnected, setCalendarConnected] = useState(false)
+  const [calendarEmail, setCalendarEmail] = useState<string | null>(null)
+  const [calendarLoading, setCalendarLoading] = useState(false)
 
   // Backup
-  const [lastBackup, setLastBackup] = useState<string | null>(null);
-  const [backupLoading, setBackupLoading] = useState(false);
+  const [lastBackup, setLastBackup] = useState<string | null>(null)
+  const [backupLoading, setBackupLoading] = useState(false)
 
-  // Handle Google Calendar OAuth callback
   useEffect(() => {
-    const cal = searchParams.get('calendar');
+    const cal = searchParams.get('calendar')
     if (cal === 'connected') {
-      toast.success('✓ Google Calendar connected!');
-      setCalendarConnected(true);
-      router.replace('/settings');
+      toast.success('✓ Google Calendar connected!')
+      setCalendarConnected(true)
+      router.replace('/settings')
     } else if (cal === 'error') {
-      const reason = searchParams.get('reason');
-      toast.error(reason ? `Failed to connect: ${reason}` : 'Failed to connect Google Calendar');
-      router.replace('/settings');
+      const reason = searchParams.get('reason')
+      toast.error(reason ? `Failed to connect: ${reason}` : 'Failed to connect Google Calendar')
+      router.replace('/settings')
     }
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      setEmail(user.email ?? '');
-      setDisplayName(user.user_metadata?.display_name ?? '');
-      setBusinessName(user.user_metadata?.business_name ?? 'SkyGlobal');
-      setBusinessPhone(user.user_metadata?.business_phone ?? '');
-      setBusinessEmail(user.user_metadata?.business_email ?? '');
-      setBusinessAddress(user.user_metadata?.business_address ?? '');
-      setCalendarConnected(user.user_metadata?.google_calendar_connected ?? false);
-      setCalendarEmail(user.user_metadata?.google_calendar_email ?? null);
-      setLastBackup(user.user_metadata?.last_backup ?? null);
-    });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      if (!user) return
+      setEmail(user.email ?? '')
+      setDisplayName(user.user_metadata?.display_name ?? '')
+      setBusinessName(user.user_metadata?.business_name ?? 'SkyGlobal')
+      setBusinessPhone(user.user_metadata?.business_phone ?? '')
+      setBusinessEmail(user.user_metadata?.business_email ?? '')
+      setBusinessAddress(user.user_metadata?.business_address ?? '')
+      setCalendarConnected(user.user_metadata?.google_calendar_connected ?? false)
+      setCalendarEmail(user.user_metadata?.google_calendar_email ?? null)
+      setLastBackup(user.user_metadata?.last_backup ?? null)
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveProfile = async () => {
-    setProfileLoading(true);
+    setProfileLoading(true)
     try {
-      const { error } = await supabase.auth.updateUser({ data: { display_name: displayName } });
-      if (error) throw new Error(error.message);
-      toast.success('Profile updated');
+      const { error } = await supabase.auth.updateUser({ data: { display_name: displayName } })
+      if (error) throw new Error(error.message)
+      toast.success('Profile updated')
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update profile');
+      toast.error(err instanceof Error ? err.message : 'Failed to update profile')
     } finally {
-      setProfileLoading(false);
+      setProfileLoading(false)
     }
-  };
+  }
 
   const changePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
-      return;
-    }
-    setPasswordLoading(true);
+    if (newPassword !== confirmPassword) { toast.error('Passwords do not match'); return }
+    if (newPassword.length < 8) { toast.error('Password must be at least 8 characters'); return }
+    setPasswordLoading(true)
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw new Error(error.message);
-      toast.success('Password updated');
-      setNewPassword('');
-      setConfirmPassword('');
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw new Error(error.message)
+      toast.success('Password updated')
+      setNewPassword('')
+      setConfirmPassword('')
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update password');
+      toast.error(err instanceof Error ? err.message : 'Failed to update password')
     } finally {
-      setPasswordLoading(false);
+      setPasswordLoading(false)
     }
-  };
+  }
 
   const saveBusiness = async () => {
-    setBusinessLoading(true);
+    setBusinessLoading(true)
     try {
       const { error } = await supabase.auth.updateUser({
-        data: {
-          business_name: businessName,
-          business_phone: businessPhone,
-          business_email: businessEmail,
-          business_address: businessAddress,
-        },
-      });
-      if (error) throw new Error(error.message);
-      toast.success('Business settings saved');
+        data: { business_name: businessName, business_phone: businessPhone, business_email: businessEmail, business_address: businessAddress },
+      })
+      if (error) throw new Error(error.message)
+      toast.success('Business info saved')
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
+      toast.error(err instanceof Error ? err.message : 'Failed to save')
     } finally {
-      setBusinessLoading(false);
+      setBusinessLoading(false)
     }
-  };
+  }
 
-  const connectCalendar = () => {
-    window.location.href = '/api/calendar/auth';
-  };
+  const connectCalendar = () => { window.location.href = '/api/calendar/auth' }
 
   const disconnectCalendar = async () => {
-    setCalendarLoading(true);
+    setCalendarLoading(true)
     try {
       const { error } = await supabase.auth.updateUser({
-        data: {
-          google_calendar_connected: false,
-          google_calendar_email: null,
-          google_calendar_tokens: null,
-        },
-      });
-      if (error) throw new Error(error.message);
-      setCalendarConnected(false);
-      setCalendarEmail(null);
-      toast.success('Google Calendar disconnected');
+        data: { google_calendar_connected: false, google_calendar_email: null, google_calendar_tokens: null },
+      })
+      if (error) throw new Error(error.message)
+      setCalendarConnected(false)
+      setCalendarEmail(null)
+      toast.success('Google Calendar disconnected')
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to disconnect');
+      toast.error(err instanceof Error ? err.message : 'Failed to disconnect')
     } finally {
-      setCalendarLoading(false);
+      setCalendarLoading(false)
     }
-  };
+  }
 
   const triggerBackup = async () => {
-    setBackupLoading(true);
+    setBackupLoading(true)
     try {
-      const res = await fetch('/api/backup', { method: 'POST' });
-      if (!res.ok) throw new Error('Backup failed');
-      const json = await res.json();
-      const ts = new Date().toISOString();
-      await supabase.auth.updateUser({ data: { last_backup: ts } });
-      setLastBackup(ts);
-      toast.success(`Backup complete — ${json.records_backed_up ?? 0} records saved`);
+      const res = await fetch('/api/backup', { method: 'POST' })
+      if (!res.ok) throw new Error('Backup failed')
+      const json = await res.json()
+      const ts = new Date().toISOString()
+      await supabase.auth.updateUser({ data: { last_backup: ts } })
+      setLastBackup(ts)
+      toast.success(`Backup complete — ${json.records_backed_up ?? 0} records saved`)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Backup failed');
+      toast.error(err instanceof Error ? err.message : 'Backup failed')
     } finally {
-      setBackupLoading(false);
+      setBackupLoading(false)
     }
-  };
+  }
 
   const downloadBackup = async () => {
     try {
-      const res = await fetch('/api/backup');
-      if (!res.ok) throw new Error('Failed to fetch backup');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `skyglobal-backup-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const res = await fetch('/api/backup')
+      if (!res.ok) throw new Error('Failed to fetch backup')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `skyglobal-backup-${new Date().toISOString().split('T')[0]}.json`
+      a.click()
+      URL.revokeObjectURL(url)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Download failed');
+      toast.error(err instanceof Error ? err.message : 'Download failed')
     }
-  };
+  }
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-  };
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
-  const sectionGap = 16;
+  const signOutAllDevices = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'global' })
+      router.push('/login')
+    } catch {
+      toast.error('Failed to sign out all devices')
+    }
+  }
 
-  return (
-    <div style={{ padding: '32px', maxWidth: 680, margin: '0 auto' }} className="p-4 md:p-8">
-      {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Settings
-        </h1>
-        <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginTop: 4 }}>
-          Manage your account and preferences
-        </p>
-      </div>
+  // ─── Panels ─────────────────────────────────────────────────────────────────
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: sectionGap }}>
-        {/* Profile */}
-        <Section icon={User} title="Profile">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Input
-              label="Display Name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Your name"
-            />
-            <div>
-              <label
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: 'var(--text-secondary)',
-                  display: 'block',
-                  marginBottom: 6,
-                }}
-              >
-                Email Address
-              </label>
-              <input
-                value={email}
-                disabled
-                style={{
-                  width: '100%',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '10px 14px',
-                  fontSize: 15,
-                  color: 'var(--text-tertiary)',
-                  cursor: 'not-allowed',
-                }}
-              />
-              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>
-                Email cannot be changed for security reasons
-              </p>
-            </div>
-            <div>
-              <Button onClick={saveProfile} loading={profileLoading}>
-                Save Profile
-              </Button>
-            </div>
-          </div>
-        </Section>
+  const panels: Record<Section, React.ReactNode> = {
+    profile: (
+      <>
+        <SectionHead title="Profile" description="Manage your display name and account email." />
+        <FieldRow label="Display Name">
+          <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your name" style={inputStyle}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+        </FieldRow>
+        <FieldRow label="Email Address">
+          <input value={email} disabled style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }} />
+          <p style={{ fontSize: 12, color: 'var(--c-text-4)', marginTop: 4 }}>Email cannot be changed for security reasons.</p>
+        </FieldRow>
+        <Button onClick={saveProfile} loading={profileLoading}>Save Profile</Button>
+      </>
+    ),
 
-        {/* Password */}
-        <Section icon={Lock} title="Change Password">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Input
-              label="New Password"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Min 8 characters"
-              hint="Use a strong, unique password"
-            />
-            <Input
-              label="Confirm New Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repeat new password"
-            />
-            <div>
-              <Button onClick={changePassword} loading={passwordLoading}>
-                Update Password
-              </Button>
-            </div>
-          </div>
-        </Section>
+    appearance: (
+      <>
+        <SectionHead title="Appearance" description="Choose how SkyGlobal CRM looks. System follows your OS setting." />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <ThemeCard label="Light" icon={Sun} active={preference === 'light'} onClick={() => setTheme('light')}
+            preview={
+              <div style={{ width: '100%', height: '100%', background: '#f5f0e8', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <div style={{ width: 14, height: 14, borderRadius: 3, background: '#e0d5c0' }} />
+                  <div style={{ width: 40, height: 6, borderRadius: 3, background: '#5c5240', opacity: 0.7 }} />
+                </div>
+                <div style={{ width: '80%', height: 5, borderRadius: 3, background: '#8a7a60', opacity: 0.5 }} />
+                <div style={{ width: '60%', height: 5, borderRadius: 3, background: '#8a7a60', opacity: 0.35 }} />
+                <div style={{ marginTop: 4, width: 36, height: 12, borderRadius: 4, background: '#e6ab35' }} />
+              </div>
+            }
+          />
+          <ThemeCard label="Dark" icon={Moon} active={preference === 'dark'} onClick={() => setTheme('dark')}
+            preview={
+              <div style={{ width: '100%', height: '100%', background: '#1d1c17', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <div style={{ width: 14, height: 14, borderRadius: 3, background: '#3a3830' }} />
+                  <div style={{ width: 40, height: 6, borderRadius: 3, background: '#efeae2', opacity: 0.8 }} />
+                </div>
+                <div style={{ width: '80%', height: 5, borderRadius: 3, background: '#bfb9ae', opacity: 0.5 }} />
+                <div style={{ width: '60%', height: 5, borderRadius: 3, background: '#bfb9ae', opacity: 0.35 }} />
+                <div style={{ marginTop: 4, width: 36, height: 12, borderRadius: 4, background: '#e6ab35' }} />
+              </div>
+            }
+          />
+          <ThemeCard label="System" icon={Monitor} active={preference === 'system'} onClick={() => setTheme('system')}
+            preview={
+              <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+                <div style={{ flex: 1, background: '#f5f0e8', padding: '8px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ width: '100%', height: 6, borderRadius: 2, background: '#5c5240', opacity: 0.6 }} />
+                  <div style={{ width: '80%', height: 4, borderRadius: 2, background: '#8a7a60', opacity: 0.4 }} />
+                  <div style={{ marginTop: 6, width: 28, height: 8, borderRadius: 3, background: '#e6ab35' }} />
+                </div>
+                <div style={{ flex: 1, background: '#1d1c17', padding: '8px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ width: '100%', height: 6, borderRadius: 2, background: '#efeae2', opacity: 0.7 }} />
+                  <div style={{ width: '80%', height: 4, borderRadius: 2, background: '#bfb9ae', opacity: 0.4 }} />
+                  <div style={{ marginTop: 6, width: 28, height: 8, borderRadius: 3, background: '#e6ab35' }} />
+                </div>
+              </div>
+            }
+          />
+        </div>
+      </>
+    ),
 
-        {/* Business Settings */}
-        <Section icon={Building2} title="Business Settings">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Input
-              label="Business Name"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="Your business name"
-            />
-            <Input
-              label="Business Phone"
-              value={businessPhone}
-              onChange={(e) => setBusinessPhone(e.target.value)}
-              placeholder="+1 (555) 000-0000"
-            />
-            <Input
-              label="Business Email"
-              value={businessEmail}
-              onChange={(e) => setBusinessEmail(e.target.value)}
-              placeholder="business@example.com"
-            />
-            <Input
-              label="Business Address"
-              value={businessAddress}
-              onChange={(e) => setBusinessAddress(e.target.value)}
-              placeholder="123 Main St, City, State"
-            />
-            <div>
-              <Button onClick={saveBusiness} loading={businessLoading}>
-                Save Business Info
-              </Button>
-            </div>
-          </div>
-        </Section>
+    business: (
+      <>
+        <SectionHead title="Business Info" description="This information is used on proposals and invoices." />
+        <FieldRow label="Business Name">
+          <input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="SkyGlobal Renovations LLC" style={inputStyle}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+        </FieldRow>
+        <FieldRow label="Business Phone">
+          <input value={businessPhone} onChange={e => setBusinessPhone(e.target.value)} placeholder="+1 (352) 000-0000" style={inputStyle}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+        </FieldRow>
+        <FieldRow label="Business Email">
+          <input value={businessEmail} onChange={e => setBusinessEmail(e.target.value)} placeholder="business@example.com" type="email" style={inputStyle}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+        </FieldRow>
+        <FieldRow label="Business Address">
+          <input value={businessAddress} onChange={e => setBusinessAddress(e.target.value)} placeholder="123 Main St, Orlando, FL" style={inputStyle}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+        </FieldRow>
+        <Button onClick={saveBusiness} loading={businessLoading}>Save Business Info</Button>
+      </>
+    ),
+
+    integrations: (
+      <>
+        <SectionHead title="Integrations" description="Connect third-party services to your CRM." />
 
         {/* Google Calendar */}
-        <Section icon={Calendar} title="Integrations">
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '4px 0',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              {/* Google Calendar icon */}
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 8,
-                  background: 'var(--bg-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid var(--border-subtle)',
-                }}
-              >
-                <Calendar size={18} style={{ color: '#4285f4' }} />
-              </div>
-              <div>
-                <p
-                  style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}
-                >
-                  Google Calendar
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                  {calendarConnected
-                    ? (calendarEmail ?? 'Connected')
-                    : 'Sync projects with your Google Calendar'}
-                </p>
-              </div>
+        <div style={{ background: 'var(--c-nested)', border: '1px solid var(--c-border)', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--c-card)', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Calendar size={20} style={{ color: '#4285f4' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>Google Calendar</p>
+              <p style={{ fontSize: 12, color: 'var(--c-text-4)', marginTop: 2 }}>
+                {calendarConnected ? (calendarEmail ?? 'Connected') : 'Sync projects with Google Calendar'}
+              </p>
             </div>
             {calendarConnected ? (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    fontSize: 12,
-                    color: 'var(--success)',
-                    fontWeight: 500,
-                  }}
-                >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--c-sage)', fontWeight: 600 }}>
                   <Check size={12} /> Connected
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  loading={calendarLoading}
-                  onClick={disconnectCalendar}
-                >
-                  Disconnect
-                </Button>
+                </span>
+                <Button variant="secondary" size="sm" loading={calendarLoading} onClick={disconnectCalendar}>Disconnect</Button>
               </div>
             ) : (
-              <Button size="sm" onClick={connectCalendar}>
+              <Button size="sm" onClick={connectCalendar} style={{ flexShrink: 0 }}>
                 Connect <ExternalLink size={12} />
               </Button>
             )}
           </div>
+        </div>
 
-          <div
-            style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border-subtle)' }}
-          >
-            <p
-              style={{
-                fontSize: 13,
-                fontWeight: 500,
-                color: 'var(--text-secondary)',
-                marginBottom: 8,
-              }}
-            >
-              Thumbtack Webhook URL
-            </p>
-            <div
-              style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 14px',
-                fontSize: 12,
-                fontFamily: 'monospace',
-                color: 'var(--blue)',
-                wordBreak: 'break-all',
-              }}
-            >
-              {typeof window !== 'undefined'
-                ? window.location.origin
-                : 'https://your-domain.vercel.app'}
-              /api/webhooks/thumbtack
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 6 }}>
-              Set header:{' '}
-              <code style={{ fontFamily: 'monospace' }}>
-                x-webhook-secret: {'<THUMBTACK_WEBHOOK_SECRET>'}
-              </code>
-            </p>
+        {/* Thumbtack webhook */}
+        <div style={{ background: 'var(--c-nested)', border: '1px solid var(--c-border)', borderRadius: 12, padding: '16px 20px' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-2)', marginBottom: 10 }}>Thumbtack Webhook URL</p>
+          <div style={{
+            background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 8,
+            padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', color: '#3583b3', wordBreak: 'break-all',
+          }}>
+            {typeof window !== 'undefined' ? window.location.origin : 'https://crm.skyglobalsvcs.com'}
+            /api/webhooks/thumbtack
           </div>
-        </Section>
-
-        {/* Data & Backups */}
-        <Section icon={Database} title="Data & Backups">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <p
-                  style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}
-                >
-                  Automated Backups
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                  {lastBackup
-                    ? `Last backup: ${new Date(lastBackup).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
-                    : 'Daily backups run at 2:00 AM UTC'}
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Button variant="secondary" size="sm" onClick={downloadBackup}>
-                  Download
-                </Button>
-                <Button size="sm" loading={backupLoading} onClick={triggerBackup}>
-                  Backup Now
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Section>
-
-        {/* Appearance */}
-        <Section icon={Palette} title="Appearance">
-          <p style={{ fontSize: 13, color: 'var(--c-text-4)', marginBottom: 16, marginTop: -8 }}>
-            Choose how SkyGlobal CRM looks. System follows your OS setting.
+          <p style={{ fontSize: 12, color: 'var(--c-text-4)', marginTop: 8 }}>
+            Set header: <code style={{ fontFamily: 'monospace', color: 'var(--c-gold)' }}>x-webhook-secret: {'<THUMBTACK_WEBHOOK_SECRET>'}</code>
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-            <ThemeCard
-              label="Light"
-              icon={Sun}
-              active={preference === 'light'}
-              onClick={() => setTheme('light')}
-              preview={
-                <div
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: '#f5f0e8',
-                    padding: '8px 10px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 5,
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <div
-                      style={{ width: 14, height: 14, borderRadius: 3, background: '#e0d5c0' }}
-                    />
-                    <div
-                      style={{
-                        width: 40,
-                        height: 6,
-                        borderRadius: 3,
-                        background: '#5c5240',
-                        opacity: 0.7,
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: '80%',
-                      height: 5,
-                      borderRadius: 3,
-                      background: '#8a7a60',
-                      opacity: 0.5,
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: '60%',
-                      height: 5,
-                      borderRadius: 3,
-                      background: '#8a7a60',
-                      opacity: 0.35,
-                    }}
-                  />
-                  <div
-                    style={{
-                      marginTop: 4,
-                      width: 36,
-                      height: 12,
-                      borderRadius: 4,
-                      background: '#e6ab35',
-                    }}
-                  />
-                </div>
-              }
-            />
-            <ThemeCard
-              label="Dark"
-              icon={Moon}
-              active={preference === 'dark'}
-              onClick={() => setTheme('dark')}
-              preview={
-                <div
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: '#1d1c17',
-                    padding: '8px 10px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 5,
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <div
-                      style={{ width: 14, height: 14, borderRadius: 3, background: '#3a3830' }}
-                    />
-                    <div
-                      style={{
-                        width: 40,
-                        height: 6,
-                        borderRadius: 3,
-                        background: '#efeae2',
-                        opacity: 0.8,
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: '80%',
-                      height: 5,
-                      borderRadius: 3,
-                      background: '#bfb9ae',
-                      opacity: 0.5,
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: '60%',
-                      height: 5,
-                      borderRadius: 3,
-                      background: '#bfb9ae',
-                      opacity: 0.35,
-                    }}
-                  />
-                  <div
-                    style={{
-                      marginTop: 4,
-                      width: 36,
-                      height: 12,
-                      borderRadius: 4,
-                      background: '#e6ab35',
-                    }}
-                  />
-                </div>
-              }
-            />
-            <ThemeCard
-              label="System"
-              icon={Monitor}
-              active={preference === 'system'}
-              onClick={() => setTheme('system')}
-              preview={
-                <div style={{ width: '100%', height: '100%', display: 'flex' }}>
-                  <div
-                    style={{
-                      flex: 1,
-                      background: '#f5f0e8',
-                      padding: '8px 6px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '100%',
-                        height: 6,
-                        borderRadius: 2,
-                        background: '#5c5240',
-                        opacity: 0.6,
-                      }}
-                    />
-                    <div
-                      style={{
-                        width: '80%',
-                        height: 4,
-                        borderRadius: 2,
-                        background: '#8a7a60',
-                        opacity: 0.4,
-                      }}
-                    />
-                    <div
-                      style={{
-                        marginTop: 6,
-                        width: 28,
-                        height: 8,
-                        borderRadius: 3,
-                        background: '#e6ab35',
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      flex: 1,
-                      background: '#1d1c17',
-                      padding: '8px 6px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '100%',
-                        height: 6,
-                        borderRadius: 2,
-                        background: '#efeae2',
-                        opacity: 0.7,
-                      }}
-                    />
-                    <div
-                      style={{
-                        width: '80%',
-                        height: 4,
-                        borderRadius: 2,
-                        background: '#bfb9ae',
-                        opacity: 0.4,
-                      }}
-                    />
-                    <div
-                      style={{
-                        marginTop: 6,
-                        width: 28,
-                        height: 8,
-                        borderRadius: 3,
-                        background: '#e6ab35',
-                      }}
-                    />
-                  </div>
-                </div>
-              }
-            />
+        </div>
+      </>
+    ),
+
+    data: (
+      <>
+        <SectionHead title="Data & Backups" description="Export and download your CRM data." />
+        <div style={{ background: 'var(--c-nested)', border: '1px solid var(--c-border)', borderRadius: 12, padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>Export All Data</p>
+              <p style={{ fontSize: 12, color: 'var(--c-text-4)', marginTop: 3 }}>
+                {lastBackup
+                  ? `Last backup: ${new Date(lastBackup).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                  : 'Download all customers, leads, projects, and expenses as JSON.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <Button variant="secondary" size="sm" onClick={downloadBackup}>Download</Button>
+              <Button size="sm" loading={backupLoading} onClick={triggerBackup}>Backup Now</Button>
+            </div>
           </div>
-        </Section>
+        </div>
+      </>
+    ),
+
+    security: (
+      <>
+        <SectionHead title="Security" description="Manage your password and active sessions." />
+
+        {/* Change password */}
+        <div style={{ marginBottom: 28 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--c-text-1)', margin: '0 0 16px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Change Password
+          </h3>
+          <FieldRow label="New Password">
+            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Min 8 characters" style={inputStyle}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+          </FieldRow>
+          <FieldRow label="Confirm New Password">
+            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repeat new password" style={inputStyle}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
+          </FieldRow>
+          <Button onClick={changePassword} loading={passwordLoading}>Update Password</Button>
+        </div>
 
         {/* Sign out */}
+        <div style={{ borderTop: '1px solid var(--c-border)', paddingTop: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--c-text-1)', margin: '0 0 6px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Sessions
+          </h3>
+          <p style={{ fontSize: 13, color: 'var(--c-text-4)', marginBottom: 16, lineHeight: 1.5 }}>
+            Sign out of this device or all devices at once.
+          </p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Button variant="secondary" size="sm" onClick={signOut}>Sign Out This Device</Button>
+            <Button variant="danger" size="sm" onClick={signOutAllDevices}>Sign Out All Devices</Button>
+          </div>
+        </div>
+      </>
+    ),
+  }
+
+  // ─── Layout ──────────────────────────────────────────────────────────────────
+
+  return (
+    <div
+      style={{ display: 'flex', minHeight: '100%', maxWidth: 1000, margin: '0 auto' }}
+      className="p-4 md:p-6 md:gap-6 flex-col md:flex-row"
+    >
+      {/* Sidebar nav */}
+      <aside
+        style={{
+          background: 'var(--c-card)',
+          border: '1px solid var(--c-border)',
+          borderRadius: 14,
+          padding: '8px',
+          alignSelf: 'flex-start',
+          boxShadow: 'var(--s-card)',
+        }}
+        className="w-full md:w-52 shrink-0 mb-4 md:mb-0 sticky top-6"
+      >
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '10px 12px 6px', fontFamily: "'DM Mono', monospace" }}>
+          Settings
+        </p>
+        {NAV_ITEMS.map(item => {
+          const isActive = activeSection === item.id
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveSection(item.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                padding: '9px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: isActive ? 700 : 500,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                background: isActive ? 'var(--c-gold-bg)' : 'transparent',
+                color: isActive ? 'var(--c-gold)' : 'var(--c-text-3)',
+                transition: 'background 150ms, color 150ms',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => {
+                if (!isActive) e.currentTarget.style.background = 'var(--c-nested)'
+              }}
+              onMouseLeave={e => {
+                if (!isActive) e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <item.icon size={15} aria-hidden="true" style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {isActive && <ChevronRight size={13} aria-hidden="true" />}
+            </button>
+          )
+        })}
+      </aside>
+
+      {/* Panel */}
+      <main style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--error-light)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '24px',
-            boxShadow: 'var(--shadow-sm)',
+            background: 'var(--c-card)',
+            border: '1px solid var(--c-border)',
+            borderRadius: 14,
+            padding: '28px 28px 32px',
+            boxShadow: 'var(--s-card)',
           }}
+          className="p-4 md:p-7"
         >
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--error)', margin: '0 0 8px' }}>
-            Sign Out
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-            Sign out of your account on this device.
-          </p>
-          <Button variant="danger" size="sm" onClick={signOut}>
-            Sign Out
-          </Button>
+          {panels[activeSection]}
         </div>
-      </div>
+      </main>
     </div>
-  );
+  )
 }

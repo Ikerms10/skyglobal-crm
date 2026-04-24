@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileNav } from '@/components/layout/MobileNav'
 import { NotificationBell } from '@/components/layout/NotificationBell'
 import { GlobalSearch } from '@/components/layout/GlobalSearch'
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -90,6 +91,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="md:hidden">
         <MobileNav />
       </div>
+
+      {/* Floating action button */}
+      <FloatingActionButton />
     </div>
   )
 }
