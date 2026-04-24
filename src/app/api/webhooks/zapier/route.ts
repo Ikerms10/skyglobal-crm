@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, getClientIp } from '@/lib/ratelimit'
+import { logAuditEvent } from '@/lib/audit'
+import { ZapierWebhookSchema } from '@/lib/validations'
 
+// Zapier fires from their servers, CORS needed for their health-check GET
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, x-webhook-secret',
 }
+
+// 30 lead ingestions per minute per IP
+const RATE_LIMIT = 30
+const RATE_WINDOW_MS = 60 * 1000
 
 export function GET() {
   return NextResponse.json({ status: 'ok' }, { headers: CORS_HEADERS })
@@ -16,27 +24,56 @@ export function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  let body: Record<string, unknown>
+  // ── Rate limiting ──────────────────────────────────────────────────────────
+  const ip = getClientIp(request)
+  if (!rateLimit(`zapier:${ip}`, RATE_LIMIT, RATE_WINDOW_MS)) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests.' },
+      { status: 429, headers: CORS_HEADERS }
+    )
+  }
+
+  // ── Webhook secret validation ──────────────────────────────────────────────
+  // Set ZAPIER_WEBHOOK_SECRET in Vercel env and in your Zapier zap headers.
+  const webhookSecret = process.env.ZAPIER_WEBHOOK_SECRET
+  if (webhookSecret) {
+    const provided = request.headers.get('x-webhook-secret')
+    if (provided !== webhookSecret) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401, headers: CORS_HEADERS }
+      )
+    }
+  }
+
+  // ── Parse & validate body ──────────────────────────────────────────────────
+  let rawBody: unknown
   try {
-    body = await request.json()
+    rawBody = await request.json()
   } catch {
-    return NextResponse.json({ success: false, error: 'Invalid JSON' }, { status: 400 })
+    return NextResponse.json(
+      { success: false, error: 'Invalid JSON' },
+      { status: 400, headers: CORS_HEADERS }
+    )
   }
 
-  const name = String(body.name ?? '').trim()
-  const description = String(body.description ?? '').trim()
-  if (!name || !description) {
-    return NextResponse.json({ success: false, error: 'name and description are required' }, { status: 400 })
+  const parsed = ZapierWebhookSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { success: false, error: 'Validation failed', details: parsed.error.flatten() },
+      { status: 422, headers: CORS_HEADERS }
+    )
   }
 
-  const phone = body.phone ? String(body.phone).trim() : null
-  const address = body.address ? String(body.address).trim() : null
-  const source = body.source ? String(body.source).trim() : 'Thumbtack'
+  const { name, description, phone, address, source } = parsed.data
 
-  // user_id can come from the payload or be set once as an env var for single-user setups
-  const userId = String(body.user_id ?? process.env.ZAPIER_USER_ID ?? '')
+  // user_id comes exclusively from env var — never from untrusted payload
+  const userId = process.env.ZAPIER_USER_ID
   if (!userId) {
-    return NextResponse.json({ success: false, error: 'user_id is required (payload or ZAPIER_USER_ID env var)' }, { status: 400 })
+    return NextResponse.json(
+      { success: false, error: 'Server misconfiguration: ZAPIER_USER_ID not set' },
+      { status: 500, headers: CORS_HEADERS }
+    )
   }
 
   const supabase = createClient(
@@ -45,7 +82,7 @@ export async function POST(request: NextRequest) {
   )
 
   try {
-    // Find existing customer by name
+    // Deduplicate by name (case-insensitive)
     const { data: existingCustomer } = await supabase
       .from('customers')
       .select('id')
@@ -64,11 +101,11 @@ export async function POST(request: NextRequest) {
         .insert({
           user_id: userId,
           name,
-          phone,
-          address,
+          phone: phone ?? null,
+          address: address ?? null,
           type: 'Residential',
-          referred_by: source,
-          tags: [source],
+          referred_by: source ?? 'Thumbtack',
+          tags: [source ?? 'Thumbtack'],
         })
         .select('id')
         .single()
@@ -92,9 +129,24 @@ export async function POST(request: NextRequest) {
 
     if (leadError) throw leadError
 
-    return NextResponse.json({ success: true, customerId, leadId: lead.id }, { headers: CORS_HEADERS })
+    await logAuditEvent(supabase, {
+      userId,
+      action: 'CREATE',
+      resourceType: 'lead',
+      resourceId: lead.id,
+      newValues: { source: 'zapier', customer_id: customerId, title: description.slice(0, 100) },
+      request,
+    })
+
+    return NextResponse.json(
+      { success: true, customerId, leadId: lead.id },
+      { headers: CORS_HEADERS }
+    )
   } catch (error) {
     console.error('Zapier webhook error:', error)
-    return NextResponse.json({ success: false, error: 'Failed to create lead' }, { status: 500, headers: CORS_HEADERS })
+    return NextResponse.json(
+      { success: false, error: 'Failed to create lead' },
+      { status: 500, headers: CORS_HEADERS }
+    )
   }
 }

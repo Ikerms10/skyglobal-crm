@@ -1,24 +1,24 @@
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+import type { NextRequest } from 'next/server'
+import { rateLimit, getClientIp } from '@/lib/ratelimit'
+
+// 10 OAuth initiations per minute per IP
+const RATE_LIMIT = 10
+const RATE_WINDOW_MS = 60 * 1000
+
+export async function GET(request: NextRequest) {
+  const ip = getClientIp(request)
+  if (!rateLimit(`calendar-auth:${ip}`, RATE_LIMIT, RATE_WINDOW_MS)) {
+    return Response.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+  }
+
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crm.skyglobalsvcs.com'
 
-  console.log('Calendar auth - clientId exists:', !!clientId)
-  console.log('Calendar auth - appUrl:', appUrl)
-
   if (!clientId || !clientSecret) {
-    return Response.json({
-      error: 'Google Calendar not configured',
-      hint: 'GOOGLE_CLIENT_ID environment variable is missing',
-      debug: {
-        hasClientId: !!clientId,
-        hasClientSecret: !!clientSecret,
-        hasAppUrl: !!appUrl,
-        nodeEnv: process.env.NODE_ENV,
-      },
-    }, { status: 503 })
+    return Response.json({ error: 'Google Calendar integration is not configured.' }, { status: 503 })
   }
 
   const redirectUri = `${appUrl}/api/calendar/callback`
@@ -36,6 +36,5 @@ export async function GET() {
     login_hint: 'skyglobalsvcs@gmail.com',
   })
 
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
-  return Response.redirect(authUrl)
+  return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
 }
