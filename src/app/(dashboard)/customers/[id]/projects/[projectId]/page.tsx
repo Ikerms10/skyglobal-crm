@@ -32,8 +32,10 @@ import {
   ChevronRight,
   Image as ImageIcon,
   FileText,
+  MessageSquare,
 } from 'lucide-react';
 import { TemplateSelector } from '@/components/proposals/TemplateSelector';
+import { ContactModal } from '@/components/ui/ContactModal';
 import { ProposalTemplate } from '@/types';
 
 const DownloadEstimateButton = dynamic(
@@ -278,6 +280,7 @@ export default function ProjectDetailPage({
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
   const [customerTypeModalOpen, setCustomerTypeModalOpen] = useState(false);
   const [proposalForExisting, setProposalForExisting] = useState<boolean | null>(null);
+  const [contactOpen, setContactOpen] = useState(false);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
 
   // Lead cost edit
@@ -875,6 +878,11 @@ export default function ProjectDetailPage({
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            {(project.customers?.phone || project.customers?.email) && (
+              <Button size="sm" variant="secondary" onClick={() => setContactOpen(true)}>
+                <MessageSquare className="h-4 w-4" /> Contact Client
+              </Button>
+            )}
             <DownloadProjectReportButton
               data={{
                 project,
@@ -1932,6 +1940,16 @@ export default function ProjectDetailPage({
           onClose={() => setTemplateSelectorOpen(false)}
         />
       )}
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        name={project.customers?.name ?? ''}
+        phone={project.customers?.phone}
+        email={project.customers?.email}
+        status={project.status}
+        resourceType="project"
+        resourceId={project.id}
+      />
     </div>
   );
 }

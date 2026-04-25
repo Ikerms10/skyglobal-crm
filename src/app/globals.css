@@ -534,6 +534,13 @@ textarea:focus {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ─── MOBILE: prevent iOS zoom on input focus ────────────────────────────── */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* ─── PRINT ──────────────────────────────────────────────────────────────── */
 @media print {
   aside,

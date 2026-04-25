@@ -14,17 +14,19 @@ import { useTheme } from '@/components/providers/ThemeProvider'
 
 // ─── Sidebar nav ─────────────────────────────────────────────────────────────
 
-type Section = 'profile' | 'appearance' | 'business' | 'integrations' | 'data' | 'security'
+type Section = 'profile' | 'appearance' | 'business' | 'notifications' | 'revenue' | 'integrations' | 'data' | 'security'
 
 interface NavItem { id: Section; icon: React.ElementType; label: string }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'profile',      icon: User,      label: 'Profile' },
-  { id: 'appearance',   icon: Palette,   label: 'Appearance' },
-  { id: 'business',     icon: Building2, label: 'Business Info' },
-  { id: 'integrations', icon: Calendar,  label: 'Integrations' },
-  { id: 'data',         icon: Database,  label: 'Data & Backups' },
-  { id: 'security',     icon: Shield,    label: 'Security' },
+  { id: 'profile',       icon: User,       label: 'Profile' },
+  { id: 'appearance',    icon: Palette,    label: 'Appearance' },
+  { id: 'business',      icon: Building2,  label: 'Business Info' },
+  { id: 'notifications', icon: Bell,       label: 'Notifications' },
+  { id: 'revenue',       icon: TrendingUp, label: 'Revenue Goals' },
+  { id: 'integrations',  icon: Calendar,   label: 'Integrations' },
+  { id: 'data',          icon: Database,   label: 'Data & Backups' },
+  { id: 'security',      icon: Shield,     label: 'Security' },
 ]
 
 // ─── Appearance cards ─────────────────────────────────────────────────────────
@@ -152,6 +154,17 @@ export default function SettingsPage() {
   const [businessAddress, setBusinessAddress] = useState('')
   const [businessLoading, setBusinessLoading] = useState(false)
 
+  // Notifications
+  const [notifyWeeklyReport, setNotifyWeeklyReport] = useState(true)
+  const [notifyProposalViewed, setNotifyProposalViewed] = useState(true)
+  const [notifyRainAlert, setNotifyRainAlert] = useState(false)
+  const [notifyLoading, setNotifyLoading] = useState(false)
+
+  // Revenue goals
+  const [monthlyGoal, setMonthlyGoal] = useState('')
+  const [annualGoal, setAnnualGoal] = useState('')
+  const [revenueLoading, setRevenueLoading] = useState(false)
+
   // Google Calendar
   const [calendarConnected, setCalendarConnected] = useState(false)
   const [calendarEmail, setCalendarEmail] = useState<string | null>(null)
@@ -175,17 +188,37 @@ export default function SettingsPage() {
   }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setEmail(user.email ?? '')
       setDisplayName(user.user_metadata?.display_name ?? '')
-      setBusinessName(user.user_metadata?.business_name ?? 'SkyGlobal')
-      setBusinessPhone(user.user_metadata?.business_phone ?? '')
-      setBusinessEmail(user.user_metadata?.business_email ?? '')
-      setBusinessAddress(user.user_metadata?.business_address ?? '')
       setCalendarConnected(user.user_metadata?.google_calendar_connected ?? false)
       setCalendarEmail(user.user_metadata?.google_calendar_email ?? null)
       setLastBackup(user.user_metadata?.last_backup ?? null)
+
+      const { data: biz } = await supabase
+        .from('business_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (biz) {
+        setBusinessName(biz.business_name ?? 'SkyGlobal')
+        setBusinessPhone(biz.business_phone ?? '')
+        setBusinessEmail(biz.business_email ?? '')
+        setBusinessAddress(biz.business_address ?? '')
+        setNotifyWeeklyReport(biz.notify_weekly_report ?? true)
+        setNotifyProposalViewed(biz.notify_proposal_viewed ?? true)
+        setNotifyRainAlert(biz.notify_rain_alert ?? false)
+        setMonthlyGoal(biz.monthly_revenue_goal != null ? String(biz.monthly_revenue_goal) : '')
+        setAnnualGoal(biz.annual_revenue_goal != null ? String(biz.annual_revenue_goal) : '')
+      } else {
+        // Fall back to legacy user_metadata values
+        setBusinessName(user.user_metadata?.business_name ?? 'SkyGlobal')
+        setBusinessPhone(user.user_metadata?.business_phone ?? '')
+        setBusinessEmail(user.user_metadata?.business_email ?? '')
+        setBusinessAddress(user.user_metadata?.business_address ?? '')
+      }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -222,15 +255,63 @@ export default function SettingsPage() {
   const saveBusiness = async () => {
     setBusinessLoading(true)
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { business_name: businessName, business_phone: businessPhone, business_email: businessEmail, business_address: businessAddress },
-      })
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { error } = await supabase.from('business_settings').upsert({
+        user_id: user.id,
+        business_name: businessName,
+        business_phone: businessPhone,
+        business_email: businessEmail,
+        business_address: businessAddress,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
       if (error) throw new Error(error.message)
       toast.success('Business info saved')
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to save')
     } finally {
       setBusinessLoading(false)
+    }
+  }
+
+  const saveNotifications = async () => {
+    setNotifyLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { error } = await supabase.from('business_settings').upsert({
+        user_id: user.id,
+        notify_weekly_report: notifyWeeklyReport,
+        notify_proposal_viewed: notifyProposalViewed,
+        notify_rain_alert: notifyRainAlert,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+      if (error) throw new Error(error.message)
+      toast.success('Notification preferences saved')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setNotifyLoading(false)
+    }
+  }
+
+  const saveRevenue = async () => {
+    setRevenueLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { error } = await supabase.from('business_settings').upsert({
+        user_id: user.id,
+        monthly_revenue_goal: monthlyGoal ? Number(monthlyGoal) : null,
+        annual_revenue_goal: annualGoal ? Number(annualGoal) : null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+      if (error) throw new Error(error.message)
+      toast.success('Revenue goals saved')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setRevenueLoading(false)
     }
   }
 
@@ -393,6 +474,73 @@ export default function SettingsPage() {
             onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
         </FieldRow>
         <Button onClick={saveBusiness} loading={businessLoading}>Save Business Info</Button>
+      </>
+    ),
+
+    notifications: (
+      <>
+        <SectionHead title="Notifications" description="Choose which alerts and reports you receive." />
+        {([
+          { key: 'weekly', label: 'Weekly Summary Report', desc: 'Receive a weekly digest of revenue, leads, and projects.', value: notifyWeeklyReport, set: setNotifyWeeklyReport },
+          { key: 'proposal', label: 'Proposal Viewed', desc: 'Get notified when a client opens your proposal.', value: notifyProposalViewed, set: setNotifyProposalViewed },
+          { key: 'rain', label: 'Rain Alert', desc: 'Weather alert when rain is forecast on a scheduled job day.', value: notifyRainAlert, set: setNotifyRainAlert },
+        ] as const).map(({ key, label, desc, value, set }) => (
+          <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--c-border)' }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>{label}</p>
+              <p style={{ fontSize: 12, color: 'var(--c-text-4)', marginTop: 3 }}>{desc}</p>
+            </div>
+            <button
+              onClick={() => set(!value)}
+              style={{
+                width: 42, height: 24, borderRadius: 12,
+                background: value ? 'var(--c-sage)' : 'var(--c-border-mid)',
+                border: 'none', cursor: 'pointer', position: 'relative',
+                transition: 'background 200ms', flexShrink: 0,
+              }}
+              aria-checked={value}
+              role="switch"
+            >
+              <span style={{
+                position: 'absolute', top: 3, left: value ? 21 : 3,
+                width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                transition: 'left 200ms',
+              }} />
+            </button>
+          </div>
+        ))}
+        <div style={{ marginTop: 20 }}>
+          <Button onClick={saveNotifications} loading={notifyLoading}>Save Preferences</Button>
+        </div>
+      </>
+    ),
+
+    revenue: (
+      <>
+        <SectionHead title="Revenue Goals" description="Set monthly and annual targets to track your progress on the dashboard." />
+        <FieldRow label="Monthly Revenue Goal ($)">
+          <input
+            type="number" min="0" step="100"
+            value={monthlyGoal}
+            onChange={e => setMonthlyGoal(e.target.value)}
+            placeholder="e.g. 25000"
+            style={inputStyle}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }}
+          />
+        </FieldRow>
+        <FieldRow label="Annual Revenue Goal ($)">
+          <input
+            type="number" min="0" step="1000"
+            value={annualGoal}
+            onChange={e => setAnnualGoal(e.target.value)}
+            placeholder="e.g. 300000"
+            style={inputStyle}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }}
+          />
+        </FieldRow>
+        <Button onClick={saveRevenue} loading={revenueLoading}>Save Goals</Button>
       </>
     ),
 

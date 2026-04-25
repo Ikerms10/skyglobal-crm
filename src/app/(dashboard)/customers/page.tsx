@@ -148,97 +148,158 @@ export default function CustomersPage() {
           action={{ label: 'Add Customer', onClick: () => setAddOpen(true) }}
         />
       ) : (
-        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
-                  {[
-                    { label: 'Name', field: 'name' as SortField },
-                    { label: 'Type', field: 'type' as SortField },
-                    { label: 'Phone', field: null },
-                    { label: 'Email', field: null },
-                    { label: 'City', field: 'city' as SortField },
-                    { label: 'Tags', field: null },
-                    { label: 'Lifetime Value', field: null },
-                    { label: 'Added', field: 'created_at' as SortField },
-                    { label: '', field: null },
-                  ].map(({ label, field }) => (
-                    <th key={label}
-                      onClick={field ? () => handleSort(field) : undefined}
-                      className={cn('text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-3)] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[var(--sg-text-1)] select-none')}
-                    >
-                      {label}{field && <SortIcon field={field} />}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((customer, i) => (
-                  <tr
-                    key={customer.id}
-                    onClick={() => router.push(`/customers/${customer.id}`)}
-                    className="data-table border-b border-[var(--sg-border)] transition-colors group cursor-pointer bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]"
-                  >
-                    <td className="px-4 py-3">
-                      <span className="text-sm font-medium text-[var(--sg-text-1)]">{customer.name}</span>
-                      {customer.company_name && <p className="text-xs text-[var(--sg-text-2)]">{customer.company_name}</p>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
-                    </td>
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      {customer.phone ? (
-                        <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-sm text-[var(--sg-text-1)] hover:text-[var(--sg-sky)] transition-colors">
-                          <Phone className="h-3 w-3" />{customer.phone}
-                        </a>
-                      ) : <span className="text-[var(--sg-text-2)]">—</span>}
-                    </td>
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      {customer.email ? (
-                        <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-sm text-[var(--sg-text-1)] hover:text-[var(--sg-sky)] transition-colors">
-                          <Mail className="h-3 w-3" /><span className="truncate max-w-[180px]">{customer.email}</span>
-                        </a>
-                      ) : <span className="text-[var(--sg-text-2)]">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{customer.city ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {customer.tags?.slice(0, 3).map(tag => (
-                          <span key={tag} className="text-xs px-1.5 py-0.5 bg-[var(--sg-elevated)] text-[var(--sg-text-2)] rounded">{tag}</span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {lifetimeValues[customer.id] ? (
-                        <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 13, color: 'var(--c-gold)' }}>
-                          {formatCurrency(lifetimeValues[customer.id])}
-                        </span>
-                      ) : <span className="text-[var(--sg-text-2)]">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(customer.created_at)}</td>
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                        <button
-                          onClick={e => { e.stopPropagation(); setEditCustomer(customer) }}
-                          className="p-1.5 text-[var(--sg-text-2)] hover:text-[var(--sg-sky)] transition-colors rounded"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); setDeleteId(customer.id) }}
-                          className="p-1.5 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-colors rounded"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+        <>
+          <div className="hidden sm:block bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
+                    {[
+                      { label: 'Name', field: 'name' as SortField },
+                      { label: 'Type', field: 'type' as SortField },
+                      { label: 'Phone', field: null },
+                      { label: 'Email', field: null },
+                      { label: 'City', field: 'city' as SortField },
+                      { label: 'Tags', field: null },
+                      { label: 'Lifetime Value', field: null },
+                      { label: 'Added', field: 'created_at' as SortField },
+                      { label: '', field: null },
+                    ].map(({ label, field }) => (
+                      <th key={label}
+                        onClick={field ? () => handleSort(field) : undefined}
+                        className={cn('text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-3)] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[var(--sg-text-1)] select-none')}
+                      >
+                        {label}{field && <SortIcon field={field} />}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((customer, i) => (
+                    <tr
+                      key={customer.id}
+                      onClick={() => router.push(`/customers/${customer.id}`)}
+                      className="data-table border-b border-[var(--sg-border)] transition-colors group cursor-pointer bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]"
+                    >
+                      <td className="px-4 py-3">
+                        <span className="text-sm font-medium text-[var(--sg-text-1)]">{customer.name}</span>
+                        {customer.company_name && <p className="text-xs text-[var(--sg-text-2)]">{customer.company_name}</p>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
+                      </td>
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        {customer.phone ? (
+                          <a href={`tel:${customer.phone}`} className="flex items-center gap-1 text-sm text-[var(--sg-text-1)] hover:text-[var(--sg-sky)] transition-colors">
+                            <Phone className="h-3 w-3" />{customer.phone}
+                          </a>
+                        ) : <span className="text-[var(--sg-text-2)]">—</span>}
+                      </td>
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        {customer.email ? (
+                          <a href={`mailto:${customer.email}`} className="flex items-center gap-1 text-sm text-[var(--sg-text-1)] hover:text-[var(--sg-sky)] transition-colors">
+                            <Mail className="h-3 w-3" /><span className="truncate max-w-[180px]">{customer.email}</span>
+                          </a>
+                        ) : <span className="text-[var(--sg-text-2)]">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)]">{customer.city ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {customer.tags?.slice(0, 3).map(tag => (
+                            <span key={tag} className="text-xs px-1.5 py-0.5 bg-[var(--sg-elevated)] text-[var(--sg-text-2)] rounded">{tag}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {lifetimeValues[customer.id] ? (
+                          <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 13, color: 'var(--c-gold)' }}>
+                            {formatCurrency(lifetimeValues[customer.id])}
+                          </span>
+                        ) : <span className="text-[var(--sg-text-2)]">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(customer.created_at)}</td>
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                          <button
+                            onClick={e => { e.stopPropagation(); setEditCustomer(customer) }}
+                            className="p-1.5 text-[var(--sg-text-2)] hover:text-[var(--sg-sky)] transition-colors rounded"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); setDeleteId(customer.id) }}
+                            className="p-1.5 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-colors rounded"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          <div className="sm:hidden flex flex-col gap-3">
+            {filtered.map(customer => (
+              <div
+                key={customer.id}
+                onClick={() => router.push(`/customers/${customer.id}`)}
+                className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4 flex items-center gap-3 cursor-pointer active:opacity-80 min-h-[44px]"
+              >
+                <div
+                  className="flex-shrink-0 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    background: 'linear-gradient(135deg, var(--sg-gold), var(--c-gold-dark, var(--sg-gold)))',
+                  }}
+                >
+                  {customer.name.charAt(0).toUpperCase()}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-sm text-[var(--sg-text-1)] truncate">{customer.name}</span>
+                    <Badge variant={customer.type === 'Commercial' ? 'purple' : 'info'}>{customer.type}</Badge>
+                  </div>
+                  <p className="text-xs text-[var(--sg-text-2)] truncate mt-0.5">
+                    {customer.phone ?? customer.email ?? customer.city ?? '—'}
+                  </p>
+                </div>
+
+                {lifetimeValues[customer.id] ? (
+                  <span
+                    className="flex-shrink-0"
+                    style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 13, color: 'var(--sg-gold)' }}
+                  >
+                    {formatCurrency(lifetimeValues[customer.id])}
+                  </span>
+                ) : null}
+
+                <div className="flex-shrink-0 flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={e => { e.stopPropagation(); setEditCustomer(customer) }}
+                    className="flex items-center justify-center text-[var(--sg-text-2)] hover:text-[var(--sg-sky)] transition-colors rounded"
+                    style={{ width: 36, height: 36 }}
+                    aria-label={`Edit ${customer.name}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); setDeleteId(customer.id) }}
+                    className="flex items-center justify-center text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-colors rounded"
+                    style={{ width: 36, height: 36 }}
+                    aria-label={`Delete ${customer.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       <AddCustomerDrawer open={addOpen} onClose={() => setAddOpen(false)} />

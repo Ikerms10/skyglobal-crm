@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { TemplateSelector } from '@/components/proposals/TemplateSelector'
 import { ProposalTemplate, ProposalStatus } from '@/types'
 import { Plus, FileText, Download, Copy, Trash2, Edit2, Loader2 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { downloadProposalPDF } from '@/components/proposals/ProposalPDF'
 import { format } from 'date-fns'
 
@@ -162,14 +163,12 @@ export default function ProposalsPage() {
             <Loader2 size={24} className="animate-spin" style={{ color: 'var(--sg-gold)' }} />
           </div>
         ) : proposals.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 240, gap: 16 }}>
-            <FileText size={40} style={{ color: 'var(--sg-text-3)' }} />
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'var(--sg-text-2)', marginBottom: 4 }}>No proposals yet</p>
-              <p style={{ color: 'var(--sg-text-3)', fontSize: 13 }}>Create your first proposal to get started</p>
-            </div>
-            <Button onClick={() => setShowSelector(true)}><Plus size={15} /> Create Proposal</Button>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No proposals yet"
+            description="Create your first proposal to start winning jobs."
+            action={{ label: '+ New Proposal', onClick: () => setShowSelector(true) }}
+          />
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>

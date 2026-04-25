@@ -45,6 +45,7 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
   const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
   const getDefaults = (l: Lead | null): FormData => ({
     title: l?.title ?? '',
@@ -96,8 +97,11 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       clearDraft()
-      toast.success('Lead updated')
-      onClose()
+      setSaveSuccess(true)
+      setTimeout(() => {
+        setSaveSuccess(false)
+        onClose()
+      }, 1500)
     },
     onError: (err: Error) => toast.error(err.message || 'Failed to update lead'),
   })
@@ -110,8 +114,20 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
-      toast.success('Lead deleted')
       onClose()
+      const deletedId = lead!.id
+      toast.success('Lead deleted', {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            const supabase = createClient()
+            await supabase.from('leads').update({ deleted_at: null }).eq('id', deletedId)
+            queryClient.invalidateQueries({ queryKey: ['leads'] })
+            toast.success('Lead restored')
+          },
+        },
+        duration: 5000,
+      })
     },
     onError: () => toast.error('Failed to delete lead'),
   })
@@ -200,7 +216,14 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
           </div>
 
           <div className="flex gap-3">
-            <Button type="submit" loading={mutation.isPending} className="flex-1">Save Changes</Button>
+            <Button
+              type="submit"
+              loading={mutation.isPending}
+              variant={saveSuccess ? 'success' : 'primary'}
+              className="flex-1"
+            >
+              {saveSuccess ? '✓ Saved' : 'Save Changes'}
+            </Button>
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
           </div>
 
