@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
+import { GradeBadge } from '@/components/ui/GradeBadge';
 import { WorkOrdersTab } from '@/components/projects/WorkOrdersTab';
 import { AddActivityModal } from '@/components/customers/AddActivityModal';
 import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink';
@@ -928,11 +929,6 @@ export default function ProjectDetailPage({
             color: profit >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]',
           },
           {
-            label: 'Margin %',
-            value: `${margin}%`,
-            color: margin >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]',
-          },
-          {
             label: 'Balance Due',
             value: formatCurrency(balanceDue),
             color: balanceDue > 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-text-2)]',
@@ -946,6 +942,16 @@ export default function ProjectDetailPage({
             <p className={cn('text-lg font-bold', color)}>{value}</p>
           </div>
         ))}
+        {/* Profit grade card */}
+        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4 flex flex-col">
+          <p className="text-xs text-[var(--sg-text-2)] mb-1">Margin %</p>
+          <div className="flex items-center gap-2">
+            <p className={cn('text-lg font-bold', margin >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]')}>
+              {margin}%
+            </p>
+            <GradeBadge contractValue={contractValue} totalCosts={totalCosts} leadCost={leadCost} size={24} />
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}

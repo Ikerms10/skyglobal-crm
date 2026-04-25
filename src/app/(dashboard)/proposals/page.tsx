@@ -149,7 +149,7 @@ export default function ProposalsPage() {
               <div key={s} style={{ background: 'var(--sg-surface)', border: '1px solid var(--sg-border)', borderRadius: 12, padding: '16px 20px' }}>
                 <div style={{ fontSize: 12, color: 'var(--sg-text-3)', marginBottom: 4, fontFamily: "'DM Mono', monospace", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--sg-text-1)', fontFamily: "'DM Mono', monospace" }}>{count}</div>
-                {total > 0 && <div style={{ fontSize: 11, color: col.text, fontFamily: "'DM Mono', monospace" }}>${total.toLocaleString()}</div>}
+                {total > 0 && <div style={{ fontSize: 11, color: col.text, fontFamily: "'DM Mono', monospace" }}>{formatCurrency(total)}</div>}
               </div>
             )
           })}
