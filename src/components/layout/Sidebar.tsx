@@ -17,6 +17,7 @@ import {
   TrendingUp,
   Sun,
   Moon,
+  ClipboardList,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ const mainNav = [
   { href: '/daily', label: 'Daily', icon: CalendarCheck },
 ];
 const businessNav = [
+  { href: '/invoices', label: 'Invoices', icon: ClipboardList },
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   { href: '/reports', label: 'Reports', icon: BarChart2 },
   { href: '/schedule', label: 'Schedule', icon: Calendar },

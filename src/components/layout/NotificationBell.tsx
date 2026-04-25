@@ -4,7 +4,9 @@ import { Bell, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
-import { differenceInDays, parseISO } from 'date-fns'
+import { differenceInDays, formatDistanceToNow, parseISO } from 'date-fns'
+import { toast } from 'sonner'
+import { AppNotification } from '@/types'
 
 const SEEN_KEY = 'sg_seen_notifications'
 
@@ -38,8 +40,47 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [data, setData] = useState<NotifData>({ followUps: [], payments: [], pastDue: [] })
   const [seen, setSeen] = useState<Set<string>>(new Set())
+  const [dbNotifs, setDbNotifs] = useState<AppNotification[]>([])
   const router = useRouter()
   const ref = useRef<HTMLDivElement>(null)
+
+  const loadDbNotifs = async () => {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      setDbNotifs((data ?? []) as AppNotification[])
+    } catch {}
+  }
+
+  const markDbRead = async (id: string) => {
+    const supabase = createClient()
+    await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id)
+    setDbNotifs(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
+  }
+
+  const markAllDbRead = async () => {
+    const supabase = createClient()
+    const now = new Date().toISOString()
+    const unreadIds = dbNotifs.filter(n => !n.read_at).map(n => n.id)
+    if (!unreadIds.length) return
+    await supabase.from('notifications').update({ read_at: now }).in('id', unreadIds)
+    setDbNotifs(prev => prev.map(n => ({ ...n, read_at: n.read_at ?? now })))
+  }
+
+  const clearReadDbNotifs = async () => {
+    const supabase = createClient()
+    const readIds = dbNotifs.filter(n => n.read_at).map(n => n.id)
+    if (!readIds.length) return
+    await supabase.from('notifications').delete().in('id', readIds)
+    setDbNotifs(prev => prev.filter(n => !n.read_at))
+  }
 
   const load = async () => {
     try {
@@ -93,8 +134,24 @@ export function NotificationBell() {
   useEffect(() => {
     setSeen(getSeenIds())
     load()
+    loadDbNotifs()
     const interval = setInterval(load, 5 * 60 * 1000)
-    return () => clearInterval(interval)
+
+    // Supabase Realtime — push new DB notifications instantly
+    const supabase = createClient()
+    const channel = supabase
+      .channel('notifications-bell')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+        const notif = payload.new as AppNotification
+        setDbNotifs(prev => [notif, ...prev])
+        toast(notif.title, { description: notif.body ?? undefined })
+      })
+      .subscribe()
+
+    return () => {
+      clearInterval(interval)
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   useEffect(() => {
@@ -110,12 +167,14 @@ export function NotificationBell() {
     ...data.payments.map(x => x.id),
     ...data.pastDue.map(x => x.id),
   ]
-  const unseenCount = allIds.filter(id => !seen.has(id)).length
+  const dbUnread = dbNotifs.filter(n => !n.read_at).length
+  const unseenCount = allIds.filter(id => !seen.has(id)).length + dbUnread
 
   const markAllRead = () => {
     const next = new Set<string>(Array.from(seen).concat(allIds))
     setSeen(next)
     saveSeenIds(next)
+    markAllDbRead()
   }
 
   const handleNavigate = (href: string, id: string) => {
@@ -126,7 +185,7 @@ export function NotificationBell() {
     setOpen(false)
   }
 
-  const isEmpty = allIds.length === 0
+  const isEmpty = allIds.length === 0 && dbNotifs.length === 0
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -231,7 +290,7 @@ export function NotificationBell() {
                 </span>
               )}
             </div>
-            {allIds.length > 0 && (
+            {(allIds.length > 0 || dbNotifs.length > 0) && (
               <button
                 onClick={markAllRead}
                 style={{
@@ -271,6 +330,62 @@ export function NotificationBell() {
               </div>
             ) : (
               <>
+                {/* DB-backed notifications */}
+                {dbNotifs.length > 0 && (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={sectionHeader}>Alerts</span>
+                      {dbNotifs.some(n => n.read_at) && (
+                        <button onClick={clearReadDbNotifs} style={{ fontSize: 9, color: 'var(--c-text-4)', background: 'none', border: 'none', cursor: 'pointer', paddingRight: 16, fontFamily: "'DM Mono', monospace" }}>
+                          Clear read
+                        </button>
+                      )}
+                    </div>
+                    {dbNotifs.map(notif => {
+                      const isUnread = !notif.read_at
+                      return (
+                        <button
+                          key={notif.id}
+                          onClick={() => {
+                            markDbRead(notif.id)
+                            if (notif.action_url) { router.push(notif.action_url); setOpen(false) }
+                          }}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            padding: '10px 16px',
+                            textAlign: 'left',
+                            background: isUnread ? 'rgba(122,158,126,0.04)' : 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--c-border)',
+                            borderLeft: isUnread ? '3px solid var(--c-sage)' : '3px solid transparent',
+                            cursor: 'pointer',
+                            transition: 'background 100ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-nested)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = isUnread ? 'rgba(122,158,126,0.04)' : 'transparent' }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 12, fontWeight: isUnread ? 700 : 500, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                              {notif.title}
+                            </p>
+                            {notif.body && (
+                              <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: '1px 0 0', fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {notif.body}
+                              </p>
+                            )}
+                            <p style={{ fontSize: 10, color: 'var(--c-text-4)', marginTop: 2, fontFamily: "'DM Mono', monospace" }}>
+                              {formatDistanceToNow(parseISO(notif.created_at), { addSuffix: true })}
+                            </p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
                 {data.followUps.length > 0 && (
                   <div>
                     <span style={sectionHeader}>Overdue Follow-ups</span>

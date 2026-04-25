@@ -168,3 +168,77 @@ export interface ProposalLineItem {
   sort_order: number
   created_at: string
 }
+
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue'
+export type EventType = 'estimate' | 'job' | 'payment' | 'deadline' | 'personal'
+export type NotificationType =
+  | 'proposal_signed'
+  | 'lead_stale'
+  | 'invoice_overdue'
+  | 'job_tomorrow'
+  | 'proposal_viewed'
+  | 'new_lead'
+  | 'weekly_report'
+
+export interface Invoice {
+  id: string
+  user_id: string
+  project_id: string | null
+  customer_id: string | null
+  invoice_number: string
+  status: InvoiceStatus
+  issue_date: string
+  due_date: string | null
+  payment_terms: string
+  notes: string | null
+  paid_at: string | null
+  payment_method: string | null
+  payment_notes: string | null
+  total: number
+  deleted_at: string | null
+  created_at: string
+  updated_at: string
+  project?: { id: string; title: string } | null
+  customer?: { id: string; name: string } | null
+}
+
+export interface InvoiceLineItem {
+  id: string
+  invoice_id: string
+  description: string
+  quantity: number | null
+  unit_price: number | null
+  total: number | null
+  sort_order: number
+  created_at: string
+}
+
+export interface AppNotification {
+  id: string
+  user_id: string
+  type: NotificationType
+  title: string
+  body: string | null
+  resource_type: string | null
+  resource_id: string | null
+  action_url: string | null
+  icon: string
+  read_at: string | null
+  created_at: string
+}
+
+export interface CalendarEvent {
+  id: string
+  user_id: string
+  title: string
+  type: EventType
+  start_at: string
+  end_at: string | null
+  all_day: boolean
+  project_id: string | null
+  lead_id: string | null
+  notes: string | null
+  created_at: string
+  project?: { id: string; title: string } | null
+  lead?: { id: string; title: string } | null
+}

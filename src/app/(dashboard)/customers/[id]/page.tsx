@@ -177,6 +177,33 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   const openLeads = leads.filter((l) => !['Won', 'Lost'].includes(l.stage)).length;
   const avgProjectValue = projects.length > 0 ? totalRevenue / projects.length : 0;
 
+  // Customer score (RFM-based)
+  const lastProject = projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+  const daysSinceLast = lastProject
+    ? Math.floor((Date.now() - new Date(lastProject.created_at).getTime()) / 86400000)
+    : null;
+  const customerScore = (() => {
+    let score = 0;
+    if (totalRevenue > 10000) score += 40;
+    else if (totalRevenue > 5000) score += 30;
+    else if (totalRevenue > 2000) score += 20;
+    else score += 10;
+    if (daysSinceLast == null) score += 0;
+    else if (daysSinceLast < 90) score += 30;
+    else if (daysSinceLast < 180) score += 20;
+    else if (daysSinceLast < 365) score += 10;
+    if (projects.length >= 5) score += 30;
+    else if (projects.length >= 3) score += 20;
+    else if (projects.length >= 2) score += 10;
+    else score += 5;
+    if (score >= 80) return 'A';
+    if (score >= 60) return 'B';
+    if (score >= 40) return 'C';
+    return 'D';
+  })();
+  const SCORE_COLORS: Record<string, string> = { A: 'var(--c-sage)', B: 'var(--c-gold)', C: '#e07020', D: 'var(--c-danger)' };
+  const SCORE_LABELS: Record<string, string> = { A: 'VIP Client', B: 'Good', C: 'Average', D: 'At Risk' };
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Back */}
@@ -304,6 +331,41 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Customer Scorecard */}
+      <div style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 12, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-text-2)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.01em' }}>
+            Customer Scorecard
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 24, fontWeight: 700, color: SCORE_COLORS[customerScore], fontFamily: "'DM Mono', monospace" }}>
+              {customerScore}
+            </span>
+            <span style={{ fontSize: 11, color: SCORE_COLORS[customerScore], fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+              {SCORE_LABELS[customerScore]}
+            </span>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          {[
+            { label: 'Total Jobs', value: String(projects.length) },
+            { label: 'Lifetime Revenue', value: formatCurrency(totalRevenue) },
+            { label: 'Avg Job Value', value: projects.length > 0 ? formatCurrency(avgProjectValue) : '—' },
+            { label: 'Days Since Last Job', value: daysSinceLast != null ? `${daysSinceLast}d` : '—' },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <div style={{ fontSize: 10, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>{label}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', fontFamily: "'DM Mono', monospace" }}>{value}</div>
+            </div>
+          ))}
+        </div>
+        {daysSinceLast != null && daysSinceLast > 180 && (
+          <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(185,74,58,0.08)', border: '1px solid rgba(185,74,58,0.20)', borderRadius: 8, fontSize: 12, color: 'var(--c-danger)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            ⚠️ No work in {daysSinceLast} days — consider a re-engagement message.
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

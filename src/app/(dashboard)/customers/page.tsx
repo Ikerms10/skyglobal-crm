@@ -24,6 +24,8 @@ export default function CustomersPage() {
   const router = useRouter()
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
+  const [showReEngage, setShowReEngage] = useState(false)
+  const [textCheckIn, setTextCheckIn] = useState<Customer | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
@@ -64,6 +66,32 @@ export default function CustomersPage() {
       }
       return map
     },
+  })
+
+  const { data: lastJobDates = {} } = useQuery({
+    queryKey: ['customer-last-job-dates'],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return {}
+      const { data } = await supabase.from('projects')
+        .select('customer_id, created_at')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+      const map: Record<string, string> = {}
+      for (const p of data ?? []) {
+        if (p.customer_id && !map[p.customer_id]) map[p.customer_id] = p.created_at
+      }
+      return map
+    },
+  })
+
+  const reEngageCustomers = customers.filter(c => {
+    const last = lastJobDates[c.id]
+    if (!last) return false
+    const days = Math.floor((Date.now() - new Date(last).getTime()) / 86400000)
+    return days > 180
   })
 
   const deleteMutation = useMutation({
@@ -122,7 +150,7 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-center">
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -131,14 +159,63 @@ export default function CustomersPage() {
         />
         <select
           value={filterType}
-          onChange={e => setFilterType(e.target.value)}
+          onChange={e => { setFilterType(e.target.value); setShowReEngage(false) }}
           className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]"
         >
           <option value="">All Types</option>
           <option value="Residential">Residential</option>
           <option value="Commercial">Commercial</option>
         </select>
+        <button
+          onClick={() => { setShowReEngage(v => !v); setFilterType('') }}
+          style={{
+            padding: '6px 14px',
+            borderRadius: 8,
+            border: `1px solid ${showReEngage ? 'var(--c-danger)' : 'var(--c-border)'}`,
+            background: showReEngage ? 'rgba(185,74,58,0.10)' : 'transparent',
+            color: showReEngage ? 'var(--c-danger)' : 'var(--c-text-3)',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: "'DM Mono', monospace",
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          ⚠️ Re-engage {reEngageCustomers.length > 0 && `(${reEngageCustomers.length})`}
+        </button>
       </div>
+
+      {showReEngage && reEngageCustomers.length > 0 && (
+        <div style={{ background: 'rgba(185,74,58,0.06)', border: '1px solid rgba(185,74,58,0.20)', borderRadius: 12, padding: 16 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--c-danger)', fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Customers with no work in 6+ months
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {reEngageCustomers.map(c => {
+              const days = Math.floor((Date.now() - new Date(lastJobDates[c.id]).getTime()) / 86400000)
+              const msg = `Hi ${c.name.split(' ')[0]}! It's Iker from SkyGlobal Renovations — hope you're doing great! It's been a while and I wanted to reach out. If you have any painting or renovation needs coming up, I'd love to help again. Give me a call anytime! 352-782-2460 🎨`
+              return (
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 8, padding: '10px 14px' }}>
+                  <div>
+                    <span style={{ fontWeight: 600, color: 'var(--c-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14 }}>{c.name}</span>
+                    <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--c-danger)', fontFamily: "'DM Mono', monospace" }}>{days}d inactive</span>
+                  </div>
+                  {c.phone && (
+                    <a
+                      href={`sms:${c.phone}?body=${encodeURIComponent(msg)}`}
+                      style={{ fontSize: 12, color: 'var(--c-sage)', background: 'rgba(122,158,126,0.10)', border: '1px solid rgba(122,158,126,0.25)', borderRadius: 6, padding: '5px 12px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Mono', monospace', whiteSpace: 'nowrap'" }}
+                    >
+                      📱 Send Check-In
+                    </a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {isLoading ? <TableSkeleton rows={8} /> : filtered.length === 0 ? (
         <EmptyState
