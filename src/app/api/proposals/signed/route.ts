@@ -3,10 +3,8 @@ import { Resend } from 'resend'
 
 import { createServiceClient } from '@/lib/supabase/service'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const CRM_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://skyglobalsvcs.com'
-
 export async function POST(req: NextRequest) {
+  const CRM_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://skyglobalsvcs.com'
   let body: { token: string; signatureBase64: string; clientIp?: string }
   try {
     body = await req.json()
@@ -117,6 +115,7 @@ export async function POST(req: NextRequest) {
       </div>
     `
 
+    const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from: 'SkyGlobal CRM <notifications@skyglobalsvcs.com>',
       to: ['ikerms10@gmail.com', 'skyglobalsvcs@gmail.com'],
