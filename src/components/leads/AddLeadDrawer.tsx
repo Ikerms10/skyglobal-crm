@@ -95,6 +95,10 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
 
       let customerId = selectedCustomer?.id ?? null
 
+      if (customerMode === 'new' && !data.new_customer_name?.trim()) {
+        throw new Error('Customer name is required')
+      }
+
       if (customerMode === 'new' && data.new_customer_name) {
         const { data: newCustomer, error } = await supabase
           .from('customers')

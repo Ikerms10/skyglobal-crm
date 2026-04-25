@@ -289,11 +289,14 @@ export default function ReportsPage() {
 
   // Project performance table
   const projectPerf = useMemo(() => {
+    // Pre-aggregate expenses by project_id to avoid O(n×m) .filter() in .map()
+    const expByProject = new Map<string, number>()
+    for (const e of projExpByProject) {
+      expByProject.set(e.project_id, (expByProject.get(e.project_id) ?? 0) + e.amount)
+    }
     return filteredProjects
       .map((p) => {
-        const costs = projExpByProject
-          .filter((e) => e.project_id === p.id)
-          .reduce((s: number, e: any) => s + e.amount, 0);
+        const costs = expByProject.get(p.id) ?? 0;
         const profit = (p.contract_value ?? 0) - (p.lead_cost ?? 0) - costs;
         const margin =
           (p.contract_value ?? 0) > 0 ? Math.round((profit / p.contract_value) * 100) : 0;

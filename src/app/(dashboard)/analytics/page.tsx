@@ -179,8 +179,10 @@ export default function AnalyticsPage() {
     if (!rawData) return []
     const map: Record<string, number> = {}
     const filteredLeads = rawData.leads.filter((l: any) => l.created_at >= rangeStart.toISOString())
+    // Pre-build Map to avoid O(n×m) .find() inside forEach
+    const projectByCustomer = new Map(rawData.projects.map((p: any) => [p.customer_id, p]))
     filteredLeads.forEach((l: any) => {
-      const proj = rawData.projects.find((p: any) => p.customer_id === l.customer_id)
+      const proj = projectByCustomer.get(l.customer_id)
       const val = proj?.contract_value ?? l.estimated_value ?? 0
       map[l.source] = (map[l.source] ?? 0) + val
     })
@@ -230,10 +232,12 @@ export default function AnalyticsPage() {
     const sourceMap: Record<string, number> = {}
     fl.forEach((l: any) => { sourceMap[l.source] = (sourceMap[l.source] ?? 0) + 1 })
     const topSource = Object.entries(sourceMap).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
+    // Pre-build Map to avoid O(n×m) .find() inside map
+    const projectByCustomerForMetrics = new Map(rawData.projects.map((p: any) => [p.customer_id, p]))
     const closedWithDays = fl
       .filter((l: any) => l.stage === 'Won')
       .map((l: any) => {
-        const proj = rawData.projects.find((p: any) => p.customer_id === l.customer_id)
+        const proj = projectByCustomerForMetrics.get(l.customer_id)
         if (!proj?.start_date) return null
         const days = differenceInDays(parseISO(proj.start_date), parseISO(l.created_at))
         return days >= 0 ? days : null

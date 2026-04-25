@@ -4,6 +4,7 @@ import { Search, User, Briefcase, Target, X, Loader2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { useDebounce } from '@/lib/hooks/useDebounce'
+import { formatCurrency } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
 const RECENT_KEY = 'sg_recent_search'
@@ -90,7 +91,7 @@ export function GlobalSearch() {
   const allResults: { href: string; label: string; sub: string; type: 'customer' | 'lead' | 'project'; id: string }[] = []
   if (data) {
     data.customers.forEach((c: any) => allResults.push({ href: `/customers/${c.id}`, label: c.name, sub: c.phone || c.email || c.type, type: 'customer', id: c.id }))
-    data.leads.forEach((l: any) => allResults.push({ href: '/leads', label: l.title, sub: `${l.stage}${l.estimated_value ? ` · $${l.estimated_value.toLocaleString()}` : ''}`, type: 'lead', id: l.id }))
+    data.leads.forEach((l: any) => allResults.push({ href: '/leads', label: l.title, sub: `${l.stage}${l.estimated_value ? ` · ${formatCurrency(l.estimated_value)}` : ''}`, type: 'lead', id: l.id }))
     data.projects.forEach((p: any) => {
       const custName = Array.isArray(p.customers) ? p.customers[0]?.name : p.customers?.name
       allResults.push({ href: `/customers/${p.customer_id}/projects/${p.id}`, label: p.title, sub: `${p.status}${custName ? ` · ${custName}` : ''}`, type: 'project', id: p.id })
@@ -338,7 +339,7 @@ export function GlobalSearch() {
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontSize: 13, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
                           <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0, fontFamily: "'DM Mono', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {l.stage}{l.estimated_value ? ` · $${l.estimated_value.toLocaleString()}` : ''}
+                            {l.stage}{l.estimated_value ? ` · ${formatCurrency(l.estimated_value)}` : ''}
                             {custName ? ` · ${custName}` : ''}
                           </p>
                         </div>
@@ -377,7 +378,7 @@ export function GlobalSearch() {
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontSize: 13, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</p>
                           <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0, fontFamily: "'DM Mono', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {p.status}{p.contract_value ? ` · $${p.contract_value.toLocaleString()}` : ''}
+                            {p.status}{p.contract_value ? ` · ${formatCurrency(p.contract_value)}` : ''}
                             {custName ? ` · ${custName}` : ''}
                           </p>
                         </div>
