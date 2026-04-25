@@ -10,7 +10,8 @@ import { LeadDrawer } from '@/components/leads/LeadDrawer'
 import { AddLeadDrawer } from '@/components/leads/AddLeadDrawer'
 import { CreateProjectModal } from '@/components/leads/CreateProjectModal'
 import { LostReasonModal } from '@/components/leads/LostReasonModal'
-import { Plus, Search, List, Columns } from 'lucide-react'
+import { Plus, Search, List, Columns, Users } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { toast } from 'sonner'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { fireWinConfetti } from '@/lib/confetti'
@@ -43,10 +44,14 @@ function KanbanColumn({
   stage,
   leads,
   onCardClick,
+  proposalMap,
+  activityMap,
 }: {
   stage: LeadStage
   leads: Lead[]
   onCardClick: (lead: Lead) => void
+  proposalMap: Record<string, number>
+  activityMap: Record<string, string>
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const totalValue = leads.reduce((sum, l) => sum + (l.estimated_value ?? 0), 0)
@@ -114,9 +119,18 @@ function KanbanColumn({
 
       {/* Drop zone */}
       <div ref={setNodeRef} style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, padding: 10 }}>
-        {leads.map(lead => (
-          <LeadCard key={lead.id} lead={lead} onClick={onCardClick} />
-        ))}
+        {leads.map(lead => {
+          const customer = lead.customer as { id?: string } | null
+          return (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              onClick={onCardClick}
+              proposalValue={customer?.id ? (proposalMap[customer.id] ?? null) : null}
+              lastActivity={activityMap[lead.id] ?? null}
+            />
+          )
+        })}
       </div>
     </div>
   )
@@ -125,70 +139,110 @@ function KanbanColumn({
 type FilterMode = 'all' | 'overdue' | 'high-value'
 type ViewMode = 'board' | 'list'
 
-function LeadListView({ leads, onCardClick }: { leads: Lead[]; onCardClick: (lead: Lead) => void }) {
+function LeadListView({
+  leads,
+  onCardClick,
+  proposalMap,
+  activityMap,
+}: {
+  leads: Lead[]
+  onCardClick: (lead: Lead) => void
+  proposalMap: Record<string, number>
+  activityMap: Record<string, string>
+}) {
+  const grouped = STAGES.map(stage => ({
+    stage,
+    items: leads.filter(l => l.stage === stage),
+  })).filter(g => g.items.length > 0)
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {leads.map(lead => {
-        const customer = lead.customer as { name?: string; phone?: string; type?: string } | null
-        const stageConfig = STAGE_CONFIG[lead.stage]
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {grouped.map(({ stage, items }) => {
+        const stageConfig = STAGE_CONFIG[stage]
         return (
-          <div
-            key={lead.id}
-            onClick={() => onCardClick(lead)}
-            style={{
-              background: 'var(--c-card)',
-              border: '1px solid var(--c-border-light)',
-              borderLeft: `3px solid ${stageConfig.headerColor}`,
-              borderRadius: 10,
-              padding: '12px 16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              transition: 'background 150ms, box-shadow 150ms',
-            }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLDivElement
-              el.style.background = 'var(--c-card-hover)'
-              el.style.boxShadow = 'var(--s-card-hover)'
-              el.style.borderLeftColor = '#e6ab35'
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLDivElement
-              el.style.background = 'var(--c-card)'
-              el.style.boxShadow = 'none'
-              el.style.borderLeftColor = stageConfig.headerColor
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {customer?.name ?? lead.title}
-              </p>
-              <p style={{ fontSize: 12, color: 'var(--c-text-4)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {lead.title}
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              {lead.estimated_value != null && lead.estimated_value > 0 && (
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-gold)', fontFamily: "'DM Mono', monospace" }}>
-                  {formatCurrency(lead.estimated_value)}
-                </span>
-              )}
+          <div key={stage}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: stageConfig.headerColor,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                fontFamily: "'DM Mono', monospace",
+              }}>
+                {stage}
+              </span>
               <span style={{
                 fontSize: 10,
-                fontWeight: 700,
-                padding: '2px 7px',
-                borderRadius: 4,
-                background: `${stageConfig.glow}`,
-                color: stageConfig.headerColor,
-                border: `1px solid ${stageConfig.headerColor}40`,
-                fontFamily: "'DM Mono', monospace",
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
+                fontWeight: 600,
+                padding: '1px 6px',
+                borderRadius: 99,
+                background: 'var(--c-sidebar-active)',
+                color: 'var(--c-text-3)',
               }}>
-                {lead.stage}
+                {items.length}
               </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {items.map(lead => {
+                const customer = lead.customer as { id?: string; name?: string; phone?: string; type?: string } | null
+                return (
+                  <div
+                    key={lead.id}
+                    onClick={() => onCardClick(lead)}
+                    style={{
+                      background: 'var(--c-card)',
+                      border: '1px solid var(--c-border-light)',
+                      borderLeft: `3px solid ${stageConfig.headerColor}`,
+                      borderRadius: 10,
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      transition: 'background 150ms, box-shadow 150ms',
+                    }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLDivElement
+                      el.style.background = 'var(--c-card-hover)'
+                      el.style.boxShadow = 'var(--s-card-hover)'
+                      el.style.borderLeftColor = '#e6ab35'
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLDivElement
+                      el.style.background = 'var(--c-card)'
+                      el.style.boxShadow = 'none'
+                      el.style.borderLeftColor = stageConfig.headerColor
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {customer?.name ?? lead.title}
+                      </p>
+                      <p style={{ fontSize: 12, color: 'var(--c-text-4)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {lead.title}
+                      </p>
+                      {activityMap[lead.id] && (
+                        <p style={{ fontSize: 10, color: 'var(--c-text-4)', margin: '2px 0 0', fontFamily: "'DM Mono', monospace" }}>
+                          Last: {activityMap[lead.id]}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                      {lead.estimated_value != null && lead.estimated_value > 0 && (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-gold)', fontFamily: "'DM Mono', monospace" }}>
+                          {formatCurrency(lead.estimated_value)}
+                        </span>
+                      )}
+                      {customer?.id && proposalMap[customer.id] && (
+                        <span style={{ fontSize: 10, color: 'var(--c-sage)', fontFamily: "'DM Mono', monospace" }}>
+                          Proposal: {formatCurrency(proposalMap[customer.id])}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )
@@ -202,6 +256,10 @@ export default function LeadsPage() {
   const [filterSource, setFilterSource] = useState('')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('board')
+
+  useEffect(() => {
+    if (window.innerWidth < 768) setViewMode('list')
+  }, [])
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [addLeadOpen, setAddLeadOpen] = useState(false)
@@ -226,6 +284,49 @@ export default function LeadsPage() {
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
       return (data ?? []) as Lead[]
+    },
+    staleTime: 30_000,
+  })
+
+  const { data: proposalMap = {} } = useQuery({
+    queryKey: ['proposal-values'],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return {}
+      const { data } = await supabase
+        .from('proposals')
+        .select('customer_id, total_investment')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+      const map: Record<string, number> = {}
+      for (const p of data ?? []) {
+        if (p.customer_id && !map[p.customer_id] && p.total_investment)
+          map[p.customer_id] = p.total_investment
+      }
+      return map
+    },
+    staleTime: 60_000,
+  })
+
+  const { data: activityMap = {} } = useQuery({
+    queryKey: ['lead-last-activities'],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return {}
+      const { data } = await supabase
+        .from('activities')
+        .select('lead_id, type')
+        .eq('user_id', user.id)
+        .not('lead_id', 'is', null)
+        .order('created_at', { ascending: false })
+      const map: Record<string, string> = {}
+      for (const a of data ?? []) {
+        if (a.lead_id && !map[a.lead_id]) map[a.lead_id] = a.type
+      }
+      return map
     },
     staleTime: 30_000,
   })
@@ -512,19 +613,31 @@ export default function LeadsPage() {
         </div>
       </div>
 
+      {/* Empty state when no leads at all */}
+      {leads.length === 0 && (
+        <EmptyState
+          icon={Users}
+          title="No leads yet"
+          description="Add your first lead to start building your pipeline."
+          action={{ label: '+ Add Lead', onClick: () => setAddLeadOpen(true) }}
+        />
+      )}
+
       {/* List view */}
-      {viewMode === 'list' && (
+      {leads.length > 0 && viewMode === 'list' && (
         <LeadListView
           leads={filteredLeads}
           onCardClick={lead => {
             setSelectedLead(lead)
             setDrawerOpen(true)
           }}
+          proposalMap={proposalMap}
+          activityMap={activityMap}
         />
       )}
 
       {/* Kanban board */}
-      {viewMode === 'board' && <DndContext
+      {leads.length > 0 && viewMode === 'board' && <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
@@ -561,13 +674,23 @@ export default function LeadsPage() {
                 setSelectedLead(lead)
                 setDrawerOpen(true)
               }}
+              proposalMap={proposalMap}
+              activityMap={activityMap}
             />
           ))}
         </div>
 
         <DragOverlay>
           {activeDragLead ? (
-            <LeadCard lead={activeDragLead} onClick={() => {}} isDragOverlay />
+            <LeadCard
+              lead={activeDragLead}
+              onClick={() => {}}
+              isDragOverlay
+              proposalValue={(activeDragLead.customer as { id?: string } | null)?.id
+                ? (proposalMap[(activeDragLead.customer as { id: string }).id] ?? null)
+                : null}
+              lastActivity={activityMap[activeDragLead.id] ?? null}
+            />
           ) : null}
         </DragOverlay>
         </div>{/* end relative wrapper */}

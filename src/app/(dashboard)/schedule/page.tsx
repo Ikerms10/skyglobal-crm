@@ -5,12 +5,22 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
   Plus, AlertTriangle,
-  Users, Trash2, X,
+  Users, Trash2, X, Calendar, RefreshCw,
 } from 'lucide-react'
 import {
   startOfWeek, endOfWeek, eachDayOfInterval, format, addWeeks, subWeeks,
   startOfMonth, endOfMonth, isToday, parseISO, addMonths, subMonths,
+  isSameDay,
 } from 'date-fns'
+import { CalendarEvent, EventType } from '@/types'
+
+const EVENT_COLORS: Record<EventType, { dot: string; bg: string; text: string; label: string }> = {
+  estimate:  { dot: '#e6ab35', bg: 'rgba(230,171,53,0.12)',  text: '#e6ab35', label: 'Estimate' },
+  job:       { dot: '#5B8CBB', bg: 'rgba(91,140,187,0.12)', text: '#5B8CBB', label: 'Job Day' },
+  payment:   { dot: '#4A6741', bg: 'rgba(74,103,65,0.12)',  text: '#4A6741', label: 'Payment' },
+  deadline:  { dot: '#B94A3A', bg: 'rgba(185,74,58,0.12)', text: '#B94A3A', label: 'Deadline' },
+  personal:  { dot: '#9a9585', bg: 'rgba(154,149,133,0.10)', text: '#9a9585', label: 'Personal' },
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -244,12 +254,16 @@ function AssignForm({
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SchedulePage() {
+  const [pageTab, setPageTab] = useState<'crew' | 'events'>('crew')
   const [view, setView] = useState<'week' | 'month'>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [prefillDate, setPrefillDate] = useState<string | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [editAssignment, setEditAssignment] = useState<CrewAssignment | null>(null)
+  const [addEventOpen, setAddEventOpen] = useState(false)
+  const [addEventDate, setAddEventDate] = useState<string | null>(null)
+  const [newEvent, setNewEvent] = useState({ title: '', type: 'estimate' as EventType, start_at: '', end_at: '', all_day: true, notes: '' })
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
   const weekEnd   = endOfWeek(currentDate,   { weekStartsOn: 1 })
@@ -295,6 +309,60 @@ export default function SchedulePage() {
 
   const assignments = data?.assignments ?? []
   const projects    = data?.projects ?? []
+
+  // Events query for the new events calendar tab
+  const { data: events = [], refetch: refetchEvents } = useQuery({
+    queryKey: ['calendar-events', format(currentDate, 'yyyy-MM')],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return []
+      const mStart = format(startOfMonth(currentDate), 'yyyy-MM-dd')
+      const mEnd   = format(endOfMonth(currentDate),   'yyyy-MM-dd')
+      const { data } = await supabase
+        .from('events')
+        .select('*, project:projects(id, title), lead:leads(id, title)')
+        .eq('user_id', user.id)
+        .gte('start_at', mStart)
+        .lte('start_at', mEnd + 'T23:59:59')
+        .order('start_at')
+      return (data ?? []) as CalendarEvent[]
+    },
+  })
+
+  const saveEvent = async () => {
+    if (!newEvent.title.trim() || !newEvent.start_at) {
+      toast.error('Title and date are required')
+      return
+    }
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { error } = await supabase.from('events').insert({
+        user_id: user.id,
+        title: newEvent.title,
+        type: newEvent.type,
+        start_at: newEvent.start_at,
+        end_at: newEvent.end_at || null,
+        all_day: newEvent.all_day,
+        notes: newEvent.notes || null,
+      })
+      if (error) throw error
+      toast.success('Event added')
+      setAddEventOpen(false)
+      setNewEvent({ title: '', type: 'estimate', start_at: '', end_at: '', all_day: true, notes: '' })
+      refetchEvents()
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Failed to save event')
+    }
+  }
+
+  const deleteEvent = async (id: string) => {
+    const supabase = createClient()
+    await supabase.from('events').delete().eq('id', id)
+    refetchEvents()
+  }
 
   const crewMembers = Array.from(new Set(assignments.map(a => a.crew_member_name))).sort()
 
@@ -371,6 +439,16 @@ export default function SchedulePage() {
     setEditAssignment(null)
   }
 
+  const evtLabelStyle: React.CSSProperties = {
+    display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--sg-text-muted)',
+    fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4,
+  }
+  const evtInputStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 10px', border: '1px solid var(--sg-border)',
+    borderRadius: 7, background: 'var(--sg-bg-surface)', color: 'var(--sg-text-primary)',
+    fontSize: 13, fontFamily: 'var(--font-ui)', outline: 'none', boxSizing: 'border-box',
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--sg-bg-base)' }}>
       <style>{`
@@ -386,16 +464,173 @@ export default function SchedulePage() {
 
       {/* Page header */}
       <div style={{ padding: '28px 24px 0' }}>
-        <h1 style={{
-          fontFamily: 'var(--font-rajdhani)', fontWeight: 700, fontSize: 28,
-          color: 'var(--sg-text-primary)', letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0,
-        }}>
-          Crew Schedule
-        </h1>
-        <p style={{ fontSize: 13, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-ui)', margin: '2px 0 0' }}>
-          Assign and track crew members across active projects
-        </p>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h1 style={{
+              fontFamily: 'var(--font-rajdhani)', fontWeight: 700, fontSize: 28,
+              color: 'var(--sg-text-primary)', letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0,
+            }}>
+              {pageTab === 'crew' ? 'Crew Schedule' : 'Events Calendar'}
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-ui)', margin: '2px 0 0' }}>
+              {pageTab === 'crew' ? 'Assign and track crew members across active projects' : 'Track estimates, jobs, payments, and deadlines'}
+            </p>
+          </div>
+          {/* Tab switcher */}
+          <div style={{ display: 'flex', gap: 2, padding: 3, background: 'var(--sg-bg-surface)', borderRadius: 10, border: '1px solid var(--sg-border)' }}>
+            {(['crew', 'events'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setPageTab(t)}
+                style={{
+                  padding: '5px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-ui)',
+                  background: pageTab === t ? (t === 'crew' ? 'var(--sg-accent)' : 'var(--sg-gold)') : 'transparent',
+                  color: pageTab === t ? '#fff' : 'var(--sg-text-secondary)',
+                  transition: 'all 150ms',
+                }}
+              >
+                {t === 'crew' ? '👷 Crew' : '📅 Events'}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* ── EVENTS CALENDAR TAB ── */}
+      {pageTab === 'events' && (
+        <div style={{ padding: '20px 24px' }}>
+          {/* Events toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button onClick={() => setCurrentDate(d => subMonths(d, 1))} style={ghostBtnStyle}>‹ Prev</button>
+              <span style={{ fontFamily: 'var(--font-rajdhani)', fontWeight: 700, fontSize: 18, color: 'var(--sg-gold)', minWidth: 160, textAlign: 'center' }}>
+                {format(currentDate, 'MMMM yyyy')}
+              </span>
+              <button onClick={() => setCurrentDate(d => addMonths(d, 1))} style={ghostBtnStyle}>Next ›</button>
+              <button onClick={() => setCurrentDate(new Date())} style={{ ...ghostBtnStyle, fontSize: 11 }}>Today</button>
+            </div>
+            <button
+              onClick={() => { setNewEvent(e => ({ ...e, start_at: new Date().toISOString().split('T')[0] })); setAddEventOpen(true) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'var(--sg-gold)', border: 'none', color: '#1d1c17', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}
+            >
+              <Plus size={15} /> Add Event
+            </button>
+          </div>
+
+          {/* Month grid */}
+          <div style={{ background: 'var(--sg-bg-surface)', border: '1px solid var(--sg-border)', borderRadius: 12, overflow: 'hidden' }}>
+            {/* Day headers */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+                <div key={d} style={{ padding: '8px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', borderBottom: '1px solid var(--sg-border)' }}>
+                  {d}
+                </div>
+              ))}
+            </div>
+            {/* Calendar cells */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+              {eachDayOfInterval({ start: startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 }), end: endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 }) }).map(day => {
+                const dayStr = format(day, 'yyyy-MM-dd')
+                const dayEvents = events.filter(e => e.start_at.split('T')[0] === dayStr)
+                const isCurrentMonth = day.getMonth() === currentDate.getMonth()
+                return (
+                  <div
+                    key={dayStr}
+                    onClick={() => { setNewEvent(e => ({ ...e, start_at: dayStr })); setAddEventOpen(true) }}
+                    style={{
+                      minHeight: 90, padding: '6px', borderBottom: '1px solid var(--sg-border)', borderRight: '1px solid var(--sg-border)',
+                      background: isToday(day) ? 'rgba(139,105,20,0.06)' : 'transparent',
+                      opacity: isCurrentMonth ? 1 : 0.4, cursor: 'pointer',
+                      transition: 'background 100ms',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = isToday(day) ? 'rgba(139,105,20,0.06)' : 'transparent' }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: isToday(day) ? 700 : 500, color: isToday(day) ? 'var(--sg-gold)' : 'var(--sg-text-secondary)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                      {format(day, 'd')}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {dayEvents.slice(0, 3).map(evt => {
+                        const ec = EVENT_COLORS[evt.type as EventType] ?? EVENT_COLORS.personal
+                        return (
+                          <div
+                            key={evt.id}
+                            onClick={e => { e.stopPropagation(); if (confirm(`Delete "${evt.title}"?`)) deleteEvent(evt.id) }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 5px', background: ec.bg, borderRadius: 4, cursor: 'pointer' }}
+                            title={evt.title}
+                          >
+                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: ec.dot, flexShrink: 0 }} />
+                            <span style={{ fontSize: 10, color: ec.text, fontFamily: 'var(--font-ui)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                              {evt.title}
+                            </span>
+                          </div>
+                        )
+                      })}
+                      {dayEvents.length > 3 && (
+                        <span style={{ fontSize: 9, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-mono)' }}>+{dayEvents.length - 3}</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
+            {Object.entries(EVENT_COLORS).map(([type, style]) => (
+              <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: style.dot }} />
+                <span style={{ fontSize: 11, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-ui)' }}>{style.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Add Event Modal */}
+          {addEventOpen && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+              <div style={{ background: 'var(--sg-bg-surface)', border: '1px solid var(--sg-border)', borderRadius: 14, width: '100%', maxWidth: 480, padding: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <h3 style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--sg-text-primary)', fontFamily: 'var(--font-ui)' }}>Add Event</h3>
+                  <button onClick={() => setAddEventOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sg-text-muted)' }}><X size={18} /></button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div>
+                    <label style={evtLabelStyle}>Title *</label>
+                    <input value={newEvent.title} onChange={e => setNewEvent(n => ({ ...n, title: e.target.value }))} placeholder="e.g. Site estimate — Johnson" style={evtInputStyle} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label style={evtLabelStyle}>Type</label>
+                      <select value={newEvent.type} onChange={e => setNewEvent(n => ({ ...n, type: e.target.value as EventType }))} style={evtInputStyle}>
+                        {Object.entries(EVENT_COLORS).map(([t, s]) => <option key={t} value={t}>{s.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={evtLabelStyle}>Date *</label>
+                      <input type="date" value={newEvent.start_at} onChange={e => setNewEvent(n => ({ ...n, start_at: e.target.value }))} style={evtInputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={evtLabelStyle}>Notes (optional)</label>
+                    <input value={newEvent.notes} onChange={e => setNewEvent(n => ({ ...n, notes: e.target.value }))} placeholder="Optional details" style={evtInputStyle} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+                  <button onClick={() => setAddEventOpen(false)} style={ghostBtnStyle}>Cancel</button>
+                  <button onClick={saveEvent} style={{ padding: '9px 20px', border: 'none', borderRadius: 8, background: 'var(--sg-gold)', color: '#1d1c17', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>
+                    Save Event
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── CREW SCHEDULING TAB ── */}
+      {pageTab === 'crew' && (<>
 
       {/* Top bar */}
       <div style={{
@@ -823,6 +1058,9 @@ export default function SchedulePage() {
           )}
         </div>
       )}
+
+      {/* ── ASSIGN / EDIT MODAL ── */}
+      </>)}
 
       {/* ── ASSIGN / EDIT MODAL ── */}
       {(assignModalOpen || editAssignment) && (

@@ -212,59 +212,86 @@ export default function ProjectsPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full" style={{ minWidth: 700 }}>
-              <thead>
-                <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
-                  {[
-                    { label: 'Project', field: 'title' as SortField },
-                    { label: 'Customer', field: null },
-                    { label: 'Status', field: 'status' as SortField },
-                    { label: 'Type', field: null },
-                    { label: 'Start', field: 'start_date' as SortField },
-                    { label: 'End', field: 'end_date' as SortField },
-                    { label: 'Contract', field: 'contract_value' as SortField },
-                    { label: 'Payment', field: 'payment_status' as SortField },
-                  ].map(({ label, field }) => (
-                    <th key={label}
-                      onClick={field ? () => handleSort(field) : undefined}
-                      className={cn('text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-3)] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[var(--sg-text-1)] select-none')}
-                    >
-                      {label}{field && <SortIcon field={field} />}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p, i) => (
-                  <tr
-                    key={p.id}
-                    onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)}
-                    className="data-table border-b border-[var(--sg-border)] transition-colors cursor-pointer bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]"
-                  >
-                    <td className="px-4 py-3">
-                      <span className="text-sm font-medium text-[var(--sg-text-1)]">{p.title}</span>
-                    </td>
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      {p.customers && (
-                        <Link href={`/customers/${p.customers.id}`} className="text-sm text-[var(--sg-text-2)] hover:text-[var(--sg-sky)]">
-                          {p.customers.name}
-                        </Link>
-                      )}
-                    </td>
-                    <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
-                    <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.start_date)}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.end_date)}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">{formatCurrency(p.contract_value)}</td>
-                    <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
+        <>
+          <div className="hidden sm:block bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full" style={{ minWidth: 700 }}>
+                <thead>
+                  <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
+                    {[
+                      { label: 'Project', field: 'title' as SortField },
+                      { label: 'Customer', field: null },
+                      { label: 'Status', field: 'status' as SortField },
+                      { label: 'Type', field: null },
+                      { label: 'Start', field: 'start_date' as SortField },
+                      { label: 'End', field: 'end_date' as SortField },
+                      { label: 'Contract', field: 'contract_value' as SortField },
+                      { label: 'Payment', field: 'payment_status' as SortField },
+                    ].map(({ label, field }) => (
+                      <th key={label}
+                        onClick={field ? () => handleSort(field) : undefined}
+                        className={cn('text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-3)] uppercase tracking-wider whitespace-nowrap', field && 'cursor-pointer hover:text-[var(--sg-text-1)] select-none')}
+                      >
+                        {label}{field && <SortIcon field={field} />}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((p, i) => (
+                    <tr
+                      key={p.id}
+                      onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)}
+                      className="data-table border-b border-[var(--sg-border)] transition-colors cursor-pointer bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]"
+                    >
+                      <td className="px-4 py-3">
+                        <span className="text-sm font-medium text-[var(--sg-text-1)]">{p.title}</span>
+                      </td>
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        {p.customers && (
+                          <Link href={`/customers/${p.customers.id}`} className="text-sm text-[var(--sg-text-2)] hover:text-[var(--sg-sky)]">
+                            {p.customers.name}
+                          </Link>
+                        )}
+                      </td>
+                      <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
+                      <td className="px-4 py-3"><Badge variant={p.type === 'Commercial' ? 'purple' : 'info'}>{p.type}</Badge></td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.start_date)}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(p.end_date)}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[var(--sg-gold)]">{formatCurrency(p.contract_value)}</td>
+                      <td className="px-4 py-3"><PaymentBadge status={p.payment_status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          <div className="sm:hidden flex flex-col gap-3">
+            {filtered.map(p => (
+              <div
+                key={p.id}
+                onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)}
+                className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4 flex flex-col gap-2 cursor-pointer active:opacity-80 min-h-[44px]"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-sm text-[var(--sg-text-1)] leading-tight">{p.title}</span>
+                  <StatusBadge status={p.status} />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-[var(--sg-text-2)]">{p.customers?.name ?? '—'}</span>
+                  <PaymentBadge status={p.payment_status} />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 13, color: 'var(--sg-gold)' }}>
+                    {formatCurrency(p.contract_value)}
+                  </span>
+                  <span className="text-xs text-[var(--sg-text-2)]">{formatDate(p.start_date)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       <NewProjectModal open={newProjectOpen} onClose={() => setNewProjectOpen(false)} />

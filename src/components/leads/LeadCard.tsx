@@ -11,6 +11,8 @@ interface LeadCardProps {
   lead: Lead
   onClick: (lead: Lead) => void
   isDragOverlay?: boolean
+  proposalValue?: number | null
+  lastActivity?: string | null
 }
 
 const VALUE_TIER = (v: number) => {
@@ -93,7 +95,7 @@ function FollowUpRow({ date, stage }: { date: string; stage: string }) {
   )
 }
 
-export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps) {
+export function LeadCard({ lead, onClick, isDragOverlay = false, proposalValue, lastActivity }: LeadCardProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -241,6 +243,22 @@ export function LeadCard({ lead, onClick, isDragOverlay = false }: LeadCardProps
             <Phone size={11} aria-hidden="true" />
             {customer.phone}
           </a>
+        )}
+
+        {/* Row 3b: Proposal value + Last activity */}
+        {(proposalValue !== undefined || lastActivity) && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 8 }}>
+            {proposalValue !== undefined && (
+              <span style={{ fontSize: 11, color: proposalValue ? 'var(--c-sage)' : 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>
+                {proposalValue ? `Proposal: ${formatCurrency(proposalValue)}` : 'No estimate'}
+              </span>
+            )}
+            {lastActivity && (
+              <span style={{ fontSize: 10, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", whiteSpace: 'nowrap' }}>
+                Last: {lastActivity}
+              </span>
+            )}
+          </div>
         )}
 
         {/* Row 4: Customer type + Days in stage */}

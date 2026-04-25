@@ -7,8 +7,29 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number | null | undefined): string {
-  if (amount == null) return '$0.00'
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+  if (amount == null || isNaN(amount as number)) return '$0.00'
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)
+}
+
+export function formatCurrencyCompact(amount: number | null | undefined): string {
+  if (amount == null || isNaN(amount as number)) return '$0'
+  if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`
+  if (amount >= 1_000) return `$${(amount / 1_000).toFixed(1)}K`
+  return formatCurrency(amount)
+}
+
+export function getProfitGrade(margin: number): { grade: string; color: string } {
+  if (margin >= 50) return { grade: 'A+', color: '#22c55e' }
+  if (margin >= 40) return { grade: 'A',  color: '#22c55e' }
+  if (margin >= 30) return { grade: 'B',  color: '#e6ab35' }
+  if (margin >= 20) return { grade: 'C',  color: '#f97316' }
+  if (margin >= 10) return { grade: 'D',  color: '#ef4444' }
+  return { grade: 'F', color: '#dc2626' }
 }
 
 export function formatDate(date: string | null | undefined): string {

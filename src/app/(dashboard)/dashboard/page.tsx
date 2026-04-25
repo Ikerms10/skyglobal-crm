@@ -22,6 +22,8 @@ import { BibleVerse } from '@/components/dashboard/BibleVerse';
 import { WeatherWidget } from '@/components/dashboard/WeatherWidget';
 import { DailyBriefing } from '@/components/dashboard/DailyBriefing';
 import { KPICommandCenter } from '@/components/dashboard/KPICommandCenter';
+import { TodaysFocus } from '@/components/dashboard/TodaysFocus';
+import { AgendaWidget } from '@/components/dashboard/AgendaWidget';
 
 type Timeframe = 'Week' | 'Month' | 'Year' | 'All';
 
@@ -403,13 +405,17 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* TODAY'S FOCUS */}
+        <TodaysFocus />
+
         {/* KPI COMMAND CENTER — above existing widgets */}
         <KPICommandCenter />
 
         {/* Divider */}
         <div style={{ height: 1, background: 'var(--c-border)', opacity: 0.5 }} />
 
-        {/* ROW 1: Bible verse */}
+        {/* ROW 1: Agenda + Bible verse */}
+        <AgendaWidget />
         <BibleVerse />
 
         {/* ROW 2: Weather + Briefing */}

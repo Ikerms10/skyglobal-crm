@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
+import { GradeBadge } from '@/components/ui/GradeBadge';
 import { WorkOrdersTab } from '@/components/projects/WorkOrdersTab';
 import { AddActivityModal } from '@/components/customers/AddActivityModal';
 import { MapsLink, DirectionsButton } from '@/components/ui/MapsLink';
@@ -32,8 +33,10 @@ import {
   ChevronRight,
   Image as ImageIcon,
   FileText,
+  MessageSquare,
 } from 'lucide-react';
 import { TemplateSelector } from '@/components/proposals/TemplateSelector';
+import { ContactModal } from '@/components/ui/ContactModal';
 import { ProposalTemplate } from '@/types';
 
 const DownloadEstimateButton = dynamic(
@@ -278,6 +281,7 @@ export default function ProjectDetailPage({
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
   const [customerTypeModalOpen, setCustomerTypeModalOpen] = useState(false);
   const [proposalForExisting, setProposalForExisting] = useState<boolean | null>(null);
+  const [contactOpen, setContactOpen] = useState(false);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
 
   // Lead cost edit
@@ -875,6 +879,11 @@ export default function ProjectDetailPage({
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            {(project.customers?.phone || project.customers?.email) && (
+              <Button size="sm" variant="secondary" onClick={() => setContactOpen(true)}>
+                <MessageSquare className="h-4 w-4" /> Contact Client
+              </Button>
+            )}
             <DownloadProjectReportButton
               data={{
                 project,
@@ -920,11 +929,6 @@ export default function ProjectDetailPage({
             color: profit >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]',
           },
           {
-            label: 'Margin %',
-            value: `${margin}%`,
-            color: margin >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]',
-          },
-          {
             label: 'Balance Due',
             value: formatCurrency(balanceDue),
             color: balanceDue > 0 ? 'text-[var(--sg-danger)]' : 'text-[var(--sg-text-2)]',
@@ -938,6 +942,16 @@ export default function ProjectDetailPage({
             <p className={cn('text-lg font-bold', color)}>{value}</p>
           </div>
         ))}
+        {/* Profit grade card */}
+        <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-4 flex flex-col">
+          <p className="text-xs text-[var(--sg-text-2)] mb-1">Margin %</p>
+          <div className="flex items-center gap-2">
+            <p className={cn('text-lg font-bold', margin >= 0 ? 'text-[var(--c-sage)]' : 'text-[var(--sg-danger)]')}>
+              {margin}%
+            </p>
+            <GradeBadge contractValue={contractValue} totalCosts={totalCosts} leadCost={leadCost} size={24} />
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -1932,6 +1946,16 @@ export default function ProjectDetailPage({
           onClose={() => setTemplateSelectorOpen(false)}
         />
       )}
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        name={project.customers?.name ?? ''}
+        phone={project.customers?.phone}
+        email={project.customers?.email}
+        status={project.status}
+        resourceType="project"
+        resourceId={project.id}
+      />
     </div>
   );
 }

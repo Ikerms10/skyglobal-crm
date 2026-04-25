@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart2, Receipt, Settings, LogOut, X } from 'lucide-react'
+import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart2, Receipt, Settings, LogOut, X, ClipboardList } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -15,6 +15,7 @@ const primaryItems = [
 ]
 
 const moreItems = [
+  { href: '/invoices', label: 'Invoices', icon: ClipboardList },
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   { href: '/reports',  label: 'Reports',  icon: BarChart2 },
   { href: '/settings', label: 'Settings', icon: Settings },

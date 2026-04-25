@@ -8,7 +8,8 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { TemplateSelector } from '@/components/proposals/TemplateSelector'
 import { ProposalTemplate, ProposalStatus } from '@/types'
-import { Plus, FileText, Download, Copy, Trash2, Edit2, Loader2 } from 'lucide-react'
+import { Plus, FileText, Download, Copy, Trash2, Edit2, Loader2, Share2, Eye, CheckCircle2, ExternalLink } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { downloadProposalPDF } from '@/components/proposals/ProposalPDF'
 import { format } from 'date-fns'
 
@@ -52,6 +53,14 @@ export default function ProposalsPage() {
   const handleSelect = (template: ProposalTemplate) => {
     setShowSelector(false)
     router.push(`/proposals/new?template=${template}`)
+  }
+
+  const handleShare = async (proposal: any) => {
+    const token = proposal.share_token
+    if (!token) { toast.error('No share token available'); return }
+    const url = `${window.location.origin}/p/${token}`
+    await navigator.clipboard.writeText(url)
+    toast.success('Share link copied to clipboard!')
   }
 
   const handleDelete = async (id: string) => {
@@ -148,7 +157,7 @@ export default function ProposalsPage() {
               <div key={s} style={{ background: 'var(--sg-surface)', border: '1px solid var(--sg-border)', borderRadius: 12, padding: '16px 20px' }}>
                 <div style={{ fontSize: 12, color: 'var(--sg-text-3)', marginBottom: 4, fontFamily: "'DM Mono', monospace", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--sg-text-1)', fontFamily: "'DM Mono', monospace" }}>{count}</div>
-                {total > 0 && <div style={{ fontSize: 11, color: col.text, fontFamily: "'DM Mono', monospace" }}>${total.toLocaleString()}</div>}
+                {total > 0 && <div style={{ fontSize: 11, color: col.text, fontFamily: "'DM Mono', monospace" }}>{formatCurrency(total)}</div>}
               </div>
             )
           })}
@@ -162,19 +171,17 @@ export default function ProposalsPage() {
             <Loader2 size={24} className="animate-spin" style={{ color: 'var(--sg-gold)' }} />
           </div>
         ) : proposals.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 240, gap: 16 }}>
-            <FileText size={40} style={{ color: 'var(--sg-text-3)' }} />
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'var(--sg-text-2)', marginBottom: 4 }}>No proposals yet</p>
-              <p style={{ color: 'var(--sg-text-3)', fontSize: 13 }}>Create your first proposal to get started</p>
-            </div>
-            <Button onClick={() => setShowSelector(true)}><Plus size={15} /> Create Proposal</Button>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No proposals yet"
+            description="Create your first proposal to start winning jobs."
+            action={{ label: '+ New Proposal', onClick: () => setShowSelector(true) }}
+          />
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--sg-elevated)', borderBottom: '1px solid var(--sg-border-md)' }}>
-                {['Client', 'Project', 'Template', 'Total', 'Status', 'Date', ''].map(h => (
+                {['Client', 'Project', 'Template', 'Total', 'Status', 'Engagement', 'Date', ''].map(h => (
                   <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'var(--sg-text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'DM Mono', monospace" }}>{h}</th>
                 ))}
               </tr>
@@ -212,6 +219,23 @@ export default function ProposalsPage() {
                         {STATUSES.map(s => <option key={s} value={s} style={{ background: 'var(--sg-surface)', color: 'var(--sg-text-1)' }}>{s}</option>)}
                       </select>
                     </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {p.signed_at ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--c-sage)', fontSize: 11, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                          <CheckCircle2 size={13} />
+                          Signed {formatDate(p.signed_at)}
+                        </div>
+                      ) : p.viewed_count > 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--c-gold)', fontSize: 11, fontFamily: "'DM Mono', monospace" }}>
+                          <Eye size={13} />
+                          Viewed {p.viewed_count}×
+                        </div>
+                      ) : p.share_token ? (
+                        <span style={{ fontSize: 11, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>Shared</span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: '12px 16px', color: 'var(--sg-text-2)', fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
                       {formatDate(p.created_at)}
                     </td>
@@ -223,6 +247,20 @@ export default function ProposalsPage() {
                           title="Edit">
                           <Edit2 size={14} />
                         </Link>
+                        <button onClick={() => handleShare(p)}
+                          style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, background: 'none', border: 'none', color: 'var(--sg-text-3)', cursor: 'pointer' }}
+                          className="hover:bg-[var(--sg-elevated)] hover:text-[var(--c-sage)] transition-colors"
+                          title="Copy share link">
+                          <Share2 size={14} />
+                        </button>
+                        {p.share_token && (
+                          <a href={`/p/${p.share_token}`} target="_blank" rel="noopener noreferrer"
+                            style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, color: 'var(--sg-text-3)', textDecoration: 'none' }}
+                            className="hover:bg-[var(--sg-elevated)] hover:text-[var(--sg-text-1)] transition-colors"
+                            title="View as client">
+                            <ExternalLink size={14} />
+                          </a>
+                        )}
                         <button onClick={() => handleDownload(p)}
                           style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, background: 'none', border: 'none', color: 'var(--sg-text-3)', cursor: 'pointer' }}
                           className="hover:bg-[var(--sg-elevated)] hover:text-[var(--sg-gold)] transition-colors"
