@@ -902,3 +902,191 @@ textarea:focus {
   transform: translateY(-2px);
   box-shadow: 0 12px 40px rgba(139,90,20,0.12), 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.5) !important;
 }
+
+/* ─── TOUCH / MOBILE FOUNDATIONS ─────────────────────────────────────────── */
+/* Prevent tap highlight on all interactive elements */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+/* All tappable elements use manipulation (no 300ms double-tap delay) */
+a,
+button,
+[role='button'],
+label,
+input[type='checkbox'],
+input[type='radio'],
+select {
+  touch-action: manipulation;
+}
+/* Prevent momentum scroll from escaping the page on iOS */
+body {
+  overscroll-behavior-y: contain;
+}
+/* Safe area bottom padding — applied to fixed bottom bars */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+/* Prevent horizontal overflow anywhere */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* ─── MOBILE CARD LIST — replaces data table on small screens ─────────────── */
+@media (max-width: 767px) {
+  .mobile-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .mobile-card-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--c-card);
+    border: 1px solid var(--c-border-light);
+    border-radius: 16px;
+    box-shadow: var(--s-card);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    text-decoration: none;
+    color: inherit;
+  }
+  .mobile-card-item:active {
+    transform: scale(0.98);
+    box-shadow: none;
+  }
+  /* Hide desktop table on mobile */
+  .desktop-table { display: none !important; }
+  /* Show mobile card list only on mobile */
+  .mobile-only { display: flex !important; }
+}
+/* Show desktop table on desktop, hide mobile cards */
+@media (min-width: 768px) {
+  .desktop-table { display: table !important; }
+  .mobile-only { display: none !important; }
+}
+
+/* ─── STICKY MOBILE FOOTER ────────────────────────────────────────────────── */
+.sticky-mobile-footer {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--c-card);
+  border-top: 1px solid var(--c-border);
+  padding: 12px 20px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+/* ─── SETTINGS — ACCORDION NAV ON MOBILE ─────────────────────────────────── */
+.settings-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+}
+@media (max-width: 767px) {
+  .settings-sidebar { display: none; }
+  .settings-accordion-nav {
+    display: flex !important;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--c-border);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .settings-accordion-nav::-webkit-scrollbar { display: none; }
+  .settings-accordion-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid var(--c-border-mid);
+    background: var(--c-card);
+    color: var(--c-text-2);
+    cursor: pointer;
+    flex-shrink: 0;
+    min-height: 36px;
+    transition: all 0.15s ease;
+  }
+  .settings-accordion-btn.active {
+    background: var(--c-gold-bg);
+    border-color: var(--c-gold-border);
+    color: var(--c-gold);
+  }
+  .settings-content { padding: 16px !important; }
+  /* Full-width save buttons on mobile */
+  .settings-save-btn { width: 100% !important; justify-content: center; }
+  /* 48px inputs on mobile */
+  .settings-content input,
+  .settings-content select,
+  .settings-content textarea {
+    min-height: 48px;
+    font-size: 16px !important;
+  }
+}
+@media (min-width: 768px) {
+  .settings-accordion-nav { display: none; }
+}
+
+/* ─── CHARTS — RESPONSIVE CONTAINERS ─────────────────────────────────────── */
+@media (max-width: 767px) {
+  .chart-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .chart-scroll-container::-webkit-scrollbar { display: none; }
+  .chart-min-width { min-width: 300px; }
+  /* Cap chart height on mobile */
+  .recharts-wrapper { max-height: 200px !important; }
+}
+
+/* ─── PROPOSAL TABS — HORIZONTAL SCROLL ON MOBILE ────────────────────────── */
+@media (max-width: 767px) {
+  .proposal-tabs-scroll {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .proposal-tabs-scroll::-webkit-scrollbar { display: none; }
+  .proposal-tab-label { display: none; }
+  .proposal-tab-icon { display: flex !important; }
+}
+@media (min-width: 768px) {
+  .proposal-tab-label { display: inline; }
+  .proposal-tab-icon { display: none; }
+}
+
+/* ─── FLUID TYPOGRAPHY — clamp-based scale ────────────────────────────────── */
+:root {
+  --text-xs:   clamp(10px, 2.5vw, 11px);
+  --text-sm:   clamp(12px, 3vw,   13px);
+  --text-base: clamp(13px, 3.5vw, 14px);
+  --text-lg:   clamp(15px, 4vw,   17px);
+  --text-xl:   clamp(18px, 4.5vw, 21px);
+  --text-2xl:  clamp(22px, 5.5vw, 28px);
+  --space-page-x: clamp(12px, 4vw, 24px);
+  --space-section: clamp(16px, 4vw, 24px);
+}
+
+/* ─── MOBILE NAV — SAFE AREA PADDING ─────────────────────────────────────── */
+.mobile-nav-bar {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ─── FAB — SAFE AREA OFFSET ON MOBILE ───────────────────────────────────── */
+@media (max-width: 767px) {
+  .fab-mobile {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

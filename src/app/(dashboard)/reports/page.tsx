@@ -403,6 +403,8 @@ export default function ReportsPage() {
       {/* Revenue vs Expenses Bar Chart */}
       <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
         <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Revenue vs Expenses</h3>
+        <div className="chart-scroll-container">
+        <div className="chart-min-width">
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={monthlyData} barCategoryGap="25%">
             <CartesianGrid strokeDasharray="3 3" stroke="var(--sg-border)" vertical={false} />
@@ -435,6 +437,8 @@ export default function ReportsPage() {
             <Bar dataKey="profit" name="profit" fill="#22c55e" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        </div>
+        </div>
         <div className="flex items-center gap-6 mt-2 justify-center">
           {[
             ['Revenue', '#e6ab35'],

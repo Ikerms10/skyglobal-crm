@@ -8,6 +8,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      animation: {
+        'slide-up': 'slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+      },
+      keyframes: {
+        slideUp: {
+          from: { transform: 'translateY(100%)' },
+          to: { transform: 'translateY(0)' },
+        },
+      },
       colors: {
         background: 'var(--c-canvas)',
         card: 'var(--c-card)',

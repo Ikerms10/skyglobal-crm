@@ -236,45 +236,97 @@ export default function ExpensesPage() {
           {isLoading ? <TableSkeleton /> : filtered.length === 0 ? (
             <EmptyState icon={DollarSign} title="No expenses" description="Add general business expenses here (ads, insurance, software, etc.)" action={{ label: 'Add Expense', onClick: () => setAddOpen(true) }} />
           ) : (
-            <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
-                    {['Date', 'Category', 'Description', 'Amount', 'Recurring', ''].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-3)] uppercase tracking-wider">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((e, i) => (
-                    <tr key={e.id} className="data-table border-b border-[var(--sg-border)] transition-colors group bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]">
-                      <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(e.date)}</td>
-                      <td className="px-4 py-3 text-sm text-[var(--sg-text-1)]">{e.category}</td>
-                      <td className="px-4 py-3 text-sm text-[var(--sg-text-1)]">{e.description ?? '—'}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-[var(--sg-danger)]">{formatCurrency(e.amount)}</td>
-                      <td className="px-4 py-3">{e.recurring ? <span className="text-xs text-[var(--sg-gold)]">Recurring</span> : <span className="text-xs text-[var(--sg-text-2)]">One-time</span>}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                          <button onClick={() => setEditExpense(e)} className="p-1 text-[var(--sg-text-2)] hover:text-[var(--sg-sky)] transition-colors">
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button onClick={() => setDeleteId(e.id)} className="p-1 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-colors">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
+            <>
+              {/* Desktop table */}
+              <div className="hidden sm:block bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
+                      {['Date', 'Category', 'Description', 'Amount', 'Recurring', ''].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[var(--sg-text-3)] uppercase tracking-wider">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-[var(--sg-elevated)] border-t border-[var(--sg-border-md)]">
-                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-[var(--sg-text-2)] text-right">Total</td>
-                    <td className="px-4 py-3 text-lg font-bold text-[var(--sg-danger)]">{formatCurrency(filtered.reduce((s, e) => s + e.amount, 0))}</td>
-                    <td colSpan={2} />
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map((e, i) => (
+                      <tr key={e.id} className="data-table border-b border-[var(--sg-border)] transition-colors group bg-[var(--sg-surface)] hover:bg-[var(--sg-elevated)]">
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-2)] whitespace-nowrap">{formatDate(e.date)}</td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-1)]">{e.category}</td>
+                        <td className="px-4 py-3 text-sm text-[var(--sg-text-1)]">{e.description ?? '—'}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-[var(--sg-danger)]">{formatCurrency(e.amount)}</td>
+                        <td className="px-4 py-3">{e.recurring ? <span className="text-xs text-[var(--sg-gold)]">Recurring</span> : <span className="text-xs text-[var(--sg-text-2)]">One-time</span>}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <button onClick={() => setEditExpense(e)} className="p-1 text-[var(--sg-text-2)] hover:text-[var(--sg-sky)] transition-colors">
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => setDeleteId(e.id)} className="p-1 text-[var(--sg-text-2)] hover:text-[var(--sg-danger)] transition-colors">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-[var(--sg-elevated)] border-t border-[var(--sg-border-md)]">
+                      <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-[var(--sg-text-2)] text-right">Total</td>
+                      <td className="px-4 py-3 text-lg font-bold text-[var(--sg-danger)]">{formatCurrency(filtered.reduce((s, e) => s + e.amount, 0))}</td>
+                      <td colSpan={2} />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="sm:hidden flex flex-col gap-3">
+                {filtered.map((e) => (
+                  <div
+                    key={e.id}
+                    className="flex items-center gap-3 p-4 rounded-2xl"
+                    style={{ background: 'var(--c-card)', border: '1px solid var(--c-border-light)', boxShadow: 'var(--s-card)' }}
+                  >
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                      background: 'var(--c-danger-bg)', border: '1px solid var(--c-danger-border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <DollarSign size={16} style={{ color: 'var(--c-danger)' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--c-text-1)' }}>{e.category}</div>
+                      <div style={{ fontSize: 12, color: 'var(--c-text-4)', marginTop: 1 }}>
+                        {e.description ? `${e.description} · ` : ''}{formatDate(e.date)}
+                        {e.recurring ? <span style={{ color: 'var(--c-gold)', marginLeft: 6 }}>Recurring</span> : null}
+                      </div>
+                    </div>
+                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 15, color: 'var(--c-danger)' }}>
+                        {formatCurrency(e.amount)}
+                      </span>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button onClick={() => setEditExpense(e)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 8, border: '1px solid var(--c-border)', background: 'transparent', color: 'var(--c-text-4)', cursor: 'pointer' }}>
+                          <Pencil size={13} />
+                        </button>
+                        <button onClick={() => setDeleteId(e.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 8, border: '1px solid var(--c-danger-border)', background: 'var(--c-danger-bg)', color: 'var(--c-danger)', cursor: 'pointer' }}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Mobile sticky total footer */}
+                <div className="sticky-mobile-footer sm:hidden">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-3)' }}>Total ({filtered.length} expenses)</span>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 18, color: 'var(--c-danger)' }}>
+                      {formatCurrency(filtered.reduce((s, e) => s + e.amount, 0))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </TabsContent>
 
