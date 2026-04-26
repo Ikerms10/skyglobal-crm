@@ -6,25 +6,30 @@ import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart2, R
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { useLanguage } from '@/contexts/LanguageContext'
 
-const primaryItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/leads',     label: 'Leads',     icon: Target },
-  { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/projects',  label: 'Projects',  icon: Briefcase },
-]
+const primaryNavDefs = [
+  { href: '/dashboard', key: 'nav.dashboard', icon: LayoutDashboard },
+  { href: '/leads',     key: 'nav.leads',     icon: Target },
+  { href: '/customers', key: 'nav.customers', icon: Users },
+  { href: '/projects',  key: 'nav.projects',  icon: Briefcase },
+] as const
 
-const moreItems = [
-  { href: '/invoices', label: 'Invoices', icon: ClipboardList },
-  { href: '/expenses', label: 'Expenses', icon: Receipt },
-  { href: '/reports',  label: 'Reports',  icon: BarChart2 },
-  { href: '/settings', label: 'Settings', icon: Settings },
-]
+const moreNavDefs = [
+  { href: '/invoices', key: 'nav.invoices', icon: ClipboardList },
+  { href: '/expenses', key: 'nav.expenses', icon: Receipt },
+  { href: '/reports',  key: 'nav.reports',  icon: BarChart2 },
+  { href: '/settings', key: 'nav.settings', icon: Settings },
+] as const
 
 export function MobileNav() {
   const pathname = usePathname()
   const router = useRouter()
   const [moreOpen, setMoreOpen] = useState(false)
+  const { t } = useLanguage()
+
+  const primaryItems = primaryNavDefs.map(d => ({ ...d, label: t(d.key) }))
+  const moreItems = moreNavDefs.map(d => ({ ...d, label: t(d.key) }))
 
   const isMoreActive = ['/expenses', '/reports', '/settings'].some(p => pathname.startsWith(p))
 
@@ -32,7 +37,7 @@ export function MobileNav() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
-    toast.success('Signed out')
+    toast.success(t('nav.signOut'))
   }
 
   return (
@@ -71,7 +76,7 @@ export function MobileNav() {
           aria-expanded={moreOpen}
         >
           <MoreHorizontal className="h-5 w-5" />
-          <span style={{ fontSize: 10, fontFamily: "'DM Mono', monospace", letterSpacing: '0.04em' }}>More</span>
+          <span style={{ fontSize: 10, fontFamily: "'DM Mono', monospace", letterSpacing: '0.04em' }}>{t('nav.more')}</span>
         </button>
       </nav>
 
@@ -112,7 +117,7 @@ export function MobileNav() {
                 color: 'var(--c-text-1)',
                 letterSpacing: '-0.01em',
               }}>
-                More
+                {t('nav.more')}
               </span>
               <button
                 onClick={() => setMoreOpen(false)}
@@ -158,7 +163,7 @@ export function MobileNav() {
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
               >
                 <LogOut className="h-5 w-5" aria-hidden="true" />
-                <span style={{ fontSize: 14, fontWeight: 500 }}>Sign Out</span>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>{t('nav.signOut')}</span>
               </button>
             </div>
           </div>

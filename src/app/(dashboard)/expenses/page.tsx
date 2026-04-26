@@ -23,6 +23,7 @@ import {
   TrendingUp, Target, Search, Pencil, Check,
   Settings2, BarChart2,
 } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────────
 
@@ -101,14 +102,16 @@ const CATEGORY_ICONS: Record<string, string> = {
   Other:          '📦',
 }
 
-const PERIOD_PRESETS: { id: PeriodPreset; label: string }[] = [
-  { id: 'this_month', label: 'This Month' },
-  { id: 'last_month', label: 'Last Month' },
-  { id: 'ytd',        label: 'Year to Date' },
-  { id: 'last_year',  label: 'Last Year' },
-  { id: 'all_time',   label: 'All Time' },
-  { id: 'custom',     label: 'Custom' },
-]
+const PERIOD_PRESET_IDS: PeriodPreset[] = ['this_month', 'last_month', 'ytd', 'last_year', 'all_time', 'custom']
+
+const PERIOD_PRESET_KEYS: Record<PeriodPreset, string> = {
+  this_month: 'expenses.thisMonth',
+  last_month: 'period.lastMonth',
+  ytd:        'period.ytd',
+  last_year:  'period.lastYear',
+  all_time:   'period.allTime',
+  custom:     'period.custom',
+}
 
 const EMPTY_BUDGETS: BudgetSettings = {
   budget_monthly: null, budget_labor: null, budget_materials: null,
@@ -469,7 +472,7 @@ export default function ExpensesPage() {
   const [period, setPeriod] = useState<PeriodPreset>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('expenses-period')
-      if (saved && PERIOD_PRESETS.some(p => p.id === saved)) return saved as PeriodPreset
+      if (saved && PERIOD_PRESET_IDS.includes(saved as PeriodPreset)) return saved as PeriodPreset
     }
     return 'this_month'
   })
@@ -489,6 +492,7 @@ export default function ExpensesPage() {
   const [budgetOpen, setBudgetOpen] = useState(false)
 
   const queryClient = useQueryClient()
+  const { t } = useLanguage()
   const { start: periodStart, end: periodEnd, label: periodLabel } = getPeriodRange(period, customFrom, customTo)
   const prevRange = getPrevPeriodRange(period)
 
@@ -566,7 +570,7 @@ export default function ExpensesPage() {
     },
     onSuccess: (_, form) => {
       queryClient.invalidateQueries({ queryKey: ['expenses-all'] })
-      toast.success(`Logged $${Number(form.amount).toFixed(2)} in ${form.category}`)
+      toast.success(t('expenses.logged'))
       setAddOpen(false)
     },
     onError: () => toast.error('Failed to add expense'),
@@ -589,7 +593,7 @@ export default function ExpensesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses-all'] })
-      toast.success('Expense updated')
+      toast.success(t('expenses.updated'))
       setEditExpense(null)
     },
     onError: () => toast.error('Failed to update expense'),
@@ -604,7 +608,7 @@ export default function ExpensesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses-all'] })
-      toast.success('Expense deleted')
+      toast.success(t('expenses.deleted'))
       setDeleteId(null)
     },
   })
@@ -622,7 +626,7 @@ export default function ExpensesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expense-budgets'] })
-      toast.success('Budgets saved')
+      toast.success(t('expenses.budgetsSaved'))
       setBudgetOpen(false)
     },
     onError: () => toast.error('Failed to save budgets'),
@@ -782,18 +786,18 @@ export default function ExpensesPage() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--c-text-1)', margin: 0, letterSpacing: '-0.02em' }}>Expenses</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--c-text-1)', margin: 0, letterSpacing: '-0.02em' }}>{t('expenses.title')}</h1>
           <p style={{ fontSize: 13, color: 'var(--c-text-4)', margin: '2px 0 0', fontFamily: "'DM Mono', monospace" }}>{periodLabel} · {periodExpenses.length} entries</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Button variant="secondary" size="sm" onClick={() => setBudgetOpen(true)}>
-            <Target size={14} /> Budgets
+            <Target size={14} /> {t('expenses.setBudgets')}
           </Button>
           <Button variant="secondary" size="sm" onClick={handleExportCSV}>
-            <Download size={14} /> Export CSV
+            <Download size={14} /> {t('expenses.exportCSV')}
           </Button>
           <Button size="sm" onClick={() => setAddOpen(true)}>
-            <Plus size={14} /> Add Expense
+            <Plus size={14} /> {t('expenses.addExpense')}
           </Button>
         </div>
       </div>
@@ -820,33 +824,33 @@ export default function ExpensesPage() {
       {/* ── Period pills ── */}
       <div style={sectionCard}>
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {PERIOD_PRESETS.map(p => (
+          {PERIOD_PRESET_IDS.map(id => (
             <button
-              key={p.id}
-              onClick={() => setPeriod(p.id)}
+              key={id}
+              onClick={() => setPeriod(id)}
               style={{
                 padding: '6px 14px', borderRadius: 99, fontSize: 12, fontWeight: 600,
                 whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, minHeight: 36,
-                border: `1px solid ${period === p.id ? 'var(--c-gold-border)' : 'var(--c-border-mid)'}`,
-                background: period === p.id ? 'var(--c-gold-bg)' : 'var(--c-nested)',
-                color: period === p.id ? 'var(--c-gold)' : 'var(--c-text-3)',
+                border: `1px solid ${period === id ? 'var(--c-gold-border)' : 'var(--c-border-mid)'}`,
+                background: period === id ? 'var(--c-gold-bg)' : 'var(--c-nested)',
+                color: period === id ? 'var(--c-gold)' : 'var(--c-text-3)',
                 transition: 'all 0.12s ease',
               }}
             >
-              {p.label}
+              {t(PERIOD_PRESET_KEYS[id])}
             </button>
           ))}
         </div>
         {period === 'custom' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--c-text-4)' }}>From</span>
+            <span style={{ fontSize: 12, color: 'var(--c-text-4)' }}>{t('period.from')}</span>
             <input type="date" value={pendingCustomFrom} onChange={e => setPendingCustomFrom(e.target.value)}
               style={{ background: 'var(--c-nested)', border: '1px solid var(--c-border)', color: 'var(--c-text-1)', borderRadius: 8, padding: '6px 10px', fontSize: 13, outline: 'none', colorScheme: 'dark' }} />
-            <span style={{ fontSize: 12, color: 'var(--c-text-4)' }}>To</span>
+            <span style={{ fontSize: 12, color: 'var(--c-text-4)' }}>{t('period.to')}</span>
             <input type="date" value={pendingCustomTo} onChange={e => setPendingCustomTo(e.target.value)}
               style={{ background: 'var(--c-nested)', border: '1px solid var(--c-border)', color: 'var(--c-text-1)', borderRadius: 8, padding: '6px 10px', fontSize: 13, outline: 'none', colorScheme: 'dark' }} />
             <Button size="sm" onClick={() => { setCustomFrom(pendingCustomFrom); setCustomTo(pendingCustomTo) }}>
-              Apply Range
+              {t('period.apply')}
             </Button>
           </div>
         )}
@@ -858,7 +862,7 @@ export default function ExpensesPage() {
           {/* Total Spent */}
           <div style={{ ...sectionCard, padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Total Spent</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('expenses.totalSpent')}</span>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--c-danger-bg)', border: '1px solid var(--c-danger-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CreditCard size={15} style={{ color: 'var(--c-danger)' }} />
               </div>
@@ -874,7 +878,7 @@ export default function ExpensesPage() {
           {/* Largest Category */}
           <div style={{ ...sectionCard, padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Top Category</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('expenses.largestCategory')}</span>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(53,131,179,0.12)', border: '1px solid rgba(53,131,179,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <BarChart2 size={15} style={{ color: '#3583b3' }} />
               </div>
@@ -894,7 +898,7 @@ export default function ExpensesPage() {
           {/* Count */}
           <div style={{ ...sectionCard, padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Entries</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('expenses.expenseCount')}</span>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Receipt size={15} style={{ color: '#6366f1' }} />
               </div>
@@ -908,7 +912,7 @@ export default function ExpensesPage() {
           {/* Biggest single */}
           <div style={{ ...sectionCard, padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Largest</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('expenses.biggestExpense')}</span>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <TrendingUp size={15} style={{ color: '#f97316' }} />
               </div>
@@ -925,7 +929,7 @@ export default function ExpensesPage() {
           {/* Budget */}
           <div style={{ ...sectionCard, padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Budget</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('expenses.budgetStatus')}</span>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(230,171,53,0.12)', border: '1px solid rgba(230,171,53,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Target size={15} style={{ color: 'var(--c-gold)' }} />
               </div>
@@ -1036,7 +1040,7 @@ export default function ExpensesPage() {
           <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 150 }}>
             <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--c-text-4)', pointerEvents: 'none' }} />
             <input
-              type="text" placeholder="Search expenses..."
+              type="text" placeholder={t('expenses.searchPlaceholder')}
               value={search} onChange={e => setSearch(e.target.value)}
               style={{ width: '100%', background: 'var(--c-nested)', border: '1px solid var(--c-border)', color: 'var(--c-text-1)', borderRadius: 8, padding: '7px 10px 7px 30px', fontSize: 13, outline: 'none' }}
               onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)' }}
@@ -1046,20 +1050,20 @@ export default function ExpensesPage() {
           {/* Category filter */}
           <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
             style={{ background: 'var(--c-nested)', border: '1px solid var(--c-border)', color: 'var(--c-text-2)', borderRadius: 8, padding: '7px 10px', fontSize: 12, outline: 'none', cursor: 'pointer' }}>
-            <option value="">All Categories</option>
+            <option value="">{t('expenses.allCategories')}</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           {/* Sort */}
           <select value={sortBy} onChange={e => setSortBy(e.target.value as SortOption)}
             style={{ background: 'var(--c-nested)', border: '1px solid var(--c-border)', color: 'var(--c-text-2)', borderRadius: 8, padding: '7px 10px', fontSize: 12, outline: 'none', cursor: 'pointer' }}>
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="highest">Highest Amount</option>
-            <option value="lowest">Lowest Amount</option>
+            <option value="newest">{t('expenses.sortNewest')}</option>
+            <option value="oldest">{t('expenses.sortOldest')}</option>
+            <option value="highest">{t('expenses.sortHighest')}</option>
+            <option value="lowest">{t('expenses.sortLowest')}</option>
           </select>
           {/* Group by */}
           <div style={{ display: 'flex', gap: 4, background: 'var(--c-nested)', borderRadius: 8, padding: 3, border: '1px solid var(--c-border)' }}>
-            {([['none', 'List'], ['date', 'By Date'], ['category', 'By Category']] as [GroupOption, string][]).map(([val, label]) => (
+            {([['none', t('expenses.list')], ['date', t('expenses.byDate')], ['category', t('expenses.byCategory')]] as [GroupOption, string][]).map(([val, label]) => (
               <button key={val} onClick={() => setGroupBy(val)}
                 style={{ padding: '4px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none',
                   background: groupBy === val ? 'var(--c-card)' : 'transparent',
@@ -1074,7 +1078,7 @@ export default function ExpensesPage() {
 
         {/* List */}
         {isLoading ? <TableSkeleton rows={5} /> : filtered.length === 0 ? (
-          <EmptyState icon={Receipt} title="No expenses" description={search || filterCat ? 'Try adjusting your filters.' : 'Add your first expense for this period.'} action={!search && !filterCat ? { label: 'Add Expense', onClick: () => setAddOpen(true) } : undefined} />
+          <EmptyState icon={Receipt} title={t('expenses.noExpenses')} description={search || filterCat ? t('expenses.noExpensesFilter') : t('expenses.noExpensesDesc')} action={!search && !filterCat ? { label: t('expenses.addExpense'), onClick: () => setAddOpen(true) } : undefined} />
         ) : (
           <>
             {/* Desktop table */}
@@ -1082,7 +1086,7 @@ export default function ExpensesPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'var(--c-nested)', borderBottom: '1px solid var(--c-border-mid)' }}>
-                    {['Date', 'Category', 'Description', 'Amount', 'Tax', ''].map(h => (
+                    {[t('expenses.date'), t('expenses.category'), t('expenses.description'), t('expenses.amount'), 'Tax', ''].map(h => (
                       <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontSize: 10, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{h}</th>
                     ))}
                   </tr>
@@ -1176,7 +1180,7 @@ export default function ExpensesPage() {
             <div className="sticky-mobile-footer" style={{ marginTop: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-3)' }}>
-                  {filtered.length} expense{filtered.length !== 1 ? 's' : ''} showing
+                  {filtered.length} {t('expenses.noExpenses').toLowerCase()}
                 </span>
                 <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, fontSize: 16, color: 'var(--c-danger)' }}>
                   {formatCurrency(filtered.reduce((s, e) => s + e.amount, 0))}

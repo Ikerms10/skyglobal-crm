@@ -11,22 +11,24 @@ import {
   Bell, Shield, TrendingUp, ChevronRight,
 } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 // ─── Sidebar nav ─────────────────────────────────────────────────────────────
 
-type Section = 'profile' | 'appearance' | 'business' | 'notifications' | 'revenue' | 'integrations' | 'data' | 'security'
+type Section = 'profile' | 'appearance' | 'language' | 'business' | 'notifications' | 'revenue' | 'integrations' | 'data' | 'security'
 
-interface NavItem { id: Section; icon: React.ElementType; label: string }
+interface NavItem { id: Section; icon: React.ElementType; labelKey: string }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: 'profile',       icon: User,       label: 'Profile' },
-  { id: 'appearance',    icon: Palette,    label: 'Appearance' },
-  { id: 'business',      icon: Building2,  label: 'Business Info' },
-  { id: 'notifications', icon: Bell,       label: 'Notifications' },
-  { id: 'revenue',       icon: TrendingUp, label: 'Revenue Goals' },
-  { id: 'integrations',  icon: Calendar,   label: 'Integrations' },
-  { id: 'data',          icon: Database,   label: 'Data & Backups' },
-  { id: 'security',      icon: Shield,     label: 'Security' },
+const NAV_ITEM_DEFS: NavItem[] = [
+  { id: 'profile',       icon: User,       labelKey: 'settings.sections.profile' },
+  { id: 'appearance',    icon: Palette,    labelKey: 'settings.sections.appearance' },
+  { id: 'language',      icon: Lock,       labelKey: 'settings.sections.language' },
+  { id: 'business',      icon: Building2,  labelKey: 'settings.sections.business' },
+  { id: 'notifications', icon: Bell,       labelKey: 'settings.sections.notifications' },
+  { id: 'revenue',       icon: TrendingUp, labelKey: 'settings.sections.revenue' },
+  { id: 'integrations',  icon: Calendar,   labelKey: 'settings.sections.integrations' },
+  { id: 'data',          icon: Database,   labelKey: 'settings.sections.data' },
+  { id: 'security',      icon: Shield,     labelKey: 'settings.sections.security' },
 ]
 
 // ─── Appearance cards ─────────────────────────────────────────────────────────
@@ -134,8 +136,11 @@ export default function SettingsPage() {
   const searchParams = useSearchParams()
   const supabase = createClient()
   const { preference, setTheme } = useTheme()
+  const { language, setLanguage, t } = useLanguage()
+  const [langSwitching, setLangSwitching] = useState(false)
 
   const [activeSection, setActiveSection] = useState<Section>('profile')
+  const NAV_ITEMS = NAV_ITEM_DEFS.map(d => ({ ...d, label: t(d.labelKey) }))
 
   // Profile
   const [displayName, setDisplayName] = useState('')
@@ -381,6 +386,13 @@ export default function SettingsPage() {
     }
   }
 
+  const handleLangChange = async (lang: 'en' | 'es') => {
+    setLangSwitching(true)
+    await setLanguage(lang)
+    setTimeout(() => setLangSwitching(false), 400)
+    toast.success(lang === 'es' ? '¡Idioma actualizado!' : 'Language updated!')
+  }
+
   // ─── Panels ─────────────────────────────────────────────────────────────────
 
   const panels: Record<Section, React.ReactNode> = {
@@ -447,6 +459,61 @@ export default function SettingsPage() {
             }
           />
         </div>
+      </>
+    ),
+
+    language: (
+      <>
+        <SectionHead title={t('settings.language.title')} description={t('settings.language.description')} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, maxWidth: 440 }}>
+          {([
+            { lang: 'en' as const, flag: '🇺🇸', label: t('settings.language.english') },
+            { lang: 'es' as const, flag: '🇵🇷', label: t('settings.language.spanish') },
+          ]).map(({ lang, flag, label }) => {
+            const isActive = language === lang
+            return (
+              <button
+                key={lang}
+                onClick={() => handleLangChange(lang)}
+                disabled={langSwitching}
+                style={{
+                  position: 'relative',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                  padding: '24px 16px 18px',
+                  borderRadius: 14,
+                  border: isActive ? '2px solid var(--c-gold)' : '2px solid var(--c-border-mid)',
+                  background: isActive ? 'var(--c-gold-bg)' : 'var(--c-nested)',
+                  cursor: langSwitching ? 'wait' : 'pointer',
+                  transition: 'all 0.15s ease',
+                  opacity: langSwitching ? 0.7 : 1,
+                }}
+              >
+                {isActive && (
+                  <div style={{
+                    position: 'absolute', top: 10, right: 10,
+                    width: 20, height: 20, borderRadius: '50%', background: 'var(--c-gold)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Check size={12} color="#1d1c17" strokeWidth={3} />
+                  </div>
+                )}
+                <span style={{ fontSize: 44, lineHeight: 1 }}>{flag}</span>
+                <span style={{
+                  fontSize: 15, fontWeight: isActive ? 700 : 500,
+                  color: isActive ? 'var(--c-gold)' : 'var(--c-text-2)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}>
+                  {label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        {langSwitching && (
+          <p style={{ fontSize: 13, color: 'var(--c-text-4)', marginTop: 14 }}>
+            {t('settings.language.switching')}
+          </p>
+        )}
       </>
     ),
 
@@ -691,7 +758,7 @@ export default function SettingsPage() {
           className="settings-sidebar shrink-0 mb-4 md:mb-0 sticky top-6 hidden md:block"
         >
           <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '10px 12px 6px', fontFamily: "'DM Mono', monospace" }}>
-            Settings
+            {t('settings.title')}
           </p>
           {NAV_ITEMS.map(item => {
             const isActive = activeSection === item.id

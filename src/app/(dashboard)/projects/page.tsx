@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { cn } from '@/lib/utils'
 import { ChevronUp, ChevronDown } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 type SortField = 'title' | 'status' | 'start_date' | 'end_date' | 'contract_value' | 'payment_status'
 type ProjectWithCustomer = Project & { customers: { name: string; id: string } | null }
@@ -62,6 +63,7 @@ export default function ProjectsPage() {
   const [newProjectOpen, setNewProjectOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
   const debouncedSearch = useDebounce(search, 300)
+  const { t } = useLanguage()
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
@@ -130,8 +132,8 @@ export default function ProjectsPage() {
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Projects</h1>
-          <p className="text-[var(--sg-text-2)] text-sm">{projects.length} total projects</p>
+          <h1 className="text-2xl font-bold text-white">{t('projects.title')}</h1>
+          <p className="text-[var(--sg-text-2)] text-sm">{projects.length} {t('projects.totalLabel')}</p>
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
@@ -139,30 +141,30 @@ export default function ProjectsPage() {
             <button onClick={() => setViewMode('list')}
               className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors',
                 viewMode === 'list' ? 'bg-[var(--sg-gold)] text-black' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]')}>
-              <List className="h-3.5 w-3.5" /> List
+              <List className="h-3.5 w-3.5" /> {t('leads.listView')}
             </button>
             <button onClick={() => setViewMode('map')}
               className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors',
                 viewMode === 'map' ? 'bg-[var(--sg-gold)] text-black' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]')}>
-              <MapPin className="h-3.5 w-3.5" /> Map
+              <MapPin className="h-3.5 w-3.5" /> {t('projects.mapView')}
             </button>
           </div>
-          <Button onClick={() => setNewProjectOpen(true)}><Plus className="h-4 w-4" /> New Project</Button>
+          <Button onClick={() => setNewProjectOpen(true)}><Plus className="h-4 w-4" /> {t('projects.addProject')}</Button>
         </div>
       </div>
 
       {/* Summary bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[var(--sg-surface)] border-l-4 border-l-[var(--sg-gold)] border border-[var(--sg-border)] rounded-xl p-4">
-          <p className="text-xs text-[var(--sg-text-2)]">Active</p>
+          <p className="text-xs text-[var(--sg-text-2)]">{t('projects.activeLabel')}</p>
           <p className="text-2xl font-bold text-[var(--sg-gold)]">{activeCount}</p>
         </div>
         <div className="bg-[var(--sg-surface)] border-l-4 border-l-[var(--sg-gold)] border border-[var(--sg-border)] rounded-xl p-4">
-          <p className="text-xs text-[var(--sg-text-2)]">Contract Value</p>
+          <p className="text-xs text-[var(--sg-text-2)]">{t('projects.totalValue')}</p>
           <p className="text-2xl font-bold text-[var(--sg-gold)]">{formatCurrency(totalContractValue)}</p>
         </div>
         <div className="bg-[var(--sg-surface)] border-l-4 border-l-[var(--sg-danger)] border border-[var(--sg-border)] rounded-xl p-4">
-          <p className="text-xs text-[var(--sg-text-2)]">Overdue</p>
+          <p className="text-xs text-[var(--sg-text-2)]">{t('projects.overdueLabel')}</p>
           <p className="text-2xl font-bold text-[var(--sg-danger)]">{overdueCount}</p>
         </div>
       </div>
@@ -172,23 +174,23 @@ export default function ProjectsPage() {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search projects..."
+          placeholder={t('projects.searchPlaceholder')}
           className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)] w-64"
         />
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
           className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]">
-          <option value="">All Statuses</option>
+          <option value="">{t('projects.allStatuses')}</option>
           {['Scheduled','In Progress','On Hold','Completed','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <select value={filterPayment} onChange={e => setFilterPayment(e.target.value)}
           className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]">
-          <option value="">All Payment Status</option>
+          <option value="">{t('projects.allPaymentStatus')}</option>
           {['Unpaid','Partial','Paid','Overdue'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
       {isLoading ? <TableSkeleton rows={8} /> : filtered.length === 0 ? (
-        <EmptyState icon={Briefcase} title="No projects found" description="Projects are created from the New Project button or when a lead is marked Won." />
+        <EmptyState icon={Briefcase} title={t('projects.noProjects')} description={t('projects.noProjectsDesc')} />
       ) : viewMode === 'map' ? (
         <div>
           {viewAllOnMapUrl && (
@@ -199,7 +201,7 @@ export default function ProjectsPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[var(--sg-sky)] hover:brightness-110 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
               >
-                🗺️ View All on Map
+                🗺️ {t('projects.viewAllOnMap')}
               </a>
             </div>
           )}
@@ -207,7 +209,7 @@ export default function ProjectsPage() {
             {mapProjects.length > 0 ? mapProjects.map(p => (
               <MapViewCard key={p.id} p={p} onClick={() => router.push(`/customers/${p.customer_id}/projects/${p.id}`)} />
             )) : (
-              <p className="text-[var(--sg-text-2)] text-sm col-span-2 py-8 text-center">No active projects with addresses</p>
+              <p className="text-[var(--sg-text-2)] text-sm col-span-2 py-8 text-center">{t('projects.noActiveAddresses')}</p>
             )}
           </div>
         </div>
@@ -219,14 +221,14 @@ export default function ProjectsPage() {
                 <thead>
                   <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
                     {[
-                      { label: 'Project', field: 'title' as SortField },
-                      { label: 'Customer', field: null },
-                      { label: 'Status', field: 'status' as SortField },
-                      { label: 'Type', field: null },
-                      { label: 'Start', field: 'start_date' as SortField },
-                      { label: 'End', field: 'end_date' as SortField },
-                      { label: 'Contract', field: 'contract_value' as SortField },
-                      { label: 'Payment', field: 'payment_status' as SortField },
+                      { label: t('projects.colProject'), field: 'title' as SortField },
+                      { label: t('projects.colCustomer'), field: null },
+                      { label: t('projects.colStatus'), field: 'status' as SortField },
+                      { label: t('projects.colType'), field: null },
+                      { label: t('projects.startDate'), field: 'start_date' as SortField },
+                      { label: t('projects.endDate'), field: 'end_date' as SortField },
+                      { label: t('projects.colContract'), field: 'contract_value' as SortField },
+                      { label: t('projects.colPayment'), field: 'payment_status' as SortField },
                     ].map(({ label, field }) => (
                       <th key={label}
                         onClick={field ? () => handleSort(field) : undefined}

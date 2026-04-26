@@ -27,6 +27,7 @@ import {
   useDroppable,
 } from '@dnd-kit/core'
 import { formatCurrency, cn } from '@/lib/utils'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const STAGES: LeadStage[] = ['New Lead', 'Estimate Sent', 'Follow-up', 'Won', 'Lost', 'On Hold']
 const SOURCES: LeadSource[] = ['Thumbtack', 'Referral', 'Google', 'Instagram', 'Door Knock', 'Facebook', 'Yelp', 'Other']
@@ -268,6 +269,7 @@ export default function LeadsPage() {
   const [lostLead, setLostLead] = useState<{ lead: Lead; prevStage: LeadStage } | null>(null)
   const debouncedSearch = useDebounce(search, 300)
   const queryClient = useQueryClient()
+  const { t } = useLanguage()
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
@@ -379,19 +381,19 @@ export default function LeadsPage() {
       setWonLead({ ...lead, stage: newStage })
       updateStageMutation.mutate({ leadId: lead.id, stage: newStage })
       fireWinConfetti()
-      toast.success('🎉 Lead won! Consider creating a project.')
+      toast.success(t('leads.won'))
     } else if (newStage === 'Lost') {
       setLostLead({ lead, prevStage: lead.stage })
     } else {
       updateStageMutation.mutate({ leadId, stage: newStage })
-      toast.success(`Moved to ${newStage}`)
+      toast.success(t('leads.movedTo', { stage: newStage }))
     }
   }, [leads, queryClient, updateStageMutation])
 
   const handleLostConfirm = (reason: string) => {
     if (!lostLead) return
     updateStageMutation.mutate({ leadId: lostLead.lead.id, stage: 'Lost', lostReason: reason })
-    toast.success('Lead marked as lost')
+    toast.success(t('leads.markedLost'))
     setLostLead(null)
   }
 
@@ -478,7 +480,7 @@ export default function LeadsPage() {
             color: 'var(--c-text-1)',
             margin: 0,
           }}>
-            Pipeline
+            {t('leads.title')}
           </h1>
           <p style={{ fontSize: 12, color: 'var(--c-text-3)', margin: '2px 0 0' }}>
             <span style={{ color: 'var(--c-gold)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{formatCurrency(totalOpenValue)}</span>
@@ -508,7 +510,7 @@ export default function LeadsPage() {
                 transition: 'background 150ms, color 150ms, border-color 150ms',
               }}
             >
-              {mode === 'all' ? 'All' : mode === 'overdue' ? 'Overdue' : 'High Value'}
+              {mode === 'all' ? t('leads.filterAll') : mode === 'overdue' ? t('leads.filterOverdue') : t('leads.filterHighValue')}
             </button>
           ))}
         </div>
@@ -531,8 +533,8 @@ export default function LeadsPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search leads..."
-              aria-label="Search leads"
+              placeholder={t('leads.searchPlaceholder')}
+              aria-label={t('leads.searchPlaceholder')}
               style={{
                 background: 'var(--c-nested)',
                 border: '1px solid var(--c-border)',
@@ -566,7 +568,7 @@ export default function LeadsPage() {
               cursor: 'pointer',
             }}
           >
-            <option value="">All Sources</option>
+            <option value="">{t('leads.allSources')}</option>
             {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           {/* List / Board toggle */}
@@ -582,7 +584,7 @@ export default function LeadsPage() {
                 transition: 'background 150ms, color 150ms',
               }}
             >
-              <List size={13} aria-hidden="true" /> List
+              <List size={13} aria-hidden="true" /> {t('leads.listView')}
             </button>
             <button
               onClick={() => setViewMode('board')}
@@ -595,7 +597,7 @@ export default function LeadsPage() {
                 transition: 'background 150ms, color 150ms',
               }}
             >
-              <Columns size={13} aria-hidden="true" /> Board
+              <Columns size={13} aria-hidden="true" /> {t('leads.boardView')}
             </button>
           </div>
 
@@ -608,7 +610,7 @@ export default function LeadsPage() {
               fontSize: 13,
             }}
           >
-            <Plus size={14} aria-hidden="true" /> Add Lead
+            <Plus size={14} aria-hidden="true" /> {t('leads.addLead')}
           </Button>
         </div>
       </div>
@@ -617,9 +619,9 @@ export default function LeadsPage() {
       {leads.length === 0 && (
         <EmptyState
           icon={Users}
-          title="No leads yet"
-          description="Add your first lead to start building your pipeline."
-          action={{ label: '+ Add Lead', onClick: () => setAddLeadOpen(true) }}
+          title={t('leads.noLeads')}
+          description={t('leads.noLeadsDesc')}
+          action={{ label: `+ ${t('leads.addLead')}`, onClick: () => setAddLeadOpen(true) }}
         />
       )}
 

@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { TodaysFocus } from '@/components/dashboard/TodaysFocus';
 import { AgendaWidget } from '@/components/dashboard/AgendaWidget';
 import { BibleVerse } from '@/components/dashboard/BibleVerse';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type Timeframe = 'Week' | 'Month' | 'Year' | 'All';
 
@@ -26,23 +27,10 @@ function getStartDate(tf: Timeframe): string | null {
   return null;
 }
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+function todayLabel(lang: string) {
+  const locale = lang === 'es' ? 'es-PR' : 'en-US';
+  return new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' });
 }
-
-function todayLabel() {
-  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-}
-
-const TIMEFRAMES: { label: string; value: Timeframe }[] = [
-  { label: 'Week', value: 'Week' },
-  { label: 'Month', value: 'Month' },
-  { label: 'Year', value: 'Year' },
-  { label: 'All', value: 'All' },
-];
 
 const STAGE_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
   'New Lead':      { bg: 'rgba(122,158,126,0.12)', text: '#4A6741', bar: '#7A9E7E' },
@@ -53,15 +41,15 @@ const STAGE_COLORS: Record<string, { bg: string; text: string; bar: string }> = 
   'On Hold':       { bg: 'rgba(200,188,168,0.2)',  text: '#9a9585', bar: '#CFC4B4' },
 };
 
-const QUICK_ACTIONS = [
-  { label: 'New Lead',     href: '/leads',     icon: Target,   bg: 'rgba(74,103,65,0.14)',  color: '#4A6741' },
-  { label: 'New Project',  href: '/projects',  icon: Briefcase,bg: 'rgba(91,140,187,0.14)', color: '#5B8CBB' },
-  { label: 'New Proposal', href: '/proposals', icon: FileText, bg: 'rgba(139,105,20,0.14)', color: '#8B6914' },
-  { label: 'New Invoice',  href: '/invoices',  icon: Receipt,  bg: 'rgba(160,120,80,0.14)', color: '#A07850' },
-  { label: 'Schedule',     href: '/schedule',  icon: Calendar, bg: 'rgba(122,158,126,0.14)',color: '#7A9E7E' },
-  { label: 'Reports',      href: '/reports',   icon: BarChart2,bg: 'rgba(167,139,250,0.14)',color: '#A78BFA' },
-  { label: 'Customers',    href: '/customers', icon: Users,    bg: 'rgba(185,74,58,0.10)',  color: '#B94A3A' },
-];
+const QUICK_ACTION_DEFS = [
+  { key: 'dashboard.newLead',     href: '/leads',     icon: Target,   bg: 'rgba(74,103,65,0.14)',  color: '#4A6741' },
+  { key: 'dashboard.newProject',  href: '/projects',  icon: Briefcase,bg: 'rgba(91,140,187,0.14)', color: '#5B8CBB' },
+  { key: 'dashboard.newProposal', href: '/proposals', icon: FileText, bg: 'rgba(139,105,20,0.14)', color: '#8B6914' },
+  { key: 'nav.invoices',          href: '/invoices',  icon: Receipt,  bg: 'rgba(160,120,80,0.14)', color: '#A07850' },
+  { key: 'nav.schedule',          href: '/schedule',  icon: Calendar, bg: 'rgba(122,158,126,0.14)',color: '#7A9E7E' },
+  { key: 'nav.reports',           href: '/reports',   icon: BarChart2,bg: 'rgba(167,139,250,0.14)',color: '#A78BFA' },
+  { key: 'nav.customers',         href: '/customers', icon: Users,    bg: 'rgba(185,74,58,0.10)',  color: '#B94A3A' },
+] as const;
 
 // ── Tiny SVG sparkline ────────────────────────────────────────────────────────
 function SparkLine({ values, color }: { values: number[]; color: string }) {
@@ -277,6 +265,16 @@ export default function DashboardPage() {
   const [timeframe, setTimeframe] = useState<Timeframe>('Month');
   const [time, setTime]           = useState('');
   const shouldReduceMotion        = useReducedMotion();
+  const { language, t }           = useLanguage();
+
+  const TIMEFRAMES: { label: string; value: Timeframe }[] = [
+    { label: t('dashboard.timeframe.week'),  value: 'Week' },
+    { label: t('dashboard.timeframe.month'), value: 'Month' },
+    { label: t('dashboard.timeframe.year'),  value: 'Year' },
+    { label: t('dashboard.timeframe.all'),   value: 'All' },
+  ];
+
+  const QUICK_ACTIONS = QUICK_ACTION_DEFS.map(d => ({ ...d, label: t(d.key) }));
 
   // Live clock
   useEffect(() => {
@@ -410,10 +408,10 @@ export default function DashboardPage() {
   const maxStageCount = Math.max(...Object.values(data?.stageCounts ?? {}).map(Number), 1);
 
   const kpis: KPIKind[] = [
-    { label: 'Revenue',         value: data?.revenue        ?? 0, fmt: 'currency', type: 'gold',  icon: DollarSign, href: '/reports',  sparkline: data?.revenueSparkline, trend: data?.revTrend },
-    { label: 'Gross Profit',    value: data?.profit         ?? 0, fmt: 'currency', type: 'sage',  icon: TrendingUp, href: '/reports',  sub: data?.margin != null ? `${data.margin}% margin` : undefined, trend: data?.profTrend },
-    { label: 'Active Projects', value: data?.activeProjects ?? 0, fmt: 'number',   type: 'amber', icon: Briefcase,  href: '/projects' },
-    { label: 'Pipeline Leads',  value: data?.totalLeads     ?? 0, fmt: 'number',   type: 'terra', icon: Target,     href: '/leads',    sub: data?.wonLeads ? `${data.wonLeads} won` : undefined },
+    { label: t('kpi.revenue'),         value: data?.revenue        ?? 0, fmt: 'currency', type: 'gold',  icon: DollarSign, href: '/reports',  sparkline: data?.revenueSparkline, trend: data?.revTrend },
+    { label: t('kpi.profit'),          value: data?.profit         ?? 0, fmt: 'currency', type: 'sage',  icon: TrendingUp, href: '/reports',  sub: data?.margin != null ? `${data.margin}% margin` : undefined, trend: data?.profTrend },
+    { label: t('kpi.activeProjects'),  value: data?.activeProjects ?? 0, fmt: 'number',   type: 'amber', icon: Briefcase,  href: '/projects' },
+    { label: t('kpi.totalLeads'),      value: data?.totalLeads     ?? 0, fmt: 'number',   type: 'terra', icon: Target,     href: '/leads',    sub: data?.wonLeads ? `${data.wonLeads} ${t('kpi.won').toLowerCase()}` : undefined },
   ];
 
   const stagger = (i: number) => ({
@@ -442,10 +440,10 @@ export default function DashboardPage() {
           <div className="ios-glass bento-card" style={{ padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>
-                {todayLabel()} · Orlando, FL
+                {todayLabel(language)} · Orlando, FL
               </p>
               <h1 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', fontWeight: 800, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.035em', lineHeight: 1.1 }}>
-                {greeting()},&nbsp;<span className="value-shimmer">Iker</span>
+                {new Date().getHours() < 12 ? t('dashboard.greeting.morning') : new Date().getHours() < 17 ? t('dashboard.greeting.afternoon') : t('dashboard.greeting.evening')},&nbsp;<span className="value-shimmer">Iker</span>
               </h1>
               <p style={{ fontSize: 13, color: 'var(--c-text-3)', margin: '8px 0 0', fontFamily: "'DM Mono', monospace" }}>
                 Here's what needs your attention today.
@@ -489,7 +487,7 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span className="live-dot" aria-hidden="true" />
             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              Command Center · Live
+              {t('dashboard.commandCenter')} · {t('dashboard.live')}
             </span>
           </div>
 
@@ -515,10 +513,10 @@ export default function DashboardPage() {
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 18 }} />)
               : ([
-                  { label: 'Open Leads',     value: data?.openLeads ?? 0,      fmt: 'number'   as const, type: 'terra'  as const, icon: Target,       href: '/leads', sub: `of ${data?.totalLeads ?? 0} total` },
-                  { label: 'Won',            value: data?.wonLeads ?? 0,       fmt: 'number'   as const, type: 'sage'   as const, icon: CheckCircle2, href: '/leads', sub: 'this period' },
-                  { label: 'Pipeline Value', value: data?.pipelineValue ?? 0,  fmt: 'currency' as const, type: 'gold'   as const, icon: DollarSign,   href: '/leads', sub: 'est. value' },
-                  { label: 'Win Rate',       value: data?.conversionRate ?? 0, fmt: 'percent'  as const, type: 'purple' as const, icon: Award,        href: '/leads', sub: `${data?.lostLeads ?? 0} lost` },
+                  { label: t('kpi.openLeads'),  value: data?.openLeads ?? 0,      fmt: 'number'   as const, type: 'terra'  as const, icon: Target,       href: '/leads', sub: `of ${data?.totalLeads ?? 0} total` },
+                  { label: t('kpi.won'),        value: data?.wonLeads ?? 0,       fmt: 'number'   as const, type: 'sage'   as const, icon: CheckCircle2, href: '/leads', sub: 'this period' },
+                  { label: t('kpi.pipeline'),   value: data?.pipelineValue ?? 0,  fmt: 'currency' as const, type: 'gold'   as const, icon: DollarSign,   href: '/leads', sub: 'est. value' },
+                  { label: t('kpi.winRate'),    value: data?.conversionRate ?? 0, fmt: 'percent'  as const, type: 'purple' as const, icon: Award,        href: '/leads', sub: `${data?.lostLeads ?? 0} lost` },
                 ] as LeadStatKind[]).map(stat => <LeadStatCard key={stat.label} stat={stat} />)
             }
           </div>
@@ -611,7 +609,7 @@ export default function DashboardPage() {
 
           <div className="ios-glass bento-card" style={{ padding: '22px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Recent Activity</h3>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{t('dashboard.recentActivity')}</h3>
               <Activity size={14} style={{ color: 'var(--c-sage)' }} />
             </div>
             {isLoading
@@ -632,13 +630,13 @@ export default function DashboardPage() {
                       </span>
                     </Link>
                   ))
-                : <p style={{ fontSize: 13, color: 'var(--c-text-4)', textAlign: 'center', padding: '20px 0', fontFamily: "'DM Mono', monospace" }}>No recent activity</p>
+                : <p style={{ fontSize: 13, color: 'var(--c-text-4)', textAlign: 'center', padding: '20px 0', fontFamily: "'DM Mono', monospace" }}>{t('dashboard.noActivity')}</p>
             }
           </div>
 
           <div className="ios-glass bento-card" style={{ padding: '22px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Follow-ups</h3>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{t('dashboard.followUps')}</h3>
               <Clock size={14} style={{ color: '#8B6914' }} />
             </div>
             {(data?.followUps ?? []).length > 0
@@ -654,18 +652,18 @@ export default function DashboardPage() {
                         <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0 }}>{(f.customers as any)?.name}</p>
                       </div>
                       <span style={{ fontSize: 11, color: isToday ? '#8B6914' : 'var(--c-text-3)', fontWeight: isToday ? 700 : 400, flexShrink: 0, marginLeft: 8, fontFamily: "'DM Mono', monospace" }}>
-                        {isToday ? 'Today' : f.follow_up_date}
+                        {isToday ? t('focus.today') : f.follow_up_date}
                       </span>
                     </Link>
                   );
                 })
-              : <p style={{ fontSize: 13, color: 'var(--c-text-4)', textAlign: 'center', padding: '20px 0', fontFamily: "'DM Mono', monospace" }}>No upcoming follow-ups</p>
+              : <p style={{ fontSize: 13, color: 'var(--c-text-4)', textAlign: 'center', padding: '20px 0', fontFamily: "'DM Mono', monospace" }}>{t('dashboard.noFollowUps')}</p>
             }
           </div>
 
           <div className="ios-glass bento-card" style={{ padding: '22px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Overdue Payments</h3>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{t('dashboard.overdueInvoices')}</h3>
               <AlertTriangle size={14} style={{ color: '#B94A3A' }} />
             </div>
             {(data?.overdue ?? []).length > 0
@@ -686,7 +684,7 @@ export default function DashboardPage() {
               : <div style={{ textAlign: 'center', padding: '16px 0' }}>
                   <p style={{ fontSize: 22, margin: '0 0 4px' }} className="float-anim">✅</p>
                   <p style={{ fontSize: 12, color: 'var(--c-sage)', fontFamily: "'DM Mono', monospace", margin: 0, fontWeight: 600 }}>All paid up</p>
-                  <Link href="/invoices" style={{ fontSize: 11, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", textDecoration: 'none', display: 'block', marginTop: 4 }}>View invoices →</Link>
+                  <Link href="/invoices" style={{ fontSize: 11, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", textDecoration: 'none', display: 'block', marginTop: 4 }}>{t('dashboard.openInvoices')} →</Link>
                 </div>
             }
           </div>
@@ -695,7 +693,7 @@ export default function DashboardPage() {
         {/* ROW 7 — Quick Actions */}
         <motion.div {...stagger(7)}>
           <div className="ios-glass bento-card" style={{ padding: '20px 28px' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 16px' }}>Quick Actions</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 16px' }}>{t('dashboard.quickActions')}</p>
             <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 12 }}>
               {QUICK_ACTIONS.map(({ label, href, icon: Icon, bg, color }) => (
                 <Link key={label} href={href} className="quick-action-btn">

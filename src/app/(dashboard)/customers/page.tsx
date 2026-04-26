@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 type SortField = 'name' | 'type' | 'city' | 'created_at'
 
@@ -33,6 +34,7 @@ export default function CustomersPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const debouncedSearch = useDebounce(search, 300)
   const queryClient = useQueryClient()
+  const { t } = useLanguage()
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['customers'],
@@ -104,7 +106,7 @@ export default function CustomersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
-      toast.success('Customer deleted')
+      toast.success(t('customers.deleted'))
       setDeleteId(null)
     },
     onError: () => toast.error('Failed to delete customer'),
@@ -142,11 +144,11 @@ export default function CustomersPage() {
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Customers</h1>
-          <p className="text-[var(--sg-text-2)] text-sm">{customers.length} total customers</p>
+          <h1 className="text-2xl font-bold text-white">{t('customers.title')}</h1>
+          <p className="text-[var(--sg-text-2)] text-sm">{customers.length} {t('customers.totalLabel')}</p>
         </div>
         <Button onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4" /> Add Customer
+          <Plus className="h-4 w-4" /> {t('customers.addCustomer')}
         </Button>
       </div>
 
@@ -161,7 +163,7 @@ export default function CustomersPage() {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search customers..."
+          placeholder={t('customers.searchPlaceholder')}
           className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)] w-64"
         />
         <select
@@ -169,9 +171,9 @@ export default function CustomersPage() {
           onChange={e => { setFilterType(e.target.value); setShowReEngage(false) }}
           className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]"
         >
-          <option value="">All Types</option>
-          <option value="Residential">Residential</option>
-          <option value="Commercial">Commercial</option>
+          <option value="">{t('customers.allTypes')}</option>
+          <option value="Residential">{t('customers.residential')}</option>
+          <option value="Commercial">{t('customers.commercial')}</option>
         </select>
         <button
           onClick={() => { setShowReEngage(v => !v); setFilterType('') }}
@@ -190,14 +192,14 @@ export default function CustomersPage() {
             gap: 6,
           }}
         >
-          ⚠️ Re-engage {reEngageCustomers.length > 0 && `(${reEngageCustomers.length})`}
+          ⚠️ {t('customers.reEngage')} {reEngageCustomers.length > 0 && `(${reEngageCustomers.length})`}
         </button>
       </div>
 
       {showReEngage && reEngageCustomers.length > 0 && (
         <div style={{ background: 'rgba(185,74,58,0.06)', border: '1px solid rgba(185,74,58,0.20)', borderRadius: 12, padding: 16 }}>
           <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--c-danger)', fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            Customers with no work in 6+ months
+            {t('customers.reEngageDesc')}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {reEngageCustomers.map(c => {
@@ -227,9 +229,9 @@ export default function CustomersPage() {
       {isLoading ? <TableSkeleton rows={8} /> : filtered.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="No customers yet"
-          description="Add your first customer to start tracking projects and leads."
-          action={{ label: 'Add Customer', onClick: () => setAddOpen(true) }}
+          title={t('customers.noCustomers')}
+          description={t('customers.noCustomersDesc')}
+          action={{ label: t('customers.addCustomer'), onClick: () => setAddOpen(true) }}
         />
       ) : (
         <>
@@ -239,14 +241,14 @@ export default function CustomersPage() {
                 <thead>
                   <tr className="bg-[var(--sg-elevated)] border-b border-[var(--sg-border-md)]">
                     {[
-                      { label: 'Name', field: 'name' as SortField },
-                      { label: 'Type', field: 'type' as SortField },
-                      { label: 'Phone', field: null },
-                      { label: 'Email', field: null },
-                      { label: 'City', field: 'city' as SortField },
-                      { label: 'Tags', field: null },
-                      { label: 'Lifetime Value', field: null },
-                      { label: 'Added', field: 'created_at' as SortField },
+                      { label: t('customers.colName'), field: 'name' as SortField },
+                      { label: t('customers.colType'), field: 'type' as SortField },
+                      { label: t('customers.colPhone'), field: null },
+                      { label: t('customers.colEmail'), field: null },
+                      { label: t('customers.colCity'), field: 'city' as SortField },
+                      { label: t('customers.colTags'), field: null },
+                      { label: t('customers.lifetimeRevenue'), field: null },
+                      { label: t('customers.colAdded'), field: 'created_at' as SortField },
                       { label: '', field: null },
                     ].map(({ label, field }) => (
                       <th key={label}
@@ -393,8 +395,8 @@ export default function CustomersPage() {
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         loading={deleteMutation.isPending}
-        title="Delete Customer"
-        description="This will also delete all their leads and projects. This cannot be undone."
+        title={t('customers.deleteTitle')}
+        description={t('customers.deleteDesc')}
       />
     </div>
   )
