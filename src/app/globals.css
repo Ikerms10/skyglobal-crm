@@ -685,26 +685,28 @@ textarea:focus {
   animation: orb-drift-3 22s ease-in-out infinite;
 }
 
-/* ─── IOS GLASS CARDS ────────────────────────────────────────────────────── */
+/* ─── IOS GLASS — light: warm cream frosted; dark: true transparent glass ──── */
 .ios-glass {
-  background: rgba(250,247,240,0.68);
+  background: rgba(252,249,242,0.76);
   backdrop-filter: blur(32px) saturate(200%);
   -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 1px solid rgba(255,255,255,0.50);
+  border: 1px solid rgba(255,255,255,0.55);
   border-radius: 22px;
   box-shadow:
-    0 2px 0 rgba(255,255,255,0.65) inset,
-    0 8px 40px rgba(139,90,20,0.10),
-    0 2px 8px rgba(0,0,0,0.05);
+    0 2px 0 rgba(255,255,255,0.70) inset,
+    0 8px 40px rgba(120,80,20,0.08),
+    0 2px 8px rgba(0,0,0,0.04);
 }
-/* In dark mode the warm-cream glass is already correct; just bump the inset highlight */
 .dark .ios-glass {
-  background: rgba(248,243,232,0.72);
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.10);
   box-shadow:
-    0 2px 0 rgba(255,255,255,0.55) inset,
-    0 8px 40px rgba(0,0,0,0.28),
-    0 2px 8px rgba(0,0,0,0.14);
+    0 2px 0 rgba(255,255,255,0.07) inset,
+    0 12px 40px rgba(0,0,0,0.30),
+    0 2px 8px rgba(0,0,0,0.18);
 }
+
+/* Colored inline glass badges (follow-ups, overdue, pipeline) */
 .ios-glass-dark {
   background: rgba(28,18,9,0.62);
   backdrop-filter: blur(28px) saturate(180%);
@@ -714,38 +716,123 @@ textarea:focus {
   box-shadow: 0 8px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07);
 }
 .ios-glass-gold {
-  background: rgba(230,171,53,0.10);
+  background: rgba(230,171,53,0.09);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(230,171,53,0.25);
+  border: 1px solid rgba(230,171,53,0.22);
   border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(230,171,53,0.12), inset 0 1px 0 rgba(255,255,255,0.4);
+  box-shadow: 0 4px 20px rgba(230,171,53,0.10), inset 0 1px 0 rgba(255,255,255,0.40);
+}
+.dark .ios-glass-gold {
+  background: rgba(230,171,53,0.08);
+  border: 1px solid rgba(230,171,53,0.18);
+  box-shadow: 0 4px 20px rgba(230,171,53,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .ios-glass-sage {
-  background: rgba(74,103,65,0.08);
+  background: rgba(22,163,74,0.07);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(74,103,65,0.2);
+  border: 1px solid rgba(22,163,74,0.18);
   border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(74,103,65,0.1), inset 0 1px 0 rgba(255,255,255,0.4);
+  box-shadow: 0 4px 20px rgba(22,163,74,0.08), inset 0 1px 0 rgba(255,255,255,0.38);
+}
+.dark .ios-glass-sage {
+  background: rgba(34,197,94,0.07);
+  border: 1px solid rgba(34,197,94,0.16);
+  box-shadow: 0 4px 20px rgba(34,197,94,0.07), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .ios-glass-danger {
-  background: rgba(185,74,58,0.07);
+  background: rgba(220,38,38,0.06);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(185,74,58,0.18);
+  border: 1px solid rgba(220,38,38,0.16);
   border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(185,74,58,0.08), inset 0 1px 0 rgba(255,255,255,0.35);
+  box-shadow: 0 4px 20px rgba(220,38,38,0.07), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.dark .ios-glass-danger {
+  background: rgba(239,68,68,0.07);
+  border: 1px solid rgba(239,68,68,0.16);
+  box-shadow: 0 4px 20px rgba(239,68,68,0.07), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* ─── STAT BUBBLE — transform handled entirely by TiltCard inline style ────── */
-.stat-bubble {
+/* ─── KPI CARD SYSTEM — CSS custom props auto-switch light ↔ dark ───────────
+   Usage: className="kpi-card kpi-gold" (or sage / amber / terra / purple)
+   In JSX use color: var(--kpi-text) and color: var(--kpi-icon)
+   ─────────────────────────────────────────────────────────────────────────── */
+.kpi-card {
+  border-radius: 22px;
+  border: 1px solid;                    /* border-color set per type class */
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
   cursor: pointer;
   will-change: transform;
-  text-decoration: none;
-  display: block;
+  box-shadow: 0 4px 32px var(--kpi-glow, rgba(0,0,0,0.08)), 0 1px 0 rgba(255,255,255,0.65) inset;
 }
-/* NOTE: no :hover transform here — TiltCard owns the transform via inline style */
+.dark .kpi-card {
+  box-shadow: 0 4px 28px var(--kpi-glow, rgba(0,0,0,0.06)), 0 1px 0 rgba(255,255,255,0.06) inset;
+}
+
+/* LIGHT: warm-cream glass with dark readable text */
+.kpi-gold   { background:rgba(255,248,215,0.92); border-color:rgba(200,148,35,0.28); --kpi-text:#6A4808; --kpi-icon:#9A6C15; --kpi-glow:rgba(230,171,53,0.16); }
+.kpi-sage   { background:rgba(215,248,222,0.92); border-color:rgba(22,130,50,0.22);  --kpi-text:#145020; --kpi-icon:#1e7a30; --kpi-glow:rgba(22,163,74,0.12);  }
+.kpi-amber  { background:rgba(255,243,212,0.92); border-color:rgba(178,118,35,0.24); --kpi-text:#684608; --kpi-icon:#966212; --kpi-glow:rgba(178,118,35,0.14); }
+.kpi-terra  { background:rgba(255,232,220,0.92); border-color:rgba(180,60,35,0.20);  --kpi-text:#682410; --kpi-icon:#96341c; --kpi-glow:rgba(180,60,35,0.12);  }
+.kpi-purple { background:rgba(236,224,255,0.92); border-color:rgba(112,72,175,0.20); --kpi-text:#4A2278; --kpi-icon:#6A3C9E; --kpi-glow:rgba(112,72,175,0.10); }
+
+/* DARK: subtle tinted dark glass with vivid accent numbers */
+.dark .kpi-gold   { background:rgba(230,171,53,0.07);  border-color:rgba(230,171,53,0.16); --kpi-text:#e6ab35; --kpi-icon:#c49028; --kpi-glow:rgba(230,171,53,0.12); }
+.dark .kpi-sage   { background:rgba(34,197,94,0.065);  border-color:rgba(34,197,94,0.15);  --kpi-text:#4ade80; --kpi-icon:#22c55e; --kpi-glow:rgba(34,197,94,0.10);  }
+.dark .kpi-amber  { background:rgba(212,156,50,0.07);  border-color:rgba(212,156,50,0.16); --kpi-text:#d4a040; --kpi-icon:#b88030; --kpi-glow:rgba(212,156,50,0.10); }
+.dark .kpi-terra  { background:rgba(218,80,50,0.07);   border-color:rgba(218,80,50,0.15);  --kpi-text:#f09070; --kpi-icon:#e07050; --kpi-glow:rgba(218,80,50,0.10);  }
+.dark .kpi-purple { background:rgba(167,139,250,0.07); border-color:rgba(167,139,250,0.16);--kpi-text:#c4b5fd; --kpi-icon:#a78bfa; --kpi-glow:rgba(167,139,250,0.09);}
+
+/* Icon pill inside any KPI or lead stat card */
+.kpi-icon-pill {
+  width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.78);
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px var(--kpi-glow, rgba(0,0,0,0.06)), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.dark .kpi-icon-pill {
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.11);
+  box-shadow: 0 2px 8px var(--kpi-glow, rgba(0,0,0,0.08)), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+/* Small variant for lead stat cards */
+.kpi-icon-pill-sm {
+  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.78);
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 2px 6px var(--kpi-glow, rgba(0,0,0,0.06));
+}
+.dark .kpi-icon-pill-sm {
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.11);
+}
+
+/* Lead stat card row */
+.lead-stat-card {
+  border-radius: 18px;
+  border: 1px solid;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  cursor: pointer;
+  text-decoration: none;
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 3px 20px var(--kpi-glow, rgba(0,0,0,0.07)), 0 1px 0 rgba(255,255,255,0.65) inset;
+  transition: transform 0.22s cubic-bezier(0.34,1.3,0.64,1), box-shadow 0.22s ease;
+}
+.dark .lead-stat-card {
+  box-shadow: 0 3px 20px var(--kpi-glow, rgba(0,0,0,0.06)), 0 1px 0 rgba(255,255,255,0.06) inset;
+}
+.lead-stat-card:hover  { transform: translateY(-3px) scale(1.015); }
+.lead-stat-card:active { transform: scale(0.97); transition-duration: 0.08s; }
+
+/* Stat bubble — TiltCard owns transform, no CSS hover conflict */
+.stat-bubble { cursor: pointer; will-change: transform; text-decoration: none; display: block; }
 .stat-bubble:active { transform: scale(0.96) !important; transition: transform 0.08s ease !important; }
 
 /* ─── LIVE PULSE DOT ──────────────────────────────────────────────────────── */

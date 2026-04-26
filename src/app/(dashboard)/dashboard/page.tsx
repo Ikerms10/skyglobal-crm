@@ -155,16 +155,14 @@ function TiltCard({ children, className = '', style = {} }: { children: React.Re
   );
 }
 
-// ── KPI Card — isolated component so useCountUp hook is valid ─────────────────
+// ── KPI Card — CSS class system: kpi-card + kpi-{type} handles all color modes
+type KPIType = 'gold' | 'sage' | 'amber' | 'terra' | 'purple';
+
 interface KPIKind {
   label: string;
   value: number;
   fmt: 'currency' | 'number';
-  color: string;       // accent color (dark, readable on light card)
-  iconColor: string;   // icon fill (slightly lighter)
-  bg: string;          // warm-cream tinted base — high enough opacity to show over dark canvas
-  border: string;
-  glow: string;
+  type: KPIType;
   icon: React.ElementType;
   href: string;
   sub?: string;
@@ -173,91 +171,65 @@ interface KPIKind {
 }
 
 function KPICard({ kpi }: { kpi: KPIKind }) {
-  const Icon = kpi.icon;
+  const Icon    = kpi.icon;
   const animated = useCountUp(kpi.value);
   const display  = kpi.fmt === 'currency'
     ? formatCurrency(animated)
     : animated.toLocaleString('en-US');
-
-  const trendUp = (kpi.trend ?? 0) >= 0;
+  const trendUp  = (kpi.trend ?? 0) >= 0;
 
   return (
-    // ios-glass supplies backdrop-filter + white inset highlight; we override bg + border
-    <TiltCard
-      className="ios-glass"
-      style={{
-        borderRadius: 22,
-        background: kpi.bg,
-        border: `1px solid ${kpi.border}`,
-        boxShadow: `0 4px 32px ${kpi.glow}, 0 1px 0 rgba(255,255,255,0.75) inset`,
-        cursor: 'pointer',
-      }}
-    >
+    <TiltCard className={`kpi-card kpi-${kpi.type}`}>
       <Link href={kpi.href} style={{ display: 'flex', flexDirection: 'column', padding: '22px 22px 18px', textDecoration: 'none' }}>
 
-        {/* Top: icon pill + trend badge */}
+        {/* Top: icon + trend */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 13,
-            background: `rgba(255,255,255,0.72)`,
-            border: `1px solid ${kpi.border}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 2px 8px ${kpi.glow}, inset 0 1px 0 rgba(255,255,255,0.9)`,
-          }}>
-            <Icon size={20} style={{ color: kpi.iconColor }} />
+          <div className="kpi-icon-pill">
+            <Icon size={20} style={{ color: 'var(--kpi-icon)' }} />
           </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {kpi.trend != null && (
               <span style={{
                 fontSize: 10, fontWeight: 700,
-                color: trendUp ? '#2d6b28' : '#9b2c2c',
-                background: trendUp ? 'rgba(45,107,40,0.12)' : 'rgba(155,44,44,0.10)',
-                border: `1px solid ${trendUp ? 'rgba(45,107,40,0.22)' : 'rgba(155,44,44,0.18)'}`,
+                color: trendUp ? 'var(--c-sage)' : 'var(--c-danger)',
+                background: trendUp ? 'rgba(22,163,74,0.10)' : 'rgba(220,38,38,0.08)',
+                border: `1px solid ${trendUp ? 'rgba(22,163,74,0.20)' : 'rgba(220,38,38,0.16)'}`,
                 borderRadius: 20, padding: '3px 8px',
                 fontFamily: "'DM Mono', monospace",
               }}>
                 {trendUp ? '▲' : '▼'} {Math.abs(kpi.trend).toFixed(0)}%
               </span>
             )}
-            <ChevronRight size={13} style={{ color: kpi.color, opacity: 0.35, marginTop: 1 }} />
+            <ChevronRight size={13} style={{ color: 'var(--kpi-text)', opacity: 0.35, marginTop: 1 }} />
           </div>
         </div>
 
-        {/* Big animated number */}
+        {/* Number */}
         <div style={{
-          fontSize: 'clamp(1.55rem, 2vw, 1.95rem)',
-          fontWeight: 800,
-          color: kpi.color,
-          fontFamily: "'DM Mono', monospace",
-          letterSpacing: '-0.04em',
-          lineHeight: 1,
-          marginBottom: 6,
+          fontSize: 'clamp(1.55rem, 2vw, 1.95rem)', fontWeight: 800,
+          color: 'var(--kpi-text)', fontFamily: "'DM Mono', monospace",
+          letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 6,
         }}>
           {display}
         </div>
 
         {/* Label */}
         <p style={{
-          fontSize: 10, fontWeight: 700,
-          color: kpi.color,
-          opacity: 0.65,
-          fontFamily: "'DM Mono', monospace",
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          margin: 0,
+          fontSize: 10, fontWeight: 700, color: 'var(--kpi-text)', opacity: 0.60,
+          fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em',
+          textTransform: 'uppercase', margin: 0,
         }}>
           {kpi.label}
         </p>
 
-        {/* Bottom: sub-stat + sparkline */}
+        {/* Sub + sparkline */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12, minHeight: 28 }}>
           {kpi.sub
-            ? <span style={{ fontSize: 11, color: kpi.color, fontFamily: "'DM Mono', monospace", fontWeight: 600, opacity: 0.75 }}>{kpi.sub}</span>
+            ? <span style={{ fontSize: 11, color: 'var(--kpi-text)', fontFamily: "'DM Mono', monospace", fontWeight: 600, opacity: 0.70 }}>{kpi.sub}</span>
             : <span />
           }
           {kpi.sparkline && kpi.sparkline.length > 1 && (
-            <SparkLine values={kpi.sparkline} color={kpi.color} />
+            <SparkLine values={kpi.sparkline} color="var(--kpi-text)" />
           )}
         </div>
 
@@ -266,55 +238,35 @@ function KPICard({ kpi }: { kpi: KPIKind }) {
   );
 }
 
-// ── Lead Stat Card — smaller, simpler, uses its own countUp ──────────────────
+// ── Lead Stat Card ────────────────────────────────────────────────────────────
 interface LeadStatKind {
   label: string;
   value: number;
   fmt?: 'number' | 'currency' | 'percent';
-  color: string;
-  iconColor: string;
-  bg: string;
-  border: string;
-  glow: string;
+  type: KPIType;
   icon: React.ElementType;
   href: string;
   sub?: string;
 }
 function LeadStatCard({ stat }: { stat: LeadStatKind }) {
-  const Icon = stat.icon;
+  const Icon    = stat.icon;
   const animated = useCountUp(stat.value, 700);
-  const display = stat.fmt === 'currency' ? formatCurrency(animated)
+  const display  = stat.fmt === 'currency' ? formatCurrency(animated)
     : stat.fmt === 'percent' ? `${animated}%`
     : animated.toLocaleString('en-US');
   return (
-    <Link href={stat.href} className="ios-glass"
-      style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '16px 20px', textDecoration: 'none', borderRadius: 18,
-        background: stat.bg, border: `1px solid ${stat.border}`,
-        boxShadow: `0 4px 24px ${stat.glow}, 0 1px 0 rgba(255,255,255,0.7) inset`,
-        transition: 'transform 0.22s cubic-bezier(0.34,1.3,0.64,1)',
-      }}
-      onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px) scale(1.015)'}
-      onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)'}
-    >
-      <div style={{
-        width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-        background: 'rgba(255,255,255,0.72)',
-        border: `1px solid ${stat.border}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 2px 8px ${stat.glow}`,
-      }}>
-        <Icon size={18} style={{ color: stat.iconColor }} />
+    <Link href={stat.href} className={`lead-stat-card kpi-${stat.type}`}>
+      <div className="kpi-icon-pill-sm">
+        <Icon size={18} style={{ color: 'var(--kpi-icon)' }} />
       </div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: stat.color, fontFamily: "'DM Mono', monospace", letterSpacing: '-0.03em', lineHeight: 1 }}>
+        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--kpi-text)', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.03em', lineHeight: 1 }}>
           {display}
         </div>
-        <p style={{ fontSize: 10, fontWeight: 700, color: stat.color, opacity: 0.6, fontFamily: "'DM Mono', monospace", letterSpacing: '0.09em', textTransform: 'uppercase', margin: '3px 0 0' }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--kpi-text)', opacity: 0.58, fontFamily: "'DM Mono', monospace", letterSpacing: '0.09em', textTransform: 'uppercase', margin: '4px 0 0' }}>
           {stat.label}
         </p>
-        {stat.sub && <p style={{ fontSize: 10, color: stat.color, opacity: 0.5, fontFamily: "'DM Mono', monospace", margin: '1px 0 0' }}>{stat.sub}</p>}
+        {stat.sub && <p style={{ fontSize: 10, color: 'var(--kpi-text)', opacity: 0.45, fontFamily: "'DM Mono', monospace", margin: '2px 0 0' }}>{stat.sub}</p>}
       </div>
     </Link>
   );
@@ -458,63 +410,10 @@ export default function DashboardPage() {
   const maxStageCount = Math.max(...Object.values(data?.stageCounts ?? {}).map(Number), 1);
 
   const kpis: KPIKind[] = [
-    {
-      label: 'Revenue',
-      value: data?.revenue        ?? 0,
-      fmt: 'currency',
-      // Warm gold-cream glass — opaque enough to read over dark canvas
-      color: '#7A5210',
-      iconColor: '#A87820',
-      bg: 'rgba(255,248,222,0.88)',
-      border: 'rgba(200,150,40,0.32)',
-      glow: 'rgba(230,171,53,0.20)',
-      icon: DollarSign,
-      href: '/reports',
-      sparkline: data?.revenueSparkline,
-      trend: data?.revTrend,
-    },
-    {
-      label: 'Gross Profit',
-      value: data?.profit         ?? 0,
-      fmt: 'currency',
-      // Sage-cream glass
-      color: '#2E5C28',
-      iconColor: '#4A7A42',
-      bg: 'rgba(228,245,230,0.88)',
-      border: 'rgba(74,103,65,0.28)',
-      glow: 'rgba(74,103,65,0.16)',
-      icon: TrendingUp,
-      href: '/reports',
-      sub: data?.margin != null ? `${data.margin}% margin` : undefined,
-      trend: data?.profTrend,
-    },
-    {
-      label: 'Active Projects',
-      value: data?.activeProjects ?? 0,
-      fmt: 'number',
-      // Warm amber-cream glass — no blue, stays within warm palette
-      color: '#7A4E10',
-      iconColor: '#A06820',
-      bg: 'rgba(255,242,218,0.88)',
-      border: 'rgba(180,120,40,0.28)',
-      glow: 'rgba(180,120,40,0.16)',
-      icon: Briefcase,
-      href: '/projects',
-    },
-    {
-      label: 'Pipeline Leads',
-      value: data?.totalLeads     ?? 0,
-      fmt: 'number',
-      // Terracotta-cream glass
-      color: '#7A3418',
-      iconColor: '#A04828',
-      bg: 'rgba(255,238,228,0.88)',
-      border: 'rgba(185,80,50,0.26)',
-      glow: 'rgba(185,80,50,0.14)',
-      icon: Target,
-      href: '/leads',
-      sub: data?.wonLeads ? `${data.wonLeads} won` : undefined,
-    },
+    { label: 'Revenue',         value: data?.revenue        ?? 0, fmt: 'currency', type: 'gold',  icon: DollarSign, href: '/reports',  sparkline: data?.revenueSparkline, trend: data?.revTrend },
+    { label: 'Gross Profit',    value: data?.profit         ?? 0, fmt: 'currency', type: 'sage',  icon: TrendingUp, href: '/reports',  sub: data?.margin != null ? `${data.margin}% margin` : undefined, trend: data?.profTrend },
+    { label: 'Active Projects', value: data?.activeProjects ?? 0, fmt: 'number',   type: 'amber', icon: Briefcase,  href: '/projects' },
+    { label: 'Pipeline Leads',  value: data?.totalLeads     ?? 0, fmt: 'number',   type: 'terra', icon: Target,     href: '/leads',    sub: data?.wonLeads ? `${data.wonLeads} won` : undefined },
   ];
 
   const stagger = (i: number) => ({
@@ -556,7 +455,7 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               {/* Live clock */}
               <div className="ios-glass-gold" style={{ padding: '16px 24px', textAlign: 'center', minWidth: 120 }}>
-                <div style={{ fontSize: 'clamp(1.4rem, 2vw, 1.75rem)', fontWeight: 800, color: '#8B6914', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.04em', lineHeight: 1 }}>
+                <div style={{ fontSize: 'clamp(1.4rem, 2vw, 1.75rem)', fontWeight: 800, color: 'var(--c-gold)', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.04em', lineHeight: 1 }}>
                   {time.split(':')[0]}<span className="time-colon">:</span>{time.slice(time.indexOf(':') + 1)}
                 </div>
                 <div style={{ fontSize: 9, color: 'var(--c-text-3)', marginTop: 4, fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -565,16 +464,16 @@ export default function DashboardPage() {
               </div>
 
               {/* Timeframe selector */}
-              <div style={{ display: 'flex', gap: 3, padding: 4, background: 'rgba(28,18,9,0.06)', borderRadius: 12, border: '1px solid rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', gap: 3, padding: 4, background: 'var(--c-nested)', borderRadius: 12, border: '1px solid var(--c-border)' }}>
                 {TIMEFRAMES.map(tf => (
                   <button key={tf.value} onClick={() => setTimeframe(tf.value)} style={{
                     padding: '6px 14px', borderRadius: 9, border: 'none', cursor: 'pointer',
                     fontSize: 12, fontWeight: timeframe === tf.value ? 700 : 500,
                     fontFamily: "'DM Mono', monospace", letterSpacing: '0.05em',
-                    background: timeframe === tf.value ? 'rgba(230,171,53,0.18)' : 'transparent',
-                    color: timeframe === tf.value ? '#8B6914' : 'var(--c-text-3)',
+                    background: timeframe === tf.value ? 'var(--c-gold-bg)' : 'transparent',
+                    color: timeframe === tf.value ? 'var(--c-gold)' : 'var(--c-text-3)',
                     transition: 'all 180ms ease',
-                    boxShadow: timeframe === tf.value ? '0 2px 8px rgba(230,171,53,0.2)' : 'none',
+                    boxShadow: timeframe === tf.value ? 'var(--c-gold-shadow) 0 2px 8px' : 'none',
                   }}>
                     {tf.label}
                   </button>
@@ -616,10 +515,10 @@ export default function DashboardPage() {
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 18 }} />)
               : ([
-                  { label: 'Open Leads',     value: data?.openLeads ?? 0,     fmt: 'number'  as const, icon: Target,        color: '#7A3C14', iconColor: '#A05020', bg: 'rgba(255,238,220,0.88)', border: 'rgba(185,80,40,0.26)',  glow: 'rgba(185,80,40,0.14)',  href: '/leads', sub: `of ${data?.totalLeads ?? 0} total` },
-                  { label: 'Won',            value: data?.wonLeads ?? 0,      fmt: 'number'  as const, icon: CheckCircle2,   color: '#2A5822', iconColor: '#3E7A32', bg: 'rgba(220,248,224,0.88)', border: 'rgba(60,120,50,0.26)',  glow: 'rgba(60,120,50,0.14)',  href: '/leads', sub: 'this period' },
-                  { label: 'Pipeline Value', value: data?.pipelineValue ?? 0, fmt: 'currency'as const, icon: DollarSign,     color: '#7A5210', iconColor: '#A87820', bg: 'rgba(255,248,222,0.88)', border: 'rgba(200,150,40,0.28)', glow: 'rgba(200,150,40,0.14)', href: '/leads', sub: 'est. value' },
-                  { label: 'Win Rate',       value: data?.conversionRate ?? 0,fmt: 'percent' as const, icon: Award,          color: '#5C3A7A', iconColor: '#7A52A0', bg: 'rgba(240,228,255,0.88)', border: 'rgba(120,80,180,0.24)', glow: 'rgba(120,80,180,0.12)', href: '/leads', sub: `${data?.lostLeads ?? 0} lost` },
+                  { label: 'Open Leads',     value: data?.openLeads ?? 0,      fmt: 'number'   as const, type: 'terra'  as const, icon: Target,       href: '/leads', sub: `of ${data?.totalLeads ?? 0} total` },
+                  { label: 'Won',            value: data?.wonLeads ?? 0,       fmt: 'number'   as const, type: 'sage'   as const, icon: CheckCircle2, href: '/leads', sub: 'this period' },
+                  { label: 'Pipeline Value', value: data?.pipelineValue ?? 0,  fmt: 'currency' as const, type: 'gold'   as const, icon: DollarSign,   href: '/leads', sub: 'est. value' },
+                  { label: 'Win Rate',       value: data?.conversionRate ?? 0, fmt: 'percent'  as const, type: 'purple' as const, icon: Award,        href: '/leads', sub: `${data?.lostLeads ?? 0} lost` },
                 ] as LeadStatKind[]).map(stat => <LeadStatCard key={stat.label} stat={stat} />)
             }
           </div>
