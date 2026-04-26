@@ -13,8 +13,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
-      style={{ background: 'var(--c-canvas)', position: 'relative' }}
+      className="flex overflow-hidden"
+      style={{ height: '100dvh', background: 'var(--c-canvas)', position: 'relative' }}
     >
       {/* Desktop Sidebar */}
       <div className="hidden md:flex" style={{ position: 'relative', zIndex: 10 }}>

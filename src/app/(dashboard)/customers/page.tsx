@@ -150,7 +150,14 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-3 items-center">
+      <div
+        className="flex flex-wrap gap-3 items-center md:static sticky top-0 z-10 md:z-auto md:bg-transparent md:border-0 md:pb-0 md:pt-0"
+        style={{
+          background: 'var(--c-canvas)',
+          borderBottom: '1px solid var(--c-border)',
+          padding: '10px 0',
+        }}
+      >
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}

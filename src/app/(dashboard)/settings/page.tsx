@@ -656,71 +656,89 @@ export default function SettingsPage() {
   // ─── Layout ──────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      style={{ display: 'flex', minHeight: '100%', maxWidth: 1000, margin: '0 auto' }}
-      className="p-4 md:p-6 md:gap-6 flex-col md:flex-row"
-    >
-      {/* Sidebar nav */}
-      <aside
-        style={{
-          background: 'var(--c-card)',
-          border: '1px solid var(--c-border)',
-          borderRadius: 14,
-          padding: '8px',
-          alignSelf: 'flex-start',
-          boxShadow: 'var(--s-card)',
-        }}
-        className="w-full md:w-52 shrink-0 mb-4 md:mb-0 sticky top-6"
-      >
-        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '10px 12px 6px', fontFamily: "'DM Mono', monospace" }}>
-          Settings
-        </p>
+    <div style={{ minHeight: '100%', maxWidth: 1000, margin: '0 auto' }}>
+      {/* Mobile: horizontal scroll chip nav */}
+      <nav className="settings-accordion-nav" aria-label="Settings sections">
         {NAV_ITEMS.map(item => {
           const isActive = activeSection === item.id
           return (
             <button
               key={item.id}
               onClick={() => setActiveSection(item.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                padding: '9px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: isActive ? 700 : 500,
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                background: isActive ? 'var(--c-gold-bg)' : 'transparent',
-                color: isActive ? 'var(--c-gold)' : 'var(--c-text-3)',
-                transition: 'background 150ms, color 150ms',
-                textAlign: 'left',
-              }}
-              onMouseEnter={e => {
-                if (!isActive) e.currentTarget.style.background = 'var(--c-nested)'
-              }}
-              onMouseLeave={e => {
-                if (!isActive) e.currentTarget.style.background = 'transparent'
-              }}
+              className={`settings-accordion-btn${isActive ? ' active' : ''}`}
             >
-              <item.icon size={15} aria-hidden="true" style={{ flexShrink: 0 }} />
-              <span style={{ flex: 1 }}>{item.label}</span>
-              {isActive && <ChevronRight size={13} aria-hidden="true" />}
+              <item.icon size={14} aria-hidden="true" />
+              {item.label}
             </button>
           )
         })}
-      </aside>
+      </nav>
 
-      {/* Panel */}
-      <main style={{ flex: 1, minWidth: 0 }}>
-        <div
+      <div
+        style={{ display: 'flex' }}
+        className="p-4 md:p-6 md:gap-6 flex-col md:flex-row"
+      >
+        {/* Desktop sidebar nav */}
+        <aside
           style={{
             background: 'var(--c-card)',
             border: '1px solid var(--c-border)',
             borderRadius: 14,
-            padding: '28px 28px 32px',
+            padding: '8px',
+            alignSelf: 'flex-start',
             boxShadow: 'var(--s-card)',
           }}
-          className="p-4 md:p-7"
+          className="settings-sidebar shrink-0 mb-4 md:mb-0 sticky top-6 hidden md:block"
         >
-          {panels[activeSection]}
-        </div>
-      </main>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '10px 12px 6px', fontFamily: "'DM Mono', monospace" }}>
+            Settings
+          </p>
+          {NAV_ITEMS.map(item => {
+            const isActive = activeSection === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                  padding: '9px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                  fontSize: 13, fontWeight: isActive ? 700 : 500,
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  background: isActive ? 'var(--c-gold-bg)' : 'transparent',
+                  color: isActive ? 'var(--c-gold)' : 'var(--c-text-3)',
+                  transition: 'background 150ms, color 150ms',
+                  textAlign: 'left',
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) e.currentTarget.style.background = 'var(--c-nested)'
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <item.icon size={15} aria-hidden="true" style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {isActive && <ChevronRight size={13} aria-hidden="true" />}
+              </button>
+            )
+          })}
+        </aside>
+
+        {/* Panel */}
+        <main style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              background: 'var(--c-card)',
+              border: '1px solid var(--c-border)',
+              borderRadius: 14,
+              boxShadow: 'var(--s-card)',
+            }}
+            className="settings-content p-4 md:p-7"
+          >
+            {panels[activeSection]}
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

@@ -38,7 +38,7 @@ export function MobileNav() {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 flex h-16 safe-bottom"
+        className="mobile-nav-bar fixed bottom-0 left-0 right-0 z-40 flex h-16"
         style={{
           background: 'var(--c-sidebar)',
           borderTop: '1px solid var(--c-border)',
@@ -85,16 +85,22 @@ export function MobileNav() {
             aria-hidden="true"
           />
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl pb-8"
+            className="animate-slide-up fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl"
             style={{
               background: 'var(--c-card)',
               border: '1px solid var(--c-border)',
               borderBottom: 'none',
+              paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 0px))',
             }}
             role="dialog"
             aria-modal="true"
             aria-label="More options"
           >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--c-border-mid)' }} />
+            </div>
+
             <div
               className="flex items-center justify-between px-5 py-4"
               style={{ borderBottom: '1px solid var(--c-border)' }}

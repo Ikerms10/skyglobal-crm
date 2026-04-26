@@ -60,24 +60,33 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
         aria-hidden="true"
       />
 
-      {/* Dialog */}
+      {/* Dialog — bottom sheet on mobile, centered dialog on desktop */}
       <div
         ref={dialogRef}
-        className={cn('animate-scale-in relative w-full flex flex-col', 'rounded-t-[20px] md:rounded-[16px]')}
+        className={cn(
+          'animate-slide-up md:animate-scale-in relative w-full flex flex-col',
+          'rounded-t-[24px] md:rounded-[16px]'
+        )}
         style={{
           maxWidth: maxWidths[size],
-          maxHeight: '95vh',
+          maxHeight: '92dvh',
           background: 'var(--c-card)',
           backdropFilter: 'blur(20px) saturate(200%)',
           WebkitBackdropFilter: 'blur(20px) saturate(200%)',
           border: '1px solid var(--c-border)',
           boxShadow: 'var(--s-modal)',
           overflow: 'hidden',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
       >
+        {/* Drag handle — visible on mobile only */}
+        <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0" aria-hidden="true">
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--c-border-mid)' }} />
+        </div>
+
         {/* Top accent line */}
         <div style={{
           height: 2,
