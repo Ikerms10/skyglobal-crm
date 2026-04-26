@@ -9,7 +9,7 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import {
   DollarSign, Briefcase, Target, TrendingUp, ArrowRight,
   Clock, AlertTriangle, Activity, FileText, Calendar,
-  BarChart2, ChevronRight, Receipt, Users,
+  BarChart2, ChevronRight, Receipt, Users, CheckCircle2, Award,
 } from 'lucide-react';
 import Link from 'next/link';
 import { TodaysFocus } from '@/components/dashboard/TodaysFocus';
@@ -266,6 +266,60 @@ function KPICard({ kpi }: { kpi: KPIKind }) {
   );
 }
 
+// ── Lead Stat Card — smaller, simpler, uses its own countUp ──────────────────
+interface LeadStatKind {
+  label: string;
+  value: number;
+  fmt?: 'number' | 'currency' | 'percent';
+  color: string;
+  iconColor: string;
+  bg: string;
+  border: string;
+  glow: string;
+  icon: React.ElementType;
+  href: string;
+  sub?: string;
+}
+function LeadStatCard({ stat }: { stat: LeadStatKind }) {
+  const Icon = stat.icon;
+  const animated = useCountUp(stat.value, 700);
+  const display = stat.fmt === 'currency' ? formatCurrency(animated)
+    : stat.fmt === 'percent' ? `${animated}%`
+    : animated.toLocaleString('en-US');
+  return (
+    <Link href={stat.href} className="ios-glass"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '16px 20px', textDecoration: 'none', borderRadius: 18,
+        background: stat.bg, border: `1px solid ${stat.border}`,
+        boxShadow: `0 4px 24px ${stat.glow}, 0 1px 0 rgba(255,255,255,0.7) inset`,
+        transition: 'transform 0.22s cubic-bezier(0.34,1.3,0.64,1)',
+      }}
+      onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px) scale(1.015)'}
+      onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)'}
+    >
+      <div style={{
+        width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+        background: 'rgba(255,255,255,0.72)',
+        border: `1px solid ${stat.border}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: `0 2px 8px ${stat.glow}`,
+      }}>
+        <Icon size={18} style={{ color: stat.iconColor }} />
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: stat.color, fontFamily: "'DM Mono', monospace", letterSpacing: '-0.03em', lineHeight: 1 }}>
+          {display}
+        </div>
+        <p style={{ fontSize: 10, fontWeight: 700, color: stat.color, opacity: 0.6, fontFamily: "'DM Mono', monospace", letterSpacing: '0.09em', textTransform: 'uppercase', margin: '3px 0 0' }}>
+          {stat.label}
+        </p>
+        {stat.sub && <p style={{ fontSize: 10, color: stat.color, opacity: 0.5, fontFamily: "'DM Mono', monospace", margin: '1px 0 0' }}>{stat.sub}</p>}
+      </div>
+    </Link>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [timeframe, setTimeframe] = useState<Timeframe>('Month');
@@ -370,9 +424,23 @@ export default function DashboardPage() {
       const stageCounts  = Object.fromEntries(stages.map(s => [s, leads.filter(l => l.stage === s).length]));
       const revenueSparkline = chartData.map(d => d.revenue);
 
+      const wonLeads   = leads.filter(l => l.stage === 'Won').length;
+      const lostLeads  = leads.filter(l => l.stage === 'Lost').length;
+      const openLeads  = leads.filter(l => !['Won', 'Lost', 'On Hold'].includes(l.stage)).length;
+      const pipelineValue = leads
+        .filter(l => !['Won', 'Lost', 'On Hold'].includes(l.stage))
+        .reduce((s, l) => s + (l.estimated_value ?? 0), 0);
+      const conversionRate = (wonLeads + lostLeads) > 0
+        ? Math.round((wonLeads / (wonLeads + lostLeads)) * 100)
+        : 0;
+
       return {
         revenue, totalExpenses, profit, margin,
-        wonLeads:       leads.filter(l => l.stage === 'Won').length,
+        wonLeads,
+        lostLeads,
+        openLeads,
+        pipelineValue,
+        conversionRate,
         totalLeads:     leads.length,
         activeProjects: projects.filter(p => p.status === 'In Progress' || p.status === 'Scheduled').length,
         chartData, stageCounts,
@@ -465,8 +533,13 @@ export default function DashboardPage() {
 
       <div style={{ position: 'relative', zIndex: 1, padding: '28px 32px', maxWidth: 1360, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }} className="p-4 md:p-8">
 
-        {/* ROW 1 — Hero glass card */}
+        {/* ROW 0 — Bible verse of the day */}
         <motion.div {...stagger(0)}>
+          <BibleVerse />
+        </motion.div>
+
+        {/* ROW 1 — Hero glass card */}
+        <motion.div {...stagger(1)}>
           <div className="ios-glass bento-card" style={{ padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>
@@ -512,7 +585,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* ROW 2 — KPI Command Center */}
-        <motion.div {...stagger(1)}>
+        <motion.div {...stagger(2)}>
           {/* Section label with live pulse */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span className="live-dot" aria-hidden="true" />
@@ -531,15 +604,36 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ROW 3 — Today's Focus */}
-        <motion.div {...stagger(2)}>
+        {/* ROW 3 — Lead KPIs */}
+        <motion.div {...stagger(3)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Target size={11} style={{ color: '#A04828' }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Leads Overview
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            {isLoading
+              ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 18 }} />)
+              : ([
+                  { label: 'Open Leads',     value: data?.openLeads ?? 0,     fmt: 'number'  as const, icon: Target,        color: '#7A3C14', iconColor: '#A05020', bg: 'rgba(255,238,220,0.88)', border: 'rgba(185,80,40,0.26)',  glow: 'rgba(185,80,40,0.14)',  href: '/leads', sub: `of ${data?.totalLeads ?? 0} total` },
+                  { label: 'Won',            value: data?.wonLeads ?? 0,      fmt: 'number'  as const, icon: CheckCircle2,   color: '#2A5822', iconColor: '#3E7A32', bg: 'rgba(220,248,224,0.88)', border: 'rgba(60,120,50,0.26)',  glow: 'rgba(60,120,50,0.14)',  href: '/leads', sub: 'this period' },
+                  { label: 'Pipeline Value', value: data?.pipelineValue ?? 0, fmt: 'currency'as const, icon: DollarSign,     color: '#7A5210', iconColor: '#A87820', bg: 'rgba(255,248,222,0.88)', border: 'rgba(200,150,40,0.28)', glow: 'rgba(200,150,40,0.14)', href: '/leads', sub: 'est. value' },
+                  { label: 'Win Rate',       value: data?.conversionRate ?? 0,fmt: 'percent' as const, icon: Award,          color: '#5C3A7A', iconColor: '#7A52A0', bg: 'rgba(240,228,255,0.88)', border: 'rgba(120,80,180,0.24)', glow: 'rgba(120,80,180,0.12)', href: '/leads', sub: `${data?.lostLeads ?? 0} lost` },
+                ] as LeadStatKind[]).map(stat => <LeadStatCard key={stat.label} stat={stat} />)
+            }
+          </div>
+        </motion.div>
+
+        {/* ROW 4 — Today's Focus */}
+        <motion.div {...stagger(4)}>
           <div className="ios-glass bento-card" style={{ padding: '22px 26px' }}>
             <TodaysFocus />
           </div>
         </motion.div>
 
-        {/* ROW 4 — Revenue chart + Pipeline */}
-        <motion.div {...stagger(3)} style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }}>
+        {/* ROW 5 — Revenue chart + Pipeline */}
+        <motion.div {...stagger(5)} style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }}>
 
           <Link href="/reports" style={{ textDecoration: 'none' }}>
             <div className="ios-glass bento-card" style={{ padding: '24px 28px', height: '100%' }}>
@@ -613,8 +707,8 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ROW 5 — Activity + Follow-ups + Overdue */}
-        <motion.div {...stagger(4)} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        {/* ROW 6 — Activity + Follow-ups + Overdue */}
+        <motion.div {...stagger(6)} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
 
           <div className="ios-glass bento-card" style={{ padding: '22px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -699,8 +793,8 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ROW 6 — Quick Actions */}
-        <motion.div {...stagger(5)}>
+        {/* ROW 7 — Quick Actions */}
+        <motion.div {...stagger(7)}>
           <div className="ios-glass bento-card" style={{ padding: '20px 28px' }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 16px' }}>Quick Actions</p>
             <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 12 }}>
@@ -716,10 +810,9 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ROW 7 — Agenda + Bible */}
-        <motion.div {...stagger(6)} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        {/* ROW 8 — Agenda */}
+        <motion.div {...stagger(8)}>
           <AgendaWidget />
-          <BibleVerse />
         </motion.div>
 
       </div>
