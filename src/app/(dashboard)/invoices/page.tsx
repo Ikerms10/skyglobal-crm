@@ -213,7 +213,7 @@ export default function InvoicesPage() {
                     <td style={{ padding: '12px 16px', fontFamily: "'DM Mono', monospace", fontWeight: 600, color: 'var(--c-text-1)' }}>
                       {formatCurrency(inv.total)}
                     </td>
-                    <td style={{ padding: '12px 16px', fontSize: 12, fontFamily: "'DM Mono', monospace', color: 'var(--c-text-2)'" }}>
+                    <td style={{ padding: '12px 16px', fontSize: 12, fontFamily: "'DM Mono', monospace", color: 'var(--c-text-2)' }}>
                       {inv.due_date ? formatDate(inv.due_date) : '—'}
                       {daysOverdue !== null && (
                         <div style={{ fontSize: 10, color: 'var(--c-danger)', fontWeight: 600 }}>{daysOverdue}d overdue</div>

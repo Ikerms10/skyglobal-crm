@@ -110,10 +110,8 @@ export function InvoiceModal({ onClose, onSaved, projectId, invoice }: Props) {
     if (form.payment_terms === 'Net 15') days = 15
     else if (form.payment_terms === 'Net 30') days = 30
     else if (form.payment_terms === 'Net 60') days = 60
-    if (days > 0) {
-      const due = new Date(issue.getTime() + days * 86400000)
-      setForm(f => ({ ...f, due_date: due.toISOString().split('T')[0] }))
-    }
+    const due = new Date(issue.getTime() + days * 86400000)
+    setForm(f => ({ ...f, due_date: due.toISOString().split('T')[0] }))
   }, [form.payment_terms, form.issue_date])
 
   // Auto-fill customer from project selection

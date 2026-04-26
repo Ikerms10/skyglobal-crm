@@ -178,9 +178,14 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   const avgProjectValue = projects.length > 0 ? totalRevenue / projects.length : 0;
 
   // Customer score (RFM-based)
-  const lastProject = projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-  const daysSinceLast = lastProject
-    ? Math.floor((Date.now() - new Date(lastProject.created_at).getTime()) / 86400000)
+  const lastProject = projects.sort((a, b) => {
+    const dateA = a.end_date ?? a.start_date ?? a.created_at
+    const dateB = b.end_date ?? b.start_date ?? b.created_at
+    return new Date(dateB).getTime() - new Date(dateA).getTime()
+  })[0];
+  const lastProjectDate = lastProject ? (lastProject.end_date ?? lastProject.start_date ?? lastProject.created_at) : null
+  const daysSinceLast = lastProjectDate
+    ? Math.floor((Date.now() - new Date(lastProjectDate).getTime()) / 86400000)
     : null;
   const customerScore = (() => {
     let score = 0;

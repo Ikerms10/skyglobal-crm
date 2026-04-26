@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Create notification for the owner
-  const { data: { users } } = await supabase.auth.admin.listUsers()
   const ownerId = proposal.user_id
   const amount = proposal.total_investment ?? 0
 
