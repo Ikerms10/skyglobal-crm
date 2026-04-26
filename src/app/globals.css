@@ -687,15 +687,23 @@ textarea:focus {
 
 /* ─── IOS GLASS CARDS ────────────────────────────────────────────────────── */
 .ios-glass {
-  background: rgba(250,247,240,0.65);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.45);
+  background: rgba(250,247,240,0.68);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.50);
   border-radius: 22px;
   box-shadow:
-    0 2px 0 rgba(255,255,255,0.6) inset,
-    0 8px 32px rgba(139,90,20,0.08),
-    0 2px 8px rgba(0,0,0,0.04);
+    0 2px 0 rgba(255,255,255,0.65) inset,
+    0 8px 40px rgba(139,90,20,0.10),
+    0 2px 8px rgba(0,0,0,0.05);
+}
+/* In dark mode the warm-cream glass is already correct; just bump the inset highlight */
+.dark .ios-glass {
+  background: rgba(248,243,232,0.72);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.55) inset,
+    0 8px 40px rgba(0,0,0,0.28),
+    0 2px 8px rgba(0,0,0,0.14);
 }
 .ios-glass-dark {
   background: rgba(28,18,9,0.62);

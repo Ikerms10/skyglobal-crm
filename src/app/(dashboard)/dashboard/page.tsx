@@ -160,8 +160,9 @@ interface KPIKind {
   label: string;
   value: number;
   fmt: 'currency' | 'number';
-  color: string;
-  bg: string;
+  color: string;       // accent color (dark, readable on light card)
+  iconColor: string;   // icon fill (slightly lighter)
+  bg: string;          // warm-cream tinted base — high enough opacity to show over dark canvas
   border: string;
   glow: string;
   icon: React.ElementType;
@@ -181,59 +182,57 @@ function KPICard({ kpi }: { kpi: KPIKind }) {
   const trendUp = (kpi.trend ?? 0) >= 0;
 
   return (
+    // ios-glass supplies backdrop-filter + white inset highlight; we override bg + border
     <TiltCard
+      className="ios-glass"
       style={{
         borderRadius: 22,
         background: kpi.bg,
-        backdropFilter: 'blur(28px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(28px) saturate(180%)',
         border: `1px solid ${kpi.border}`,
-        boxShadow: `0 4px 32px ${kpi.glow}, 0 1px 0 rgba(255,255,255,0.5) inset`,
+        boxShadow: `0 4px 32px ${kpi.glow}, 0 1px 0 rgba(255,255,255,0.75) inset`,
         cursor: 'pointer',
       }}
     >
-      <Link href={kpi.href} style={{ display: 'flex', flexDirection: 'column', padding: '22px 22px 18px', textDecoration: 'none', gap: 0 }}>
+      <Link href={kpi.href} style={{ display: 'flex', flexDirection: 'column', padding: '22px 22px 18px', textDecoration: 'none' }}>
 
-        {/* Top row: icon pill + trend badge */}
+        {/* Top: icon pill + trend badge */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <div style={{
             width: 42, height: 42, borderRadius: 13,
-            background: `rgba(255,255,255,0.55)`,
+            background: `rgba(255,255,255,0.72)`,
             border: `1px solid ${kpi.border}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 2px 10px ${kpi.glow}, inset 0 1px 0 rgba(255,255,255,0.7)`,
+            boxShadow: `0 2px 8px ${kpi.glow}, inset 0 1px 0 rgba(255,255,255,0.9)`,
           }}>
-            <Icon size={20} style={{ color: kpi.color }} />
+            <Icon size={20} style={{ color: kpi.iconColor }} />
           </div>
 
-          <div style={{ display: 'flex', align: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {kpi.trend != null && (
               <span style={{
                 fontSize: 10, fontWeight: 700,
-                color: trendUp ? '#3d7a33' : '#B94A3A',
-                background: trendUp ? 'rgba(74,103,65,0.13)' : 'rgba(185,74,58,0.10)',
-                border: `1px solid ${trendUp ? 'rgba(74,103,65,0.2)' : 'rgba(185,74,58,0.18)'}`,
+                color: trendUp ? '#2d6b28' : '#9b2c2c',
+                background: trendUp ? 'rgba(45,107,40,0.12)' : 'rgba(155,44,44,0.10)',
+                border: `1px solid ${trendUp ? 'rgba(45,107,40,0.22)' : 'rgba(155,44,44,0.18)'}`,
                 borderRadius: 20, padding: '3px 8px',
                 fontFamily: "'DM Mono', monospace",
-                letterSpacing: '0.02em',
               }}>
                 {trendUp ? '▲' : '▼'} {Math.abs(kpi.trend).toFixed(0)}%
               </span>
             )}
-            <ChevronRight size={13} style={{ color: kpi.color, opacity: 0.4, marginTop: 1 }} />
+            <ChevronRight size={13} style={{ color: kpi.color, opacity: 0.35, marginTop: 1 }} />
           </div>
         </div>
 
         {/* Big animated number */}
         <div style={{
-          fontSize: 'clamp(1.6rem, 2.2vw, 2rem)',
+          fontSize: 'clamp(1.55rem, 2vw, 1.95rem)',
           fontWeight: 800,
           color: kpi.color,
           fontFamily: "'DM Mono', monospace",
           letterSpacing: '-0.04em',
           lineHeight: 1,
-          marginBottom: 5,
-          textShadow: `0 0 28px ${kpi.glow}`,
+          marginBottom: 6,
         }}>
           {display}
         </div>
@@ -241,7 +240,8 @@ function KPICard({ kpi }: { kpi: KPIKind }) {
         {/* Label */}
         <p style={{
           fontSize: 10, fontWeight: 700,
-          color: 'var(--c-text-3)',
+          color: kpi.color,
+          opacity: 0.65,
           fontFamily: "'DM Mono', monospace",
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
@@ -250,10 +250,10 @@ function KPICard({ kpi }: { kpi: KPIKind }) {
           {kpi.label}
         </p>
 
-        {/* Bottom row: sub-stat + sparkline */}
+        {/* Bottom: sub-stat + sparkline */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12, minHeight: 28 }}>
           {kpi.sub
-            ? <span style={{ fontSize: 11, color: kpi.color, fontFamily: "'DM Mono', monospace", fontWeight: 600, opacity: 0.85 }}>{kpi.sub}</span>
+            ? <span style={{ fontSize: 11, color: kpi.color, fontFamily: "'DM Mono', monospace", fontWeight: 600, opacity: 0.75 }}>{kpi.sub}</span>
             : <span />
           }
           {kpi.sparkline && kpi.sparkline.length > 1 && (
@@ -394,10 +394,12 @@ export default function DashboardPage() {
       label: 'Revenue',
       value: data?.revenue        ?? 0,
       fmt: 'currency',
-      color: '#8B6914',
-      bg: 'rgba(230,171,53,0.11)',
-      border: 'rgba(230,171,53,0.28)',
-      glow: 'rgba(230,171,53,0.22)',
+      // Warm gold-cream glass — opaque enough to read over dark canvas
+      color: '#7A5210',
+      iconColor: '#A87820',
+      bg: 'rgba(255,248,222,0.88)',
+      border: 'rgba(200,150,40,0.32)',
+      glow: 'rgba(230,171,53,0.20)',
       icon: DollarSign,
       href: '/reports',
       sparkline: data?.revenueSparkline,
@@ -407,10 +409,12 @@ export default function DashboardPage() {
       label: 'Gross Profit',
       value: data?.profit         ?? 0,
       fmt: 'currency',
-      color: '#4A6741',
-      bg: 'rgba(74,103,65,0.10)',
-      border: 'rgba(74,103,65,0.24)',
-      glow: 'rgba(74,103,65,0.18)',
+      // Sage-cream glass
+      color: '#2E5C28',
+      iconColor: '#4A7A42',
+      bg: 'rgba(228,245,230,0.88)',
+      border: 'rgba(74,103,65,0.28)',
+      glow: 'rgba(74,103,65,0.16)',
       icon: TrendingUp,
       href: '/reports',
       sub: data?.margin != null ? `${data.margin}% margin` : undefined,
@@ -420,10 +424,12 @@ export default function DashboardPage() {
       label: 'Active Projects',
       value: data?.activeProjects ?? 0,
       fmt: 'number',
-      color: '#5B8CBB',
-      bg: 'rgba(91,140,187,0.10)',
-      border: 'rgba(91,140,187,0.24)',
-      glow: 'rgba(91,140,187,0.18)',
+      // Warm amber-cream glass — no blue, stays within warm palette
+      color: '#7A4E10',
+      iconColor: '#A06820',
+      bg: 'rgba(255,242,218,0.88)',
+      border: 'rgba(180,120,40,0.28)',
+      glow: 'rgba(180,120,40,0.16)',
       icon: Briefcase,
       href: '/projects',
     },
@@ -431,10 +437,12 @@ export default function DashboardPage() {
       label: 'Pipeline Leads',
       value: data?.totalLeads     ?? 0,
       fmt: 'number',
-      color: '#A07850',
-      bg: 'rgba(160,120,80,0.10)',
-      border: 'rgba(160,120,80,0.24)',
-      glow: 'rgba(160,120,80,0.18)',
+      // Terracotta-cream glass
+      color: '#7A3418',
+      iconColor: '#A04828',
+      bg: 'rgba(255,238,228,0.88)',
+      border: 'rgba(185,80,50,0.26)',
+      glow: 'rgba(185,80,50,0.14)',
       icon: Target,
       href: '/leads',
       sub: data?.wonLeads ? `${data.wonLeads} won` : undefined,
