@@ -54,8 +54,8 @@ export function MarkPaidModal({ invoice, onClose, onSaved }: Props) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 16, width: '100%', maxWidth: 420 }}>
+    <div className="modal-backdrop-blur" style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div className="modal-content-enter" style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 16, width: '100%', maxWidth: 420 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--c-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

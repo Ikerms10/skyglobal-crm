@@ -48,7 +48,7 @@ export function TodaysFocus() {
             Today's Focus
           </span>
           {items.length > 0 && (
-            <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--c-danger)', color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: "'DM Mono', monospace" }}>
+            <span className="pulse-dot" style={{ fontSize: 10, fontWeight: 700, background: 'var(--c-danger)', color: '#fff', padding: '1px 6px', borderRadius: 10, fontFamily: "'DM Mono', monospace", display: 'inline-block' }}>
               {items.length}
             </span>
           )}
@@ -70,8 +70,9 @@ export function TodaysFocus() {
         </div>
       ) : items.length === 0 ? (
         <div style={{ padding: '20px 0', textAlign: 'center' }}>
-          <p style={{ margin: 0, fontSize: 14, color: 'var(--c-sage)', fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            You're all caught up 🎉
+          <p className="float-anim" style={{ margin: 0, fontSize: 28, lineHeight: 1 }}>🎉</p>
+          <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--c-sage)', fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            You're all caught up
           </p>
           <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace" }}>
             No immediate actions needed
@@ -80,11 +81,12 @@ export function TodaysFocus() {
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
-            {visible.map(item => {
+            {visible.map((item, idx) => {
               const Icon = TYPE_ICON[item.type]
               return (
                 <div
                   key={item.id}
+                  className={`animate-fade-up stagger-${Math.min(idx + 1, 6)}`}
                   style={{
                     background: 'var(--c-card)',
                     border: '1px solid var(--c-border)',
@@ -94,15 +96,17 @@ export function TodaysFocus() {
                     flexDirection: 'column',
                     gap: 8,
                     cursor: 'pointer',
-                    transition: 'border-color 150ms, box-shadow 150ms',
+                    transition: 'border-color 150ms, box-shadow 200ms, transform 200ms cubic-bezier(0.34,1.3,0.64,1)',
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.borderColor = 'var(--c-gold-border)'
-                    e.currentTarget.style.boxShadow = '0 2px 12px var(--c-gold-shadow)'
+                    e.currentTarget.style.boxShadow = '0 4px 16px var(--c-gold-shadow)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.borderColor = 'var(--c-border)'
                     e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.transform = 'translateY(0)'
                   }}
                   onClick={() => router.push(item.actionRoute)}
                 >

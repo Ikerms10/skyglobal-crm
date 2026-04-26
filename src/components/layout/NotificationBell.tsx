@@ -142,7 +142,7 @@ export function NotificationBell() {
     const channel = supabase
       .channel('notifications-bell')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
-        const notif = payload.new as AppNotification
+        const notif = { ...payload.new as AppNotification, _new: true }
         setDbNotifs(prev => [notif, ...prev])
         toast(notif.title, { description: notif.body ?? undefined })
       })
@@ -350,6 +350,7 @@ export function NotificationBell() {
                             markDbRead(notif.id)
                             if (notif.action_url) { router.push(notif.action_url); setOpen(false) }
                           }}
+                          className={(notif as any)._new ? 'notif-enter' : ''}
                           style={{
                             width: '100%',
                             display: 'flex',

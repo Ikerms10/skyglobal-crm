@@ -1,5 +1,6 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -34,6 +35,17 @@ export default function InvoicesPage() {
   const [filter, setFilter] = useState('all')
   const [createOpen, setCreateOpen] = useState(false)
   const [markPaidInvoice, setMarkPaidInvoice] = useState<Invoice | null>(null)
+
+  // Keyboard shortcut: N → new invoice
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !['INPUT','TEXTAREA','SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        setCreateOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['invoices'],
@@ -133,19 +145,20 @@ export default function InvoicesPage() {
             </div>
             <div>
               <div style={{ fontSize: 11, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace", marginTop: 1 }}>{formatCurrency(value)}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace", marginTop: 1 }} className={label === 'Outstanding' && value > 0 ? 'value-shimmer' : ''}>{formatCurrency(value)}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 2, padding: 3, background: 'var(--c-nested)', borderRadius: 10, border: '1px solid var(--c-border)', width: 'fit-content' }}>
+      <div style={{ display: 'flex', gap: 2, padding: 3, background: 'var(--c-nested)', borderRadius: 10, border: '1px solid var(--c-border)', width: 'fit-content', position: 'relative' }}>
         {FILTERS.map(f => (
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
             style={{
+              position: 'relative',
               padding: '5px 14px',
               borderRadius: 7,
               border: 'none',
@@ -154,11 +167,19 @@ export default function InvoicesPage() {
               fontWeight: filter === f.value ? 700 : 500,
               fontFamily: "'DM Mono', monospace",
               letterSpacing: '0.06em',
-              background: filter === f.value ? 'var(--c-gold-bg)' : 'transparent',
+              background: 'transparent',
               color: filter === f.value ? 'var(--c-gold)' : 'var(--c-text-3)',
-              transition: 'all 150ms',
+              transition: 'color 150ms',
+              zIndex: 1,
             }}
           >
+            {filter === f.value && (
+              <motion.div
+                layoutId="invoice-tab-bg"
+                style={{ position: 'absolute', inset: 0, borderRadius: 7, background: 'var(--c-gold-bg)', zIndex: -1 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+              />
+            )}
             {f.label}
           </button>
         ))}
@@ -198,8 +219,9 @@ export default function InvoicesPage() {
                 return (
                   <tr
                     key={inv.id}
-                    style={{ borderBottom: idx < filtered.length - 1 ? '1px solid var(--c-border)' : 'none' }}
-                    className="hover:bg-[var(--c-elevated)] transition-colors"
+                    style={{ borderBottom: idx < filtered.length - 1 ? '1px solid var(--c-border)' : 'none', cursor: 'pointer' }}
+                    className="hover:bg-[var(--c-elevated)] transition-colors group"
+                    onClick={() => inv.status !== 'paid' && setMarkPaidInvoice(inv)}
                   >
                     <td style={{ padding: '12px 16px', fontFamily: "'DM Mono', monospace", fontWeight: 700, color: 'var(--c-gold)', fontSize: 13 }}>
                       {inv.invoice_number}

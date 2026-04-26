@@ -70,18 +70,27 @@ export function KPICard({ label, value, format, color, icon: Icon, trend, sparkl
         overflow: 'hidden',
         boxShadow: 'var(--s-card), var(--s-card-inset)',
         transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease',
+        willChange: 'transform',
         cursor: 'default',
         position: 'relative',
       }}
+      onMouseMove={e => {
+        const card = e.currentTarget
+        const rect = card.getBoundingClientRect()
+        const x = (e.clientX - rect.left - rect.width  / 2) / (rect.width  / 2)
+        const y = (e.clientY - rect.top  - rect.height / 2) / (rect.height / 2)
+        card.style.transform = `translateY(-2px) perspective(700px) rotateX(${(-y * 3.5).toFixed(2)}deg) rotateY(${(x * 3.5).toFixed(2)}deg)`
+      }}
       onMouseEnter={e => {
         e.currentTarget.style.borderColor = 'var(--c-border-mid)'
-        e.currentTarget.style.boxShadow = 'var(--s-card-hover), var(--s-card-hover-inset)'
-        e.currentTarget.style.transform = 'translateY(-2px)'
+        e.currentTarget.style.boxShadow = `var(--s-card-hover), var(--s-card-hover-inset), 0 0 20px ${c.glow}`
+        e.currentTarget.style.transition = 'border-color 0.2s ease, box-shadow 0.2s ease'
       }}
       onMouseLeave={e => {
         e.currentTarget.style.borderColor = 'var(--c-border-light)'
         e.currentTarget.style.boxShadow = 'var(--s-card), var(--s-card-inset)'
-        e.currentTarget.style.transform = 'translateY(0)'
+        e.currentTarget.style.transform = 'translateY(0) perspective(700px) rotateX(0deg) rotateY(0deg)'
+        e.currentTarget.style.transition = 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.35s cubic-bezier(0.34,1.3,0.64,1)'
       }}
     >
       {/* Top accent bar — 3px, flush to top */}

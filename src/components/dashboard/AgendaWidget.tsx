@@ -38,7 +38,7 @@ export function AgendaWidget() {
   })
 
   return (
-    <div style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 12, padding: '16px 20px' }}>
+    <div className="animate-fade-up" style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 12, padding: '16px 20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
           <Calendar size={14} style={{ color: 'var(--c-gold)' }} />
@@ -63,7 +63,12 @@ export function AgendaWidget() {
             const dotColor = EVENT_DOT[evt.type as EventType] ?? EVENT_DOT.personal
             const isTodayEvent = isToday(eventDate)
             return (
-              <div key={evt.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div
+                key={evt.id}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '5px 8px', margin: '0 -8px', borderRadius: 7, transition: 'background 150ms', cursor: 'default' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-nested)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+              >
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0, marginTop: 4 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span style={{
