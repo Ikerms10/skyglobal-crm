@@ -8,15 +8,13 @@ import { formatDistanceToNow, subMonths, startOfWeek, startOfMonth, startOfYear 
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import {
   DollarSign, Briefcase, Target, TrendingUp, ArrowRight,
-  Clock, AlertTriangle, Activity, Plus, FileText, Calendar,
-  BarChart2, ChevronRight, Zap, Receipt, Users,
+  Clock, AlertTriangle, Activity, FileText, Calendar,
+  BarChart2, ChevronRight, Receipt, Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { TodaysFocus } from '@/components/dashboard/TodaysFocus';
 import { AgendaWidget } from '@/components/dashboard/AgendaWidget';
 import { BibleVerse } from '@/components/dashboard/BibleVerse';
-import { WeatherWidget } from '@/components/dashboard/WeatherWidget';
 
 type Timeframe = 'Week' | 'Month' | 'Year' | 'All';
 
@@ -47,12 +45,12 @@ const TIMEFRAMES: { label: string; value: Timeframe }[] = [
 ];
 
 const STAGE_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
-  'New Lead':     { bg: 'rgba(122,158,126,0.12)', text: '#4A6741', bar: '#7A9E7E' },
-  'Estimate Sent':{ bg: 'rgba(139,105,20,0.12)',  text: '#8B6914', bar: '#8B6914' },
-  'Follow-up':    { bg: 'rgba(160,120,80,0.12)',  text: '#A07850', bar: '#A07850' },
-  Won:            { bg: 'rgba(74,103,65,0.14)',   text: '#4A6741', bar: '#4A6741' },
-  Lost:           { bg: 'rgba(185,74,58,0.10)',   text: '#B94A3A', bar: '#B94A3A' },
-  'On Hold':      { bg: 'rgba(200,188,168,0.2)',  text: '#9a9585', bar: '#CFC4B4' },
+  'New Lead':      { bg: 'rgba(122,158,126,0.12)', text: '#4A6741', bar: '#7A9E7E' },
+  'Estimate Sent': { bg: 'rgba(139,105,20,0.12)',  text: '#8B6914', bar: '#8B6914' },
+  'Follow-up':     { bg: 'rgba(160,120,80,0.12)',  text: '#A07850', bar: '#A07850' },
+  Won:             { bg: 'rgba(74,103,65,0.14)',   text: '#4A6741', bar: '#4A6741' },
+  Lost:            { bg: 'rgba(185,74,58,0.10)',   text: '#B94A3A', bar: '#B94A3A' },
+  'On Hold':       { bg: 'rgba(200,188,168,0.2)',  text: '#9a9585', bar: '#CFC4B4' },
 };
 
 const QUICK_ACTIONS = [
@@ -65,6 +63,60 @@ const QUICK_ACTIONS = [
   { label: 'Customers',    href: '/customers', icon: Users,    bg: 'rgba(185,74,58,0.10)',  color: '#B94A3A' },
 ];
 
+// ── Tiny SVG sparkline ────────────────────────────────────────────────────────
+function SparkLine({ values, color }: { values: number[]; color: string }) {
+  if (!values || values.length < 2) return null;
+  const w = 72, h = 28;
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = max - min || 1;
+  const pts = values
+    .map((v, i) => `${(i / (values.length - 1)) * w},${h - ((v - min) / range) * h}`)
+    .join(' ');
+  return (
+    <svg width={w} height={h} style={{ overflow: 'visible', display: 'block' }}>
+      <defs>
+        <linearGradient id={`spark-fill-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.18} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={0.75}
+      />
+    </svg>
+  );
+}
+
+// ── Count-up hook — requestAnimationFrame, cubic ease-out ─────────────────────
+function useCountUp(target: number, duration = 900): number {
+  const [val, setVal] = useState(0);
+  const prev = useRef(0);
+  useEffect(() => {
+    if (target === prev.current) return;
+    const from = prev.current;
+    const start = performance.now();
+    let raf: number;
+    const run = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(Math.round(from + (target - from) * eased));
+      if (p < 1) { raf = requestAnimationFrame(run); }
+      else { setVal(target); prev.current = target; }
+    };
+    raf = requestAnimationFrame(run);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
 function ChartTooltipContent({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -79,6 +131,7 @@ function ChartTooltipContent({ active, payload, label }: any) {
   );
 }
 
+// ── 3-D perspective tilt card ─────────────────────────────────────────────────
 function TiltCard({ children, className = '', style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null);
   const handleMove = (e: React.MouseEvent) => {
@@ -86,33 +139,144 @@ function TiltCard({ children, className = '', style = {} }: { children: React.Re
     const r = ref.current.getBoundingClientRect();
     const x = (e.clientX - r.left - r.width  / 2) / (r.width  / 2);
     const y = (e.clientY - r.top  - r.height / 2) / (r.height / 2);
-    ref.current.style.transform = `perspective(800px) rotateX(${(-y * 3).toFixed(2)}deg) rotateY(${(x * 3).toFixed(2)}deg) translateY(-3px)`;
+    ref.current.style.transition = 'transform 0.08s ease';
+    ref.current.style.transform  = `perspective(800px) rotateX(${(-y * 4).toFixed(2)}deg) rotateY(${(x * 4).toFixed(2)}deg) translateY(-4px) scale(1.015)`;
   };
   const handleLeave = () => {
     if (!ref.current) return;
-    ref.current.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0)';
-    ref.current.style.transition = 'transform 0.4s cubic-bezier(0.34,1.3,0.64,1)';
-  };
-  const handleEnter = () => {
-    if (!ref.current) ref.current!.style.transition = 'transform 0.08s ease';
+    ref.current.style.transition = 'transform 0.5s cubic-bezier(0.34,1.3,0.64,1)';
+    ref.current.style.transform  = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0) scale(1)';
   };
   return (
     <div ref={ref} className={className} style={{ willChange: 'transform', ...style }}
-      onMouseMove={handleMove} onMouseLeave={handleLeave} onMouseEnter={handleEnter}>
+      onMouseMove={handleMove} onMouseLeave={handleLeave}>
       {children}
     </div>
   );
 }
 
+// ── KPI Card — isolated component so useCountUp hook is valid ─────────────────
+interface KPIKind {
+  label: string;
+  value: number;
+  fmt: 'currency' | 'number';
+  color: string;
+  bg: string;
+  border: string;
+  glow: string;
+  icon: React.ElementType;
+  href: string;
+  sub?: string;
+  sparkline?: number[];
+  trend?: number | null;
+}
+
+function KPICard({ kpi }: { kpi: KPIKind }) {
+  const Icon = kpi.icon;
+  const animated = useCountUp(kpi.value);
+  const display  = kpi.fmt === 'currency'
+    ? formatCurrency(animated)
+    : animated.toLocaleString('en-US');
+
+  const trendUp = (kpi.trend ?? 0) >= 0;
+
+  return (
+    <TiltCard
+      style={{
+        borderRadius: 22,
+        background: kpi.bg,
+        backdropFilter: 'blur(28px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+        border: `1px solid ${kpi.border}`,
+        boxShadow: `0 4px 32px ${kpi.glow}, 0 1px 0 rgba(255,255,255,0.5) inset`,
+        cursor: 'pointer',
+      }}
+    >
+      <Link href={kpi.href} style={{ display: 'flex', flexDirection: 'column', padding: '22px 22px 18px', textDecoration: 'none', gap: 0 }}>
+
+        {/* Top row: icon pill + trend badge */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: 13,
+            background: `rgba(255,255,255,0.55)`,
+            border: `1px solid ${kpi.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 2px 10px ${kpi.glow}, inset 0 1px 0 rgba(255,255,255,0.7)`,
+          }}>
+            <Icon size={20} style={{ color: kpi.color }} />
+          </div>
+
+          <div style={{ display: 'flex', align: 'center', gap: 6 }}>
+            {kpi.trend != null && (
+              <span style={{
+                fontSize: 10, fontWeight: 700,
+                color: trendUp ? '#3d7a33' : '#B94A3A',
+                background: trendUp ? 'rgba(74,103,65,0.13)' : 'rgba(185,74,58,0.10)',
+                border: `1px solid ${trendUp ? 'rgba(74,103,65,0.2)' : 'rgba(185,74,58,0.18)'}`,
+                borderRadius: 20, padding: '3px 8px',
+                fontFamily: "'DM Mono', monospace",
+                letterSpacing: '0.02em',
+              }}>
+                {trendUp ? '▲' : '▼'} {Math.abs(kpi.trend).toFixed(0)}%
+              </span>
+            )}
+            <ChevronRight size={13} style={{ color: kpi.color, opacity: 0.4, marginTop: 1 }} />
+          </div>
+        </div>
+
+        {/* Big animated number */}
+        <div style={{
+          fontSize: 'clamp(1.6rem, 2.2vw, 2rem)',
+          fontWeight: 800,
+          color: kpi.color,
+          fontFamily: "'DM Mono', monospace",
+          letterSpacing: '-0.04em',
+          lineHeight: 1,
+          marginBottom: 5,
+          textShadow: `0 0 28px ${kpi.glow}`,
+        }}>
+          {display}
+        </div>
+
+        {/* Label */}
+        <p style={{
+          fontSize: 10, fontWeight: 700,
+          color: 'var(--c-text-3)',
+          fontFamily: "'DM Mono', monospace",
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          margin: 0,
+        }}>
+          {kpi.label}
+        </p>
+
+        {/* Bottom row: sub-stat + sparkline */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12, minHeight: 28 }}>
+          {kpi.sub
+            ? <span style={{ fontSize: 11, color: kpi.color, fontFamily: "'DM Mono', monospace", fontWeight: 600, opacity: 0.85 }}>{kpi.sub}</span>
+            : <span />
+          }
+          {kpi.sparkline && kpi.sparkline.length > 1 && (
+            <SparkLine values={kpi.sparkline} color={kpi.color} />
+          )}
+        </div>
+
+      </Link>
+    </TiltCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const [timeframe, setTimeframe]   = useState<Timeframe>('Month');
-  const [time, setTime]             = useState('');
-  const shouldReduceMotion          = useReducedMotion();
-  const router = useRouter();
+  const [timeframe, setTimeframe] = useState<Timeframe>('Month');
+  const [time, setTime]           = useState('');
+  const shouldReduceMotion        = useReducedMotion();
 
   // Live clock
   useEffect(() => {
-    const tick = () => setTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }));
+    const tick = () => setTime(
+      new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+    );
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -164,42 +328,60 @@ export default function DashboardPage() {
       const expenses = expensesRes.data ?? [];
       const projExp  = projectExpensesRes.data ?? [];
 
-      const revenue = projects.filter(p => p.status === 'In Progress' || p.status === 'Completed')
+      const revenue       = projects.filter(p => p.status === 'In Progress' || p.status === 'Completed')
         .reduce((s, p) => s + (p.contract_value ?? 0), 0);
       const totalExpenses = [...expenses.map(e => e.amount), ...projExp.map(e => e.amount)].reduce((s, a) => s + a, 0);
-      const profit = revenue - totalExpenses;
-      const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
+      const profit        = revenue - totalExpenses;
+      const margin        = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
 
+      // 6-month chart data
       const chartData = Array.from({ length: 6 }, (_, i) => {
-        const d  = subMonths(new Date(), 5 - i);
-        const m  = d.toLocaleDateString('en-US', { month: 'short' });
-        const yr = d.getFullYear();
+        const d   = subMonths(new Date(), 5 - i);
+        const mon = d.toLocaleDateString('en-US', { month: 'short' });
+        const yr  = d.getFullYear();
         const rev = (allProjRes.data ?? []).filter(p => {
           const pd = new Date(p.created_at);
-          return pd.toLocaleDateString('en-US', { month: 'short' }) === m && pd.getFullYear() === yr
+          return pd.toLocaleDateString('en-US', { month: 'short' }) === mon
+            && pd.getFullYear() === yr
             && (p.status === 'In Progress' || p.status === 'Completed');
         }).reduce((s, p) => s + (p.contract_value ?? 0), 0);
         const exp = [
-          ...(allExpRes.data ?? []).filter(e => { const ed = new Date(e.date); return ed.toLocaleDateString('en-US', { month: 'short' }) === m && ed.getFullYear() === yr; }).map(e => e.amount),
-          ...(allProjExpRes.data ?? []).filter(e => { const ed = new Date(e.date); return ed.toLocaleDateString('en-US', { month: 'short' }) === m && ed.getFullYear() === yr; }).map(e => e.amount),
+          ...(allExpRes.data ?? []).filter(e => {
+            const ed = new Date(e.date);
+            return ed.toLocaleDateString('en-US', { month: 'short' }) === mon && ed.getFullYear() === yr;
+          }).map(e => e.amount),
+          ...(allProjExpRes.data ?? []).filter(e => {
+            const ed = new Date(e.date);
+            return ed.toLocaleDateString('en-US', { month: 'short' }) === mon && ed.getFullYear() === yr;
+          }).map(e => e.amount),
         ].reduce((s, a) => s + a, 0);
-        return { month: m, revenue: Math.round(rev), expenses: Math.round(exp) };
+        return { month: mon, revenue: Math.round(rev), expenses: Math.round(exp), profit: Math.round(rev - exp) };
       });
 
-      const stages = ['New Lead', 'Estimate Sent', 'Follow-up', 'Won', 'Lost', 'On Hold'];
-      const stageCounts = Object.fromEntries(stages.map(s => [s, leads.filter(l => l.stage === s).length]));
+      // Month-over-month trends
+      const lastRev  = chartData[5]?.revenue  ?? 0;
+      const prevRev  = chartData[4]?.revenue  ?? 0;
+      const lastProf = chartData[5]?.profit   ?? 0;
+      const prevProf = chartData[4]?.profit   ?? 0;
+      const revTrend  = prevRev  > 0 ? Math.round(((lastRev  - prevRev)  / prevRev)  * 100) : null;
+      const profTrend = prevProf > 0 ? Math.round(((lastProf - prevProf) / Math.abs(prevProf)) * 100) : null;
+
+      const stages       = ['New Lead', 'Estimate Sent', 'Follow-up', 'Won', 'Lost', 'On Hold'];
+      const stageCounts  = Object.fromEntries(stages.map(s => [s, leads.filter(l => l.stage === s).length]));
       const revenueSparkline = chartData.map(d => d.revenue);
 
       return {
         revenue, totalExpenses, profit, margin,
-        wonLeads: leads.filter(l => l.stage === 'Won').length,
-        totalLeads: leads.length,
+        wonLeads:       leads.filter(l => l.stage === 'Won').length,
+        totalLeads:     leads.length,
         activeProjects: projects.filter(p => p.status === 'In Progress' || p.status === 'Scheduled').length,
         chartData, stageCounts,
         activities: activitiesRes.data ?? [],
-        followUps:  followUpsRes.data ?? [],
-        overdue:    overdueRes.data ?? [],
+        followUps:  followUpsRes.data  ?? [],
+        overdue:    overdueRes.data    ?? [],
         revenueSparkline,
+        revTrend,
+        profTrend,
       };
     },
     staleTime: 60_000,
@@ -207,33 +389,82 @@ export default function DashboardPage() {
 
   const maxStageCount = Math.max(...Object.values(data?.stageCounts ?? {}).map(Number), 1);
 
-  const kpis = [
-    { label: 'Revenue',        value: data?.revenue ?? 0,        fmt: 'currency', color: '#8B6914', bg: 'rgba(230,171,53,0.10)', border: 'rgba(230,171,53,0.25)', icon: DollarSign, href: '/reports',  sparkline: data?.revenueSparkline },
-    { label: 'Gross Profit',   value: data?.profit ?? 0,         fmt: 'currency', color: '#4A6741', bg: 'rgba(74,103,65,0.09)',  border: 'rgba(74,103,65,0.22)',  icon: TrendingUp, href: '/reports',  sub: data?.margin != null ? `${data.margin}% margin` : undefined },
-    { label: 'Active Projects',value: data?.activeProjects ?? 0, fmt: 'number',   color: '#5B8CBB', bg: 'rgba(91,140,187,0.09)', border: 'rgba(91,140,187,0.22)', icon: Briefcase,  href: '/projects' },
-    { label: 'Leads',          value: data?.totalLeads ?? 0,     fmt: 'number',   color: '#A07850', bg: 'rgba(160,120,80,0.09)', border: 'rgba(160,120,80,0.22)', icon: Target,     href: '/leads',   sub: data?.wonLeads ? `${data.wonLeads} won` : undefined },
+  const kpis: KPIKind[] = [
+    {
+      label: 'Revenue',
+      value: data?.revenue        ?? 0,
+      fmt: 'currency',
+      color: '#8B6914',
+      bg: 'rgba(230,171,53,0.11)',
+      border: 'rgba(230,171,53,0.28)',
+      glow: 'rgba(230,171,53,0.22)',
+      icon: DollarSign,
+      href: '/reports',
+      sparkline: data?.revenueSparkline,
+      trend: data?.revTrend,
+    },
+    {
+      label: 'Gross Profit',
+      value: data?.profit         ?? 0,
+      fmt: 'currency',
+      color: '#4A6741',
+      bg: 'rgba(74,103,65,0.10)',
+      border: 'rgba(74,103,65,0.24)',
+      glow: 'rgba(74,103,65,0.18)',
+      icon: TrendingUp,
+      href: '/reports',
+      sub: data?.margin != null ? `${data.margin}% margin` : undefined,
+      trend: data?.profTrend,
+    },
+    {
+      label: 'Active Projects',
+      value: data?.activeProjects ?? 0,
+      fmt: 'number',
+      color: '#5B8CBB',
+      bg: 'rgba(91,140,187,0.10)',
+      border: 'rgba(91,140,187,0.24)',
+      glow: 'rgba(91,140,187,0.18)',
+      icon: Briefcase,
+      href: '/projects',
+    },
+    {
+      label: 'Pipeline Leads',
+      value: data?.totalLeads     ?? 0,
+      fmt: 'number',
+      color: '#A07850',
+      bg: 'rgba(160,120,80,0.10)',
+      border: 'rgba(160,120,80,0.24)',
+      glow: 'rgba(160,120,80,0.18)',
+      icon: Target,
+      href: '/leads',
+      sub: data?.wonLeads ? `${data.wonLeads} won` : undefined,
+    },
   ];
 
-  const stagger = (i: number) => ({ initial: { opacity: 0, y: shouldReduceMotion ? 0 : 18 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.07, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] } });
+  const stagger = (i: number) => ({
+    initial: { opacity: 0, y: shouldReduceMotion ? 0 : 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { delay: i * 0.07, duration: 0.42, ease: [0.25, 0.46, 0.45, 0.94] },
+  });
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--c-canvas)', overflow: 'hidden' }}>
-      {/* ── Ambient orbs ── */}
-      <div className="dash-orb dash-orb-gold"  aria-hidden="true" />
-      <div className="dash-orb dash-orb-sage"  aria-hidden="true" />
-      <div className="dash-orb dash-orb-warm"  aria-hidden="true" />
 
-      {/* ── Page content ── */}
+      {/* Ambient orbs */}
+      <div className="dash-orb dash-orb-gold" aria-hidden="true" />
+      <div className="dash-orb dash-orb-sage" aria-hidden="true" />
+      <div className="dash-orb dash-orb-warm" aria-hidden="true" />
+
       <div style={{ position: 'relative', zIndex: 1, padding: '28px 32px', maxWidth: 1360, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }} className="p-4 md:p-8">
 
-        {/* ── ROW 1: Hero glass card ── */}
+        {/* ROW 1 — Hero glass card */}
         <motion.div {...stagger(0)}>
           <div className="ios-glass bento-card" style={{ padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>
                 {todayLabel()} · Orlando, FL
               </p>
-              <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.035em', lineHeight: 1.1 }}>
+              <h1 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', fontWeight: 800, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.035em', lineHeight: 1.1 }}>
                 {greeting()},&nbsp;<span className="value-shimmer">Iker</span>
               </h1>
               <p style={{ fontSize: 13, color: 'var(--c-text-3)', margin: '8px 0 0', fontFamily: "'DM Mono', monospace" }}>
@@ -241,14 +472,14 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               {/* Live clock */}
-              <div className="ios-glass-gold" style={{ padding: '14px 22px', textAlign: 'center', minWidth: 110 }}>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#8B6914', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.04em', lineHeight: 1 }}>
+              <div className="ios-glass-gold" style={{ padding: '16px 24px', textAlign: 'center', minWidth: 120 }}>
+                <div style={{ fontSize: 'clamp(1.4rem, 2vw, 1.75rem)', fontWeight: 800, color: '#8B6914', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.04em', lineHeight: 1 }}>
                   {time.split(':')[0]}<span className="time-colon">:</span>{time.slice(time.indexOf(':') + 1)}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--c-text-3)', marginTop: 3, fontFamily: "'DM Mono', monospace", letterSpacing: '0.08em' }}>
-                  LOCAL TIME
+                <div style={{ fontSize: 9, color: 'var(--c-text-3)', marginTop: 4, fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Local Time
                 </div>
               </div>
 
@@ -261,7 +492,7 @@ export default function DashboardPage() {
                     fontFamily: "'DM Mono', monospace", letterSpacing: '0.05em',
                     background: timeframe === tf.value ? 'rgba(230,171,53,0.18)' : 'transparent',
                     color: timeframe === tf.value ? '#8B6914' : 'var(--c-text-3)',
-                    transition: 'all 150ms',
+                    transition: 'all 180ms ease',
                     boxShadow: timeframe === tf.value ? '0 2px 8px rgba(230,171,53,0.2)' : 'none',
                   }}>
                     {tf.label}
@@ -272,49 +503,36 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ── ROW 2: KPI stat bubbles ── */}
-        <motion.div {...stagger(1)} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }} className="grid-cols-2 md:grid-cols-4">
-          {kpis.map((kpi, i) => {
-            const Icon = kpi.icon;
-            const fmtVal = kpi.fmt === 'currency'
-              ? formatCurrency(kpi.value)
-              : kpi.value.toLocaleString('en-US');
-            return (
-              <TiltCard key={kpi.label} className="stat-bubble" style={{ borderRadius: 20, background: kpi.bg, backdropFilter: 'blur(24px) saturate(160%)', WebkitBackdropFilter: 'blur(24px) saturate(160%)', border: `1px solid ${kpi.border}`, boxShadow: `0 4px 24px ${kpi.bg}, inset 0 1px 0 rgba(255,255,255,0.45)` }}>
-                <Link href={kpi.href} style={{ display: 'block', padding: '22px 20px', textDecoration: 'none' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-                    <div style={{ width: 38, height: 38, borderRadius: 11, background: `rgba(255,255,255,0.5)`, border: `1px solid ${kpi.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                      <Icon size={18} style={{ color: kpi.color }} />
-                    </div>
-                    <ChevronRight size={14} style={{ color: kpi.color, opacity: 0.5, marginTop: 4 }} />
-                  </div>
-                  {isLoading
-                    ? <div className="skeleton" style={{ height: 36, width: 100, marginBottom: 6 }} />
-                    : <div style={{ fontSize: '1.75rem', fontWeight: 800, color: kpi.color, fontFamily: "'DM Mono', monospace", letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 4 }}>
-                        {fmtVal}
-                      </div>
-                  }
-                  <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.07em', textTransform: 'uppercase', margin: 0 }}>
-                    {kpi.label}
-                  </p>
-                  {kpi.sub && <p style={{ fontSize: 11, color: kpi.color, margin: '3px 0 0', fontFamily: "'DM Mono', monospace", fontWeight: 600, opacity: 0.8 }}>{kpi.sub}</p>}
-                </Link>
-              </TiltCard>
-            );
-          })}
+        {/* ROW 2 — KPI Command Center */}
+        <motion.div {...stagger(1)}>
+          {/* Section label with live pulse */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span className="live-dot" aria-hidden="true" />
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Command Center · Live
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+            {isLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="skeleton" style={{ height: 168, borderRadius: 22 }} />
+                ))
+              : kpis.map(kpi => <KPICard key={kpi.label} kpi={kpi} />)
+            }
+          </div>
         </motion.div>
 
-        {/* ── ROW 3: Today's Focus ── */}
+        {/* ROW 3 — Today's Focus */}
         <motion.div {...stagger(2)}>
           <div className="ios-glass bento-card" style={{ padding: '22px 26px' }}>
             <TodaysFocus />
           </div>
         </motion.div>
 
-        {/* ── ROW 4: Chart + Pipeline ── */}
-        <motion.div {...stagger(3)} style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }} className="grid-cols-1 md:grid-cols-[3fr_2fr]">
+        {/* ROW 4 — Revenue chart + Pipeline */}
+        <motion.div {...stagger(3)} style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }}>
 
-          {/* Revenue chart */}
           <Link href="/reports" style={{ textDecoration: 'none' }}>
             <div className="ios-glass bento-card" style={{ padding: '24px 28px', height: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -357,12 +575,9 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Pipeline stages */}
           <div className="ios-glass bento-card" style={{ padding: '24px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.01em' }}>
-                Pipeline
-              </h3>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.01em' }}>Pipeline</h3>
               <Link href="/leads" style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--c-gold)', textDecoration: 'none', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
                 {data?.totalLeads ?? 0} leads <ArrowRight size={11} />
               </Link>
@@ -371,14 +586,14 @@ export default function DashboardPage() {
               ? <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 40, borderRadius: 12 }} />)}</div>
               : <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                   {Object.entries(data?.stageCounts ?? {}).filter(([, c]) => Number(c) > 0).map(([stage, count]) => {
-                    const sc = STAGE_COLORS[stage] ?? STAGE_COLORS['On Hold'];
+                    const sc  = STAGE_COLORS[stage] ?? STAGE_COLORS['On Hold'];
                     const pct = Math.round((Number(count) / maxStageCount) * 100);
                     return (
                       <Link key={stage} href="/leads" className="pipeline-pill" style={{ background: sc.bg, border: `1px solid ${sc.bar}25`, textDecoration: 'none' }}>
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontSize: 12, fontWeight: 600, color: sc.text, margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{stage}</p>
                           <div style={{ height: 3, borderRadius: 2, background: `${sc.bar}25`, marginTop: 5, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: sc.bar, boxShadow: `0 0 6px ${sc.bar}60`, transition: 'width 600ms ease' }} />
+                            <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: sc.bar, boxShadow: `0 0 6px ${sc.bar}60`, transition: 'width 700ms cubic-bezier(0.34,1.3,0.64,1)' }} />
                           </div>
                         </div>
                         <span style={{ fontSize: 16, fontWeight: 800, color: sc.text, fontFamily: "'DM Mono', monospace", marginLeft: 12, flexShrink: 0 }}>{String(count)}</span>
@@ -390,10 +605,9 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ── ROW 5: Activity + Follow-ups + Overdue ── */}
-        <motion.div {...stagger(4)} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }} className="grid-cols-1 md:grid-cols-3">
+        {/* ROW 5 — Activity + Follow-ups + Overdue */}
+        <motion.div {...stagger(4)} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
 
-          {/* Recent activity */}
           <div className="ios-glass bento-card" style={{ padding: '22px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Recent Activity</h3>
@@ -403,9 +617,10 @@ export default function DashboardPage() {
               ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 40, marginBottom: 8, borderRadius: 10 }} />)
               : (data?.activities ?? []).length > 0
                 ? (data!.activities as Array<{ id: string; type: string; content: string | null; created_at: string; customer_id: string }>).map(a => (
-                    <Link key={a.id} href={a.customer_id ? `/customers/${a.customer_id}` : '/customers'} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 10, marginBottom: 2, textDecoration: 'none', transition: 'background 150ms' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.04)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <Link key={a.id} href={a.customer_id ? `/customers/${a.customer_id}` : '/customers'}
+                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 10, marginBottom: 2, textDecoration: 'none', transition: 'background 150ms' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.04)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
                       <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--c-sage)', flexShrink: 0, marginTop: 5, boxShadow: '0 0 6px var(--c-sage)' }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{a.type}</p>
@@ -420,7 +635,6 @@ export default function DashboardPage() {
             }
           </div>
 
-          {/* Follow-ups */}
           <div className="ios-glass bento-card" style={{ padding: '22px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Follow-ups</h3>
@@ -430,7 +644,8 @@ export default function DashboardPage() {
               ? (data!.followUps as unknown as Array<{ id: string; title: string; follow_up_date: string | null; customers: { name: string } | null }>).map(f => {
                   const isToday = f.follow_up_date === new Date().toISOString().split('T')[0];
                   return (
-                    <Link key={f.id} href="/leads" className="ios-glass-gold" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', marginBottom: 6, textDecoration: 'none', transition: 'transform 150ms' }}
+                    <Link key={f.id} href="/leads" className="ios-glass-gold"
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', marginBottom: 6, textDecoration: 'none', transition: 'transform 150ms' }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateX(3px)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateX(0)'}>
                       <div style={{ minWidth: 0 }}>
@@ -443,11 +658,10 @@ export default function DashboardPage() {
                     </Link>
                   );
                 })
-              : <p style={{ fontSize: 13, color: 'var(--c-text-4)', textAlign: 'center', padding: '20px 0', fontFamily: "'DM Mono', monospace" }}>No upcoming follow-ups 🎉</p>
+              : <p style={{ fontSize: 13, color: 'var(--c-text-4)', textAlign: 'center', padding: '20px 0', fontFamily: "'DM Mono', monospace" }}>No upcoming follow-ups</p>
             }
           </div>
 
-          {/* Overdue payments */}
           <div className="ios-glass bento-card" style={{ padding: '22px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Overdue Payments</h3>
@@ -455,7 +669,8 @@ export default function DashboardPage() {
             </div>
             {(data?.overdue ?? []).length > 0
               ? (data!.overdue as unknown as Array<{ id: string; title: string; customer_id: string; contract_value: number | null; amount_paid: number; customers: { name: string } | null }>).map(p => (
-                  <Link key={p.id} href={`/customers/${p.customer_id}/projects/${p.id}`} className="ios-glass-danger" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', marginBottom: 6, textDecoration: 'none', transition: 'transform 150ms' }}
+                  <Link key={p.id} href={`/customers/${p.customer_id}/projects/${p.id}`} className="ios-glass-danger"
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', marginBottom: 6, textDecoration: 'none', transition: 'transform 150ms' }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateX(3px)'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateX(0)'}>
                     <div style={{ minWidth: 0 }}>
@@ -476,7 +691,7 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ── ROW 6: Quick Actions ── */}
+        {/* ROW 6 — Quick Actions */}
         <motion.div {...stagger(5)}>
           <div className="ios-glass bento-card" style={{ padding: '20px 28px' }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 16px' }}>Quick Actions</p>
@@ -493,8 +708,8 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ── ROW 7: Agenda + Bible ── */}
-        <motion.div {...stagger(6)} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }} className="grid-cols-1 md:grid-cols-2">
+        {/* ROW 7 — Agenda + Bible */}
+        <motion.div {...stagger(6)} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <AgendaWidget />
           <BibleVerse />
         </motion.div>
