@@ -19,6 +19,7 @@ export default async function InvitePage({ params }: Props) {
   }
 
   const businessName = (invite.tenants as any)?.business_name ?? 'a business'
+  const isNewBusiness = businessName === 'Pending Setup'
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--c-canvas)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
@@ -27,15 +28,18 @@ export default async function InvitePage({ params }: Props) {
           SkyGlobal CRM
         </p>
         <p style={{ fontSize: 13, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", margin: '6px 0 0' }}>
-          You've been invited to join <strong style={{ color: 'var(--c-gold)' }}>{businessName}</strong>
+          {isNewBusiness
+            ? "You've been invited to set up your account"
+            : <>You've been invited to join <strong style={{ color: 'var(--c-gold)' }}>{businessName}</strong></>
+          }
         </p>
       </div>
       <InviteSignupForm
-        token={params.token}
         inviteId={invite.id}
         tenantId={invite.tenant_id}
         prefillEmail={invite.email}
         role={invite.role}
+        isNewBusiness={isNewBusiness}
       />
     </div>
   )
