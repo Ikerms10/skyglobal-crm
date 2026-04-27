@@ -1,7 +1,11 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShieldCheck, Building2, Users, LogOut, Eye, Mail, Plus, X, Loader2, Check, Copy, RefreshCw } from 'lucide-react'
+import {
+  ShieldCheck, Building2, Eye, Mail, Plus, X, Loader2, Check,
+  Copy, RefreshCw, TrendingUp, FolderOpen, Users2, PenLine,
+  PauseCircle, PlayCircle,
+} from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 
@@ -9,11 +13,14 @@ interface Tenant {
   id: string
   business_name: string
   business_email: string | null
+  business_logo_url: string | null
   status: string
   plan: string
   created_at: string
-  tenant_users: { count: number }[]
   owner: { email: string }[] | null
+  leadCount: number
+  projectCount: number
+  revenueThisMonth: number
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -22,6 +29,8 @@ const STATUS_COLOR: Record<string, string> = {
   suspended: 'var(--c-danger)',
   cancelled: 'var(--c-text-4)',
 }
+
+const PLANS = ['beta', 'starter', 'pro', 'enterprise'] as const
 
 // ─── Modal shell ──────────────────────────────────────────────────────────────
 
@@ -256,50 +265,249 @@ function CreateAccountModal({ onClose, onSuccess }: { onClose: () => void; onSuc
   )
 }
 
+// ─── Edit plan modal ──────────────────────────────────────────────────────────
+
+function EditPlanModal({ tenant, onClose, onSave }: { tenant: Tenant; onClose: () => void; onSave: (id: string, plan: string) => void }) {
+  const [selected, setSelected] = useState(tenant.plan)
+  const [loading, setLoading] = useState(false)
+
+  const handleSave = async () => {
+    if (selected === tenant.plan) { onClose(); return }
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/tenant/${tenant.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: selected }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error)
+      }
+      toast.success(`Plan updated to ${selected}`)
+      onSave(tenant.id, selected)
+      onClose()
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to update plan')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <p style={{ margin: 0, fontSize: 13, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace" }}>
+        Changing plan for <strong style={{ color: 'var(--c-text-1)' }}>{tenant.business_name}</strong>
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {PLANS.map(plan => (
+          <button
+            key={plan}
+            onClick={() => setSelected(plan)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
+              border: `1px solid ${selected === plan ? 'var(--c-gold)' : 'var(--c-border)'}`,
+              background: selected === plan ? 'color-mix(in srgb, var(--c-gold) 10%, transparent)' : 'var(--c-canvas)',
+              color: selected === plan ? 'var(--c-gold)' : 'var(--c-text-2)',
+              fontSize: 13, fontWeight: selected === plan ? 700 : 400,
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              textAlign: 'left', transition: 'all 150ms',
+            }}
+          >
+            <span style={{ textTransform: 'capitalize' }}>{plan}</span>
+            {selected === plan && <Check size={14} />}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={onClose} style={{ flex: 1, height: 40, borderRadius: 7, background: 'transparent', border: '1px solid var(--c-border)', cursor: 'pointer', color: 'var(--c-text-3)', fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          Cancel
+        </button>
+        <button onClick={handleSave} disabled={loading} style={{ flex: 2, height: 40, borderRadius: 7, background: 'var(--c-gold)', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loading ? 0.7 : 1 }}>
+          {loading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={14} />}
+          {loading ? 'Saving…' : 'Save plan'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Tenant card ──────────────────────────────────────────────────────────────
+
+function TenantCard({
+  tenant,
+  onView,
+  onEditPlan,
+  onToggleSuspend,
+}: {
+  tenant: Tenant
+  onView: () => void
+  onEditPlan: () => void
+  onToggleSuspend: () => void
+}) {
+  const isSuspended = tenant.status === 'suspended'
+  const initials = tenant.business_name
+    .split(' ')
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
+
+  const ownerEmail = (tenant.owner as any)?.[0]?.email ?? null
+
+  return (
+    <div style={{
+      background: 'var(--c-card)',
+      border: '1px solid var(--c-border)',
+      borderRadius: 12,
+      padding: '18px 20px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 14,
+    }}>
+      {/* Top row: logo + name + badges */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        {tenant.business_logo_url ? (
+          <img
+            src={tenant.business_logo_url}
+            alt={tenant.business_name}
+            style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'contain', background: '#fff', padding: 4, border: '1px solid var(--c-border)', flexShrink: 0 }}
+          />
+        ) : (
+          <div style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--c-canvas)', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, fontWeight: 800, color: 'var(--c-text-3)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {initials || <Building2 size={18} style={{ color: 'var(--c-text-4)' }} />}
+          </div>
+        )}
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--c-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              {tenant.business_name}
+            </p>
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 8,
+              background: `color-mix(in srgb, ${STATUS_COLOR[tenant.status] ?? 'var(--c-text-4)'} 15%, transparent)`,
+              color: STATUS_COLOR[tenant.status] ?? 'var(--c-text-4)',
+              fontFamily: "'DM Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.06em',
+            }}>
+              {tenant.status}
+            </span>
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 8,
+              background: 'var(--c-canvas)', color: 'var(--c-text-4)',
+              border: '1px solid var(--c-border)', fontFamily: "'DM Mono', monospace",
+              textTransform: 'uppercase', letterSpacing: '0.06em',
+            }}>
+              {tenant.plan}
+            </span>
+          </div>
+          <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>
+            {ownerEmail ?? tenant.business_email ?? 'No email'} · {formatDistanceToNow(new Date(tenant.created_at), { addSuffix: true })}
+          </p>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--c-border)' }}>
+        {[
+          { icon: Users2, label: 'Leads', value: tenant.leadCount },
+          { icon: FolderOpen, label: 'Projects', value: tenant.projectCount },
+          { icon: TrendingUp, label: 'Rev. this mo.', value: `$${tenant.revenueThisMonth.toLocaleString()}` },
+        ].map(({ icon: Icon, label, value }, i) => (
+          <div key={label} style={{
+            flex: 1, padding: '10px 0', textAlign: 'center',
+            borderLeft: i > 0 ? '1px solid var(--c-border)' : 'none',
+            background: 'var(--c-canvas)',
+          }}>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--c-text-1)', fontFamily: "'DM Mono', monospace" }}>
+              {value}
+            </p>
+            <p style={{ margin: '1px 0 0', fontSize: 9, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          onClick={onView}
+          style={{ flex: 1, height: 34, borderRadius: 7, background: 'var(--c-gold)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+        >
+          <Eye size={12} /> View CRM
+        </button>
+        <button
+          onClick={onEditPlan}
+          style={{ flex: 1, height: 34, borderRadius: 7, background: 'transparent', border: '1px solid var(--c-border)', cursor: 'pointer', color: 'var(--c-text-3)', fontSize: 12, fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, transition: 'all 150ms' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--c-gold)'; e.currentTarget.style.color = 'var(--c-gold)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--c-border)'; e.currentTarget.style.color = 'var(--c-text-3)' }}
+        >
+          <PenLine size={12} /> Edit Plan
+        </button>
+        <button
+          onClick={onToggleSuspend}
+          style={{ flex: 1, height: 34, borderRadius: 7, background: 'transparent', border: `1px solid ${isSuspended ? 'var(--c-sage)' : 'var(--c-danger)'}`, cursor: 'pointer', color: isSuspended ? 'var(--c-sage)' : 'var(--c-danger)', fontSize: 12, fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, transition: 'all 150ms' }}
+        >
+          {isSuspended ? <><PlayCircle size={12} /> Activate</> : <><PauseCircle size={12} /> Suspend</>}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
-export function AdminPanel({ tenants: initialTenants, currentUserId }: { tenants: any[]; currentUserId: string }) {
+export function AdminPanel({ tenants: initialTenants }: { tenants: Tenant[] }) {
   const router = useRouter()
-  const [tenants, setTenants] = useState<any[]>(initialTenants)
+  const [tenants, setTenants] = useState<Tenant[]>(initialTenants)
   const [modal, setModal] = useState<'invite' | 'create' | null>(null)
-  const [impersonating, setImpersonating] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') return sessionStorage.getItem('admin_viewing_tenant')
-    return null
-  })
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null)
+  const [suspending, setSuspending] = useState<string | null>(null)
 
-  const handleImpersonate = (tenantId: string) => {
+  const handleView = (tenantId: string) => {
     sessionStorage.setItem('admin_viewing_tenant', tenantId)
-    setImpersonating(tenantId)
     router.push('/dashboard')
   }
 
-  const handleExitImpersonation = () => {
-    sessionStorage.removeItem('admin_viewing_tenant')
-    setImpersonating(null)
-    router.refresh()
+  const handlePlanSaved = (id: string, plan: string) => {
+    setTenants(prev => prev.map(t => t.id === id ? { ...t, plan } : t))
   }
 
-  // Reload tenant list after a new one is created
+  const handleToggleSuspend = async (tenant: Tenant) => {
+    const newStatus = tenant.status === 'suspended' ? 'active' : 'suspended'
+    setSuspending(tenant.id)
+    try {
+      const res = await fetch(`/api/admin/tenant/${tenant.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error)
+      }
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, status: newStatus } : t))
+      toast.success(`${tenant.business_name} ${newStatus === 'suspended' ? 'suspended' : 'reactivated'}`)
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to update status')
+    } finally {
+      setSuspending(null)
+    }
+  }
+
   const handleModalSuccess = () => {
     setModal(null)
     router.refresh()
   }
 
-  return (
-    <div style={{ padding: '28px 24px', maxWidth: 1000, margin: '0 auto' }}>
-      {/* Impersonation banner */}
-      {impersonating && (
-        <div style={{ marginBottom: 20, padding: '10px 16px', borderRadius: 8, background: 'color-mix(in srgb, var(--c-danger) 12%, transparent)', border: '1px solid var(--c-danger)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-danger)', fontFamily: "'DM Mono', monospace" }}>
-            Viewing as: {tenants.find(t => t.id === impersonating)?.business_name ?? impersonating}
-          </span>
-          <button onClick={handleExitImpersonation} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 6, background: 'var(--c-danger)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>
-            <LogOut size={12} /> Exit
-          </button>
-        </div>
-      )}
+  const activeCount = tenants.filter(t => t.status === 'active').length
+  const trialCount = tenants.filter(t => t.status === 'trial').length
 
-      {/* Header + actions */}
+  return (
+    <div style={{ padding: '28px 24px', maxWidth: 1100, margin: '0 auto' }}>
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ShieldCheck size={22} style={{ color: 'var(--c-gold)' }} />
@@ -313,11 +521,10 @@ export function AdminPanel({ tenants: initialTenants, currentUserId }: { tenants
           </div>
         </div>
 
-        {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={() => setModal('invite')}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, height: 38, padding: '0 16px', borderRadius: 8, background: 'transparent', border: '1px solid var(--c-gold-border)', cursor: 'pointer', color: 'var(--c-gold)', fontSize: 13, fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif', transition: 'all 150ms'" }}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, height: 38, padding: '0 16px', borderRadius: 8, background: 'transparent', border: '1px solid var(--c-gold-border)', cursor: 'pointer', color: 'var(--c-gold)', fontSize: 13, fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 150ms' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in srgb, var(--c-gold) 10%, transparent)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
           >
@@ -334,12 +541,12 @@ export function AdminPanel({ tenants: initialTenants, currentUserId }: { tenants
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Summary stats */}
       <div className="grid grid-cols-3 gap-4" style={{ marginBottom: 28 }}>
         {[
           { label: 'Total Tenants', value: tenants.length },
-          { label: 'Active', value: tenants.filter(t => t.status === 'active').length },
-          { label: 'Beta', value: tenants.filter(t => t.plan === 'beta').length },
+          { label: 'Active', value: activeCount },
+          { label: 'Trial', value: trialCount },
         ].map(stat => (
           <div key={stat.label} style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 10, padding: '16px 20px' }}>
             <p style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--c-text-1)', fontFamily: "'DM Mono', monospace" }}>{stat.value}</p>
@@ -348,60 +555,28 @@ export function AdminPanel({ tenants: initialTenants, currentUserId }: { tenants
         ))}
       </div>
 
-      {/* Tenant list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {tenants.map(tenant => {
-          const memberCount = tenant.tenant_users?.[0]?.count ?? 0
-          return (
-            <div key={tenant.id} style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 8, background: 'var(--c-canvas)', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Building2 size={18} style={{ color: 'var(--c-text-4)' }} />
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--c-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                    {tenant.business_name}
-                  </p>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 8, background: `color-mix(in srgb, ${STATUS_COLOR[tenant.status] ?? 'var(--c-text-4)'} 15%, transparent)`, color: STATUS_COLOR[tenant.status] ?? 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    {tenant.status}
-                  </span>
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 8, background: 'var(--c-canvas)', color: 'var(--c-text-4)', border: '1px solid var(--c-border)', fontFamily: "'DM Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    {tenant.plan}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 3, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>
-                    {tenant.business_email ?? 'No email'}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Users size={10} /> {memberCount}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>
-                    {formatDistanceToNow(new Date(tenant.created_at), { addSuffix: true })}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => handleImpersonate(tenant.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, background: 'transparent', border: '1px solid var(--c-border)', cursor: 'pointer', color: 'var(--c-text-3)', fontSize: 11, fontFamily: "'DM Mono', monospace", transition: 'all 150ms', flexShrink: 0 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-gold)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--c-gold)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-text-3)'; e.currentTarget.style.borderColor = 'var(--c-border)' }}
-              >
-                <Eye size={12} /> View
-              </button>
+      {/* Tenant cards grid */}
+      {tenants.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {tenants.map(tenant => (
+            <div key={tenant.id} style={{ opacity: suspending === tenant.id ? 0.6 : 1, transition: 'opacity 200ms', pointerEvents: suspending === tenant.id ? 'none' : 'auto' }}>
+              <TenantCard
+                tenant={tenant}
+                onView={() => handleView(tenant.id)}
+                onEditPlan={() => setEditingTenant(tenant)}
+                onToggleSuspend={() => handleToggleSuspend(tenant)}
+              />
             </div>
-          )
-        })}
-
-        {tenants.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '48px 0' }}>
-            <p style={{ margin: 0, fontSize: 28 }}>🏢</p>
-            <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>No tenants yet — create your first account above.</p>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ textAlign: 'center', padding: '64px 0' }}>
+          <Building2 size={40} style={{ color: 'var(--c-text-4)', margin: '0 auto 12px' }} />
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace" }}>
+            No tenants yet — create your first account above.
+          </p>
+        </div>
+      )}
 
       {/* Modals */}
       {modal === 'invite' && (
@@ -412,6 +587,11 @@ export function AdminPanel({ tenants: initialTenants, currentUserId }: { tenants
       {modal === 'create' && (
         <Modal title="Create Account" onClose={() => setModal(null)}>
           <CreateAccountModal onClose={() => setModal(null)} onSuccess={handleModalSuccess} />
+        </Modal>
+      )}
+      {editingTenant && (
+        <Modal title="Edit Plan" onClose={() => setEditingTenant(null)}>
+          <EditPlanModal tenant={editingTenant} onClose={() => setEditingTenant(null)} onSave={handlePlanSaved} />
         </Modal>
       )}
     </div>

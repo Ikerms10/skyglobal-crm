@@ -214,6 +214,7 @@ export function GlobalSearch() {
       {showDropdown && (
         <div
           role="listbox"
+          className="global-search-dropdown"
           style={{
             position: 'absolute',
             top: '100%',

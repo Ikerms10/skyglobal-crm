@@ -869,6 +869,7 @@ export function FloatingActionButton() {
       {/* FAB container — fixed position */}
       <div
         ref={containerRef}
+        className="fab-mobile"
         style={{
           position: 'fixed',
           bottom: 24,
@@ -879,8 +880,6 @@ export function FloatingActionButton() {
           alignItems: 'center',
           gap: 10,
         }}
-        // NOTE: On mobile (≤768px) the bottom nav uses ~56px, so we push the FAB up.
-        className="max-md:bottom-[80px]"
       >
         {/* Action buttons — fan upward */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>

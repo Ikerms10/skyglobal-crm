@@ -407,9 +407,9 @@ export default function ReportsPage() {
                 borderRadius: 8,
               }}
               labelStyle={{ color: 'var(--c-text-1)', fontWeight: 600 }}
-              formatter={(v: any, name: string) => [
+              formatter={(v: unknown, name: unknown) => [
                 formatCurrency(Number(v)),
-                name.charAt(0).toUpperCase() + name.slice(1),
+                String(name).charAt(0).toUpperCase() + String(name).slice(1),
               ]}
             />
             <Bar dataKey="revenue" name="revenue" fill="#e6ab35" radius={[4, 4, 0, 0]} />

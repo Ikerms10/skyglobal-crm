@@ -124,14 +124,15 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 28,
-                height: 28,
+                width: 36,
+                height: 36,
                 borderRadius: 8,
                 background: 'transparent',
                 border: '1px solid var(--c-border)',
                 color: 'var(--c-text-4)',
                 cursor: 'pointer',
                 transition: 'background 150ms, color 150ms, border-color 150ms',
+                flexShrink: 0,
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.background = 'rgba(185,74,58,0.10)'

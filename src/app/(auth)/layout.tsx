@@ -9,9 +9,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </svg>
           </div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--c-text-1)' }}>SkyGlobal <span style={{ color: 'var(--c-gold)' }}>CRM</span></h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--c-text-4)' }}>SkyGlobal Renovations</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--c-text-4)' }}>Business Management Platform</p>
         </div>
-        <div className="rounded-2xl p-8" style={{ background: 'var(--c-card)', border: '1px solid var(--c-border-light)', boxShadow: 'var(--s-modal)' }}>
+        <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'var(--c-card)', border: '1px solid var(--c-border-light)', boxShadow: 'var(--s-modal)' }}>
           {children}
         </div>
       </div>

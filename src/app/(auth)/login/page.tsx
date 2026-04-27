@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
@@ -127,9 +128,28 @@ export default function LoginPage() {
         {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : 'Sign in'}
       </button>
 
-      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--c-text-4)' }}>
-        SkyGlobal Renovations — Internal Access Only
-      </p>
+      <div style={{ borderTop: '1px solid var(--c-border)', paddingTop: 18, textAlign: 'center' }}>
+        <p style={{ fontSize: 13, color: 'var(--c-text-4)', margin: '0 0 10px' }}>
+          New business? Get your own CRM.
+        </p>
+        <Link
+          href="/signup"
+          style={{
+            display: 'inline-block',
+            padding: '10px 28px',
+            border: '1.5px solid var(--c-gold)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--c-gold)',
+            fontSize: 14,
+            fontWeight: 600,
+            textDecoration: 'none',
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            transition: 'background 150ms',
+          }}
+        >
+          Create Free Account →
+        </Link>
+      </div>
     </form>
   )
 }
