@@ -38,7 +38,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         await supabase
           .from('business_settings')
-          .upsert({ user_id: user.id, language: lang }, { onConflict: 'user_id' })
+          .upsert({ user_id: user.id, key: 'ui_language', value: lang }, { onConflict: 'user_id,key' })
       }
     } catch {
       // Non-critical — localStorage is the source of truth

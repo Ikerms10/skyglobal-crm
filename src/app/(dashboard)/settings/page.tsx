@@ -201,22 +201,26 @@ export default function SettingsPage() {
       setCalendarEmail(user.user_metadata?.google_calendar_email ?? null)
       setLastBackup(user.user_metadata?.last_backup ?? null)
 
-      const { data: biz } = await supabase
+      const { data: rows } = await supabase
         .from('business_settings')
-        .select('*')
+        .select('key, value')
         .eq('user_id', user.id)
-        .single()
 
-      if (biz) {
+      if (rows?.length) {
+        const biz = rows.reduce((acc: Record<string, string>, r: { key: string; value: string }) => {
+          acc[r.key] = r.value
+          return acc
+        }, {})
         setBusinessName(biz.business_name ?? 'SkyGlobal')
         setBusinessPhone(biz.business_phone ?? '')
         setBusinessEmail(biz.business_email ?? '')
         setBusinessAddress(biz.business_address ?? '')
-        setNotifyWeeklyReport(biz.notify_weekly_report ?? true)
-        setNotifyProposalViewed(biz.notify_proposal_viewed ?? true)
-        setNotifyRainAlert(biz.notify_rain_alert ?? false)
-        setMonthlyGoal(biz.monthly_revenue_goal != null ? String(biz.monthly_revenue_goal) : '')
-        setAnnualGoal(biz.annual_revenue_goal != null ? String(biz.annual_revenue_goal) : '')
+        // KV values are strings; treat absence of 'false' as true for toggles that default on
+        setNotifyWeeklyReport(biz.notify_weekly_report !== 'false')
+        setNotifyProposalViewed(biz.notify_proposal_viewed !== 'false')
+        setNotifyRainAlert(biz.notify_rain_alert === 'true')
+        setMonthlyGoal(biz.monthly_revenue_goal ?? '')
+        setAnnualGoal(biz.annual_revenue_goal ?? '')
       } else {
         // Fall back to legacy user_metadata values
         setBusinessName(user.user_metadata?.business_name ?? 'SkyGlobal')
@@ -262,14 +266,12 @@ export default function SettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
-      const { error } = await supabase.from('business_settings').upsert({
-        user_id: user.id,
-        business_name: businessName,
-        business_phone: businessPhone,
-        business_email: businessEmail,
-        business_address: businessAddress,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      const { error } = await supabase.from('business_settings').upsert([
+        { user_id: user.id, key: 'business_name',    value: businessName },
+        { user_id: user.id, key: 'business_phone',   value: businessPhone },
+        { user_id: user.id, key: 'business_email',   value: businessEmail },
+        { user_id: user.id, key: 'business_address', value: businessAddress },
+      ], { onConflict: 'user_id,key' })
       if (error) throw new Error(error.message)
       toast.success('Business info saved')
     } catch (err: unknown) {
@@ -284,13 +286,11 @@ export default function SettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
-      const { error } = await supabase.from('business_settings').upsert({
-        user_id: user.id,
-        notify_weekly_report: notifyWeeklyReport,
-        notify_proposal_viewed: notifyProposalViewed,
-        notify_rain_alert: notifyRainAlert,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      const { error } = await supabase.from('business_settings').upsert([
+        { user_id: user.id, key: 'notify_weekly_report',   value: String(notifyWeeklyReport) },
+        { user_id: user.id, key: 'notify_proposal_viewed', value: String(notifyProposalViewed) },
+        { user_id: user.id, key: 'notify_rain_alert',      value: String(notifyRainAlert) },
+      ], { onConflict: 'user_id,key' })
       if (error) throw new Error(error.message)
       toast.success('Notification preferences saved')
     } catch (err: unknown) {
@@ -305,12 +305,10 @@ export default function SettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
-      const { error } = await supabase.from('business_settings').upsert({
-        user_id: user.id,
-        monthly_revenue_goal: monthlyGoal ? Number(monthlyGoal) : null,
-        annual_revenue_goal: annualGoal ? Number(annualGoal) : null,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      const { error } = await supabase.from('business_settings').upsert([
+        { user_id: user.id, key: 'monthly_revenue_goal', value: monthlyGoal },
+        { user_id: user.id, key: 'annual_revenue_goal',  value: annualGoal },
+      ], { onConflict: 'user_id,key' })
       if (error) throw new Error(error.message)
       toast.success('Revenue goals saved')
     } catch (err: unknown) {
@@ -468,7 +466,7 @@ export default function SettingsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, maxWidth: 440 }}>
           {([
             { lang: 'en' as const, flag: '🇺🇸', label: t('settings.language.english') },
-            { lang: 'es' as const, flag: '🇵🇷', label: t('settings.language.spanish') },
+            { lang: 'es' as const, flag: '🇪🇸', label: t('settings.language.spanish') },
           ]).map(({ lang, flag, label }) => {
             const isActive = language === lang
             return (
