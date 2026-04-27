@@ -75,7 +75,7 @@ export function TodaysFocus() {
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+          <div className="today-focus-grid">
             {visible.map((item, idx) => {
               const Icon = TYPE_ICON[item.type]
               return (

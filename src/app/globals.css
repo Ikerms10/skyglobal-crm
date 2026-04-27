@@ -1090,3 +1090,111 @@ html, body {
     bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+/* ─── MOBILE: responsive page padding ────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Projects & customers filter inputs fill available space on mobile */
+  .filter-bar-input {
+    flex: 1 1 140px;
+    min-width: 140px;
+  }
+
+  /* Ensure selects in filter bars don't overflow */
+  .filter-bar-select {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  /* Leads header: stack the value summary below the title on very small screens */
+  .leads-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Header search: hide placeholder text to save space */
+  header input[type='text']::placeholder,
+  header input[type='search']::placeholder {
+    font-size: 12px;
+  }
+
+  /* Prevent dashboard KPI card overflow on tiny screens */
+  .kpi-card {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Invoice table: horizontal scroll with touch */
+  .invoice-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Reports/Analytics charts: ensure they don't stretch the page */
+  .analytics-chart-card {
+    overflow-x: hidden;
+  }
+
+  /* Notification bell dropdown: full-width on mobile */
+  .notif-dropdown {
+    left: auto !important;
+    right: -8px !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 360px !important;
+  }
+
+  /* Ensure modal body scroll works on iOS */
+  .modal-body-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ─── MOBILE: Prevent GlobalSearch dropdown from overflowing viewport ──────── */
+@media (max-width: 639px) {
+  /* On small screens, the search dropdown should be full-width */
+  .global-search-dropdown {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    top: 56px !important;
+  }
+}
+
+/* ─── TODAY'S FOCUS — responsive grid ────────────────────────────────────── */
+.today-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+@media (max-width: 767px) {
+  .today-focus-grid {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 10px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .today-focus-grid::-webkit-scrollbar { display: none; }
+  .today-focus-grid > * {
+    flex-shrink: 0;
+    width: 260px;
+    scroll-snap-align: start;
+  }
+}
+
+/* ─── MOBILE: Dashboard page overrides ────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Ensure bento grid stacks on mobile */
+  .dashboard-bento-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Daily log page inputs */
+  .daily-log-form {
+    padding: 12px !important;
+  }
+}

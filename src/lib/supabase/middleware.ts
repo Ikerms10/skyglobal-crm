@@ -25,8 +25,11 @@ export async function updateSession(request: NextRequest) {
   const isWebhook = pathname.startsWith('/api/webhooks/')
   // Public share links — proposals sent to clients don't require login
   const isPublicProposalView = pathname.startsWith('/proposals/view/')
+  // Public signup and invite flows
+  const isPublicSignup = pathname.startsWith('/signup')
+  const isPublicInvite = pathname.startsWith('/invite/')
 
-  if (!user && !isAuthRoute && !isWebhook && !isPublicProposalView) {
+  if (!user && !isAuthRoute && !isWebhook && !isPublicProposalView && !isPublicSignup && !isPublicInvite) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     // Preserve the original destination so login can redirect back
