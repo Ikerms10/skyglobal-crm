@@ -60,9 +60,9 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
   useEffect(() => {
     if (project) {
       reset({
-        title: project.title,
-        type: project.type,
-        status: project.status,
+        title: project.title ?? '',
+        type: project.type ?? 'Residential',
+        status: project.status ?? 'Scheduled',
         address: project.address ?? '',
         description: project.description ?? '',
         start_date: project.start_date ?? '',
@@ -70,7 +70,7 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
         contract_value: project.contract_value != null ? String(project.contract_value) : '',
         amount_paid: String(project.amount_paid ?? 0),
         lead_cost: project.lead_cost != null ? String(project.lead_cost) : '',
-        payment_status: project.payment_status,
+        payment_status: project.payment_status ?? 'Unpaid',
         notes: project.notes ?? '',
       })
     }
@@ -98,7 +98,10 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
       if (error) throw new Error(error.message)
     },
     onSuccess: () => {
-      if (project) queryClient.invalidateQueries({ queryKey: ['project', project.id] })
+      // Invalidate every cache that reads project data so all pages stay in sync
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
       toast.success('Project updated')
       onClose()
       onSuccess()

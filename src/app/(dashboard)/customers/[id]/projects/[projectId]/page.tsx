@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -255,6 +256,7 @@ export default function ProjectDetailPage({
   params: { id: string; projectId: string };
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { id: customerId, projectId } = params;
 
   // Data state
@@ -445,6 +447,8 @@ export default function ProjectDetailPage({
         .eq('id', projectId);
       if (error) throw new Error(error.message);
       setProject((p: any) => ({ ...p, status }));
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success(`Status updated to ${status}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update status');
@@ -481,6 +485,8 @@ export default function ProjectDetailPage({
         .eq('id', projectId);
       if (error) throw new Error(error.message);
       setProject((p: any) => ({ ...p, lead_cost: val }));
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setEditingLeadCost(false);
       toast.success('Lead cost updated');
     } catch (err) {
@@ -664,6 +670,19 @@ export default function ProjectDetailPage({
         } as any)
         .eq('id', projectId);
       if (error) throw new Error(error.message);
+      setProject((p: any) => ({
+        ...p,
+        paint_brand: mgmt.paint_brand || null,
+        paint_colors: mgmt.paint_colors || null,
+        num_coats: mgmt.num_coats ? parseInt(mgmt.num_coats) : null,
+        primer_used: mgmt.primer_used,
+        special_finishes: mgmt.special_finishes || null,
+        crew_notes: mgmt.crew_notes || null,
+        site_conditions: mgmt.site_conditions || null,
+        parking_notes: mgmt.parking_notes || null,
+        client_communication: mgmt.client_communication || null,
+      }));
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Saved');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save');
