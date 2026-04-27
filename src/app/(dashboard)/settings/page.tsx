@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import {
-  User, Lock, Building2, Calendar, Database,
+  User, Languages, Building2, Calendar, Database,
   ExternalLink, Check, Sun, Moon, Monitor, Palette,
   Bell, Shield, TrendingUp, ChevronRight,
 } from 'lucide-react'
@@ -22,7 +22,7 @@ interface NavItem { id: Section; icon: React.ElementType; labelKey: string }
 const NAV_ITEM_DEFS: NavItem[] = [
   { id: 'profile',       icon: User,       labelKey: 'settings.sections.profile' },
   { id: 'appearance',    icon: Palette,    labelKey: 'settings.sections.appearance' },
-  { id: 'language',      icon: Lock,       labelKey: 'settings.sections.language' },
+  { id: 'language',      icon: Languages,  labelKey: 'settings.sections.language' },
   { id: 'business',      icon: Building2,  labelKey: 'settings.sections.business' },
   { id: 'notifications', icon: Bell,       labelKey: 'settings.sections.notifications' },
   { id: 'revenue',       icon: TrendingUp, labelKey: 'settings.sections.revenue' },
