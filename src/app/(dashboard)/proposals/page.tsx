@@ -12,6 +12,7 @@ import { Plus, FileText, Download, Copy, Trash2, Edit2, Loader2, Share2, Eye, Ch
 import { EmptyState } from '@/components/ui/EmptyState'
 import { downloadProposalPDF } from '@/components/proposals/ProposalPDF'
 import { format } from 'date-fns'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const STATUS_COLORS: Record<ProposalStatus, { bg: string; text: string }> = {
   Draft:    { bg: 'var(--c-nested)', text: 'var(--c-text-4)' },
@@ -35,6 +36,7 @@ export default function ProposalsPage() {
   const [loading, setLoading] = useState(true)
   const [showSelector, setShowSelector] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const { t } = useLanguage()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -60,7 +62,7 @@ export default function ProposalsPage() {
     if (!token) { toast.error('No share token available'); return }
     const url = `${window.location.origin}/p/${token}`
     await navigator.clipboard.writeText(url)
-    toast.success('Share link copied to clipboard!')
+    toast.success(t('proposals.linkCopied'))
   }
 
   const handleDelete = async (id: string) => {
@@ -68,7 +70,7 @@ export default function ProposalsPage() {
     setDeletingId(id)
     const supabase = createClient()
     await supabase.from('proposals').update({ deleted_at: new Date().toISOString() }).eq('id', id)
-    toast.success('Proposal deleted')
+    toast.success(t('proposals.deleted'))
     setDeletingId(null)
     load()
   }
@@ -91,7 +93,7 @@ export default function ProposalsPage() {
     if (items?.length) {
       await supabase.from('proposal_line_items').insert(items.map(({ id, created_at, proposal_id, ...rest }: any) => ({ ...rest, proposal_id: newP.id })))
     }
-    toast.success('Proposal duplicated')
+    toast.success(t('proposals.duplicated'))
     load()
   }
 
@@ -136,13 +138,13 @@ export default function ProposalsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--sg-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.02em' }}>Proposals</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--sg-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.02em' }}>{t('proposals.title')}</h1>
           <p style={{ fontSize: 14, color: 'var(--sg-text-2)', marginTop: 2 }}>
-            {proposals.length} proposal{proposals.length !== 1 ? 's' : ''} total
+            {proposals.length} {t('proposals.totalLabel')}
           </p>
         </div>
         <Button onClick={() => setShowSelector(true)}>
-          <Plus size={16} /> Create Proposal
+          <Plus size={16} /> {t('proposals.new')}
         </Button>
       </div>
 
@@ -173,15 +175,15 @@ export default function ProposalsPage() {
         ) : proposals.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="No proposals yet"
-            description="Create your first proposal to start winning jobs."
-            action={{ label: '+ New Proposal', onClick: () => setShowSelector(true) }}
+            title={t('proposals.noProposals')}
+            description={t('proposals.noProposalsDesc')}
+            action={{ label: `+ ${t('proposals.new')}`, onClick: () => setShowSelector(true) }}
           />
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--sg-elevated)', borderBottom: '1px solid var(--sg-border-md)' }}>
-                {['Client', 'Project', 'Template', 'Total', 'Status', 'Engagement', 'Date', ''].map(h => (
+                {[t('customers.colName'), t('invoices.colProject'), t('proposals.colTemplate'), t('invoices.colAmount'), t('form.status'), t('proposals.colEngagement'), t('customers.colAdded'), ''].map(h => (
                   <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'var(--sg-text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'DM Mono', monospace" }}>{h}</th>
                 ))}
               </tr>

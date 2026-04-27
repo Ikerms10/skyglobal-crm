@@ -13,6 +13,7 @@ import {
   isSameDay,
 } from 'date-fns'
 import { CalendarEvent, EventType } from '@/types'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const EVENT_COLORS: Record<EventType, { dot: string; bg: string; text: string; label: string }> = {
   estimate:  { dot: '#e6ab35', bg: 'rgba(230,171,53,0.12)',  text: '#e6ab35', label: 'Estimate' },
@@ -270,6 +271,7 @@ export default function SchedulePage() {
   const weekDays  = eachDayOfInterval({ start: weekStart, end: weekEnd })
 
   const queryClient = useQueryClient()
+  const { t } = useLanguage()
 
   const { data, isLoading } = useQuery({
     queryKey: ['schedule', format(weekStart, 'yyyy-MM-dd'), view],
@@ -470,7 +472,7 @@ export default function SchedulePage() {
               fontFamily: 'var(--font-rajdhani)', fontWeight: 700, fontSize: 28,
               color: 'var(--sg-text-primary)', letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0,
             }}>
-              {pageTab === 'crew' ? 'Crew Schedule' : 'Events Calendar'}
+              {pageTab === 'crew' ? t('schedule.crewTitle') : t('schedule.eventsTitle')}
             </h1>
             <p style={{ fontSize: 13, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-ui)', margin: '2px 0 0' }}>
               {pageTab === 'crew' ? 'Assign and track crew members across active projects' : 'Track estimates, jobs, payments, and deadlines'}
@@ -478,19 +480,19 @@ export default function SchedulePage() {
           </div>
           {/* Tab switcher */}
           <div style={{ display: 'flex', gap: 2, padding: 3, background: 'var(--sg-bg-surface)', borderRadius: 10, border: '1px solid var(--sg-border)' }}>
-            {(['crew', 'events'] as const).map(t => (
+            {(['crew', 'events'] as const).map(tab => (
               <button
-                key={t}
-                onClick={() => setPageTab(t)}
+                key={tab}
+                onClick={() => setPageTab(tab)}
                 style={{
                   padding: '5px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
                   fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-ui)',
-                  background: pageTab === t ? (t === 'crew' ? 'var(--sg-accent)' : 'var(--sg-gold)') : 'transparent',
-                  color: pageTab === t ? '#fff' : 'var(--sg-text-secondary)',
+                  background: pageTab === tab ? (tab === 'crew' ? 'var(--sg-accent)' : 'var(--sg-gold)') : 'transparent',
+                  color: pageTab === tab ? '#fff' : 'var(--sg-text-secondary)',
                   transition: 'all 150ms',
                 }}
               >
-                {t === 'crew' ? '👷 Crew' : '📅 Events'}
+                {tab === 'crew' ? `👷 ${t('schedule.crew')}` : `📅 ${t('schedule.title')}`}
               </button>
             ))}
           </div>
@@ -508,13 +510,13 @@ export default function SchedulePage() {
                 {format(currentDate, 'MMMM yyyy')}
               </span>
               <button onClick={() => setCurrentDate(d => addMonths(d, 1))} style={ghostBtnStyle}>Next ›</button>
-              <button onClick={() => setCurrentDate(new Date())} style={{ ...ghostBtnStyle, fontSize: 11 }}>Today</button>
+              <button onClick={() => setCurrentDate(new Date())} style={{ ...ghostBtnStyle, fontSize: 11 }}>{t('focus.today')}</button>
             </div>
             <button
               onClick={() => { setNewEvent(e => ({ ...e, start_at: new Date().toISOString().split('T')[0] })); setAddEventOpen(true) }}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'var(--sg-gold)', border: 'none', color: '#1d1c17', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}
             >
-              <Plus size={15} /> Add Event
+              <Plus size={15} /> {t('schedule.addEvent')}
             </button>
           </div>
 

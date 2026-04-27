@@ -6,27 +6,29 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import {
-  User, Lock, Building2, Calendar, Database,
+  User, Languages, Building2, Calendar, Database,
   ExternalLink, Check, Sun, Moon, Monitor, Palette,
   Bell, Shield, TrendingUp, ChevronRight,
 } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 // ─── Sidebar nav ─────────────────────────────────────────────────────────────
 
-type Section = 'profile' | 'appearance' | 'business' | 'notifications' | 'revenue' | 'integrations' | 'data' | 'security'
+type Section = 'profile' | 'appearance' | 'language' | 'business' | 'notifications' | 'revenue' | 'integrations' | 'data' | 'security'
 
-interface NavItem { id: Section; icon: React.ElementType; label: string }
+interface NavItem { id: Section; icon: React.ElementType; labelKey: string }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: 'profile',       icon: User,       label: 'Profile' },
-  { id: 'appearance',    icon: Palette,    label: 'Appearance' },
-  { id: 'business',      icon: Building2,  label: 'Business Info' },
-  { id: 'notifications', icon: Bell,       label: 'Notifications' },
-  { id: 'revenue',       icon: TrendingUp, label: 'Revenue Goals' },
-  { id: 'integrations',  icon: Calendar,   label: 'Integrations' },
-  { id: 'data',          icon: Database,   label: 'Data & Backups' },
-  { id: 'security',      icon: Shield,     label: 'Security' },
+const NAV_ITEM_DEFS: NavItem[] = [
+  { id: 'profile',       icon: User,       labelKey: 'settings.sections.profile' },
+  { id: 'appearance',    icon: Palette,    labelKey: 'settings.sections.appearance' },
+  { id: 'language',      icon: Languages,  labelKey: 'settings.sections.language' },
+  { id: 'business',      icon: Building2,  labelKey: 'settings.sections.business' },
+  { id: 'notifications', icon: Bell,       labelKey: 'settings.sections.notifications' },
+  { id: 'revenue',       icon: TrendingUp, labelKey: 'settings.sections.revenue' },
+  { id: 'integrations',  icon: Calendar,   labelKey: 'settings.sections.integrations' },
+  { id: 'data',          icon: Database,   labelKey: 'settings.sections.data' },
+  { id: 'security',      icon: Shield,     labelKey: 'settings.sections.security' },
 ]
 
 // ─── Appearance cards ─────────────────────────────────────────────────────────
@@ -134,8 +136,11 @@ export default function SettingsPage() {
   const searchParams = useSearchParams()
   const supabase = createClient()
   const { preference, setTheme } = useTheme()
+  const { language, setLanguage, t } = useLanguage()
+  const [langSwitching, setLangSwitching] = useState(false)
 
   const [activeSection, setActiveSection] = useState<Section>('profile')
+  const NAV_ITEMS = NAV_ITEM_DEFS.map(d => ({ ...d, label: t(d.labelKey) }))
 
   // Profile
   const [displayName, setDisplayName] = useState('')
@@ -196,22 +201,26 @@ export default function SettingsPage() {
       setCalendarEmail(user.user_metadata?.google_calendar_email ?? null)
       setLastBackup(user.user_metadata?.last_backup ?? null)
 
-      const { data: biz } = await supabase
+      const { data: rows } = await supabase
         .from('business_settings')
-        .select('*')
+        .select('key, value')
         .eq('user_id', user.id)
-        .single()
 
-      if (biz) {
+      if (rows?.length) {
+        const biz = rows.reduce((acc: Record<string, string>, r: { key: string; value: string }) => {
+          acc[r.key] = r.value
+          return acc
+        }, {})
         setBusinessName(biz.business_name ?? 'SkyGlobal')
         setBusinessPhone(biz.business_phone ?? '')
         setBusinessEmail(biz.business_email ?? '')
         setBusinessAddress(biz.business_address ?? '')
-        setNotifyWeeklyReport(biz.notify_weekly_report ?? true)
-        setNotifyProposalViewed(biz.notify_proposal_viewed ?? true)
-        setNotifyRainAlert(biz.notify_rain_alert ?? false)
-        setMonthlyGoal(biz.monthly_revenue_goal != null ? String(biz.monthly_revenue_goal) : '')
-        setAnnualGoal(biz.annual_revenue_goal != null ? String(biz.annual_revenue_goal) : '')
+        // KV values are strings; treat absence of 'false' as true for toggles that default on
+        setNotifyWeeklyReport(biz.notify_weekly_report !== 'false')
+        setNotifyProposalViewed(biz.notify_proposal_viewed !== 'false')
+        setNotifyRainAlert(biz.notify_rain_alert === 'true')
+        setMonthlyGoal(biz.monthly_revenue_goal ?? '')
+        setAnnualGoal(biz.annual_revenue_goal ?? '')
       } else {
         // Fall back to legacy user_metadata values
         setBusinessName(user.user_metadata?.business_name ?? 'SkyGlobal')
@@ -257,14 +266,12 @@ export default function SettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
-      const { error } = await supabase.from('business_settings').upsert({
-        user_id: user.id,
-        business_name: businessName,
-        business_phone: businessPhone,
-        business_email: businessEmail,
-        business_address: businessAddress,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      const { error } = await supabase.from('business_settings').upsert([
+        { user_id: user.id, key: 'business_name',    value: businessName },
+        { user_id: user.id, key: 'business_phone',   value: businessPhone },
+        { user_id: user.id, key: 'business_email',   value: businessEmail },
+        { user_id: user.id, key: 'business_address', value: businessAddress },
+      ], { onConflict: 'user_id,key' })
       if (error) throw new Error(error.message)
       toast.success('Business info saved')
     } catch (err: unknown) {
@@ -279,13 +286,11 @@ export default function SettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
-      const { error } = await supabase.from('business_settings').upsert({
-        user_id: user.id,
-        notify_weekly_report: notifyWeeklyReport,
-        notify_proposal_viewed: notifyProposalViewed,
-        notify_rain_alert: notifyRainAlert,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      const { error } = await supabase.from('business_settings').upsert([
+        { user_id: user.id, key: 'notify_weekly_report',   value: String(notifyWeeklyReport) },
+        { user_id: user.id, key: 'notify_proposal_viewed', value: String(notifyProposalViewed) },
+        { user_id: user.id, key: 'notify_rain_alert',      value: String(notifyRainAlert) },
+      ], { onConflict: 'user_id,key' })
       if (error) throw new Error(error.message)
       toast.success('Notification preferences saved')
     } catch (err: unknown) {
@@ -300,12 +305,10 @@ export default function SettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
-      const { error } = await supabase.from('business_settings').upsert({
-        user_id: user.id,
-        monthly_revenue_goal: monthlyGoal ? Number(monthlyGoal) : null,
-        annual_revenue_goal: annualGoal ? Number(annualGoal) : null,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      const { error } = await supabase.from('business_settings').upsert([
+        { user_id: user.id, key: 'monthly_revenue_goal', value: monthlyGoal },
+        { user_id: user.id, key: 'annual_revenue_goal',  value: annualGoal },
+      ], { onConflict: 'user_id,key' })
       if (error) throw new Error(error.message)
       toast.success('Revenue goals saved')
     } catch (err: unknown) {
@@ -381,6 +384,13 @@ export default function SettingsPage() {
     }
   }
 
+  const handleLangChange = async (lang: 'en' | 'es') => {
+    setLangSwitching(true)
+    await setLanguage(lang)
+    setTimeout(() => setLangSwitching(false), 400)
+    toast.success(lang === 'es' ? '¡Idioma actualizado!' : 'Language updated!')
+  }
+
   // ─── Panels ─────────────────────────────────────────────────────────────────
 
   const panels: Record<Section, React.ReactNode> = {
@@ -447,6 +457,61 @@ export default function SettingsPage() {
             }
           />
         </div>
+      </>
+    ),
+
+    language: (
+      <>
+        <SectionHead title={t('settings.language.title')} description={t('settings.language.description')} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, maxWidth: 440 }}>
+          {([
+            { lang: 'en' as const, flag: '🇺🇸', label: t('settings.language.english') },
+            { lang: 'es' as const, flag: '🇪🇸', label: t('settings.language.spanish') },
+          ]).map(({ lang, flag, label }) => {
+            const isActive = language === lang
+            return (
+              <button
+                key={lang}
+                onClick={() => handleLangChange(lang)}
+                disabled={langSwitching}
+                style={{
+                  position: 'relative',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                  padding: '24px 16px 18px',
+                  borderRadius: 14,
+                  border: isActive ? '2px solid var(--c-gold)' : '2px solid var(--c-border-mid)',
+                  background: isActive ? 'var(--c-gold-bg)' : 'var(--c-nested)',
+                  cursor: langSwitching ? 'wait' : 'pointer',
+                  transition: 'all 0.15s ease',
+                  opacity: langSwitching ? 0.7 : 1,
+                }}
+              >
+                {isActive && (
+                  <div style={{
+                    position: 'absolute', top: 10, right: 10,
+                    width: 20, height: 20, borderRadius: '50%', background: 'var(--c-gold)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Check size={12} color="#1d1c17" strokeWidth={3} />
+                  </div>
+                )}
+                <span style={{ fontSize: 44, lineHeight: 1 }}>{flag}</span>
+                <span style={{
+                  fontSize: 15, fontWeight: isActive ? 700 : 500,
+                  color: isActive ? 'var(--c-gold)' : 'var(--c-text-2)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}>
+                  {label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        {langSwitching && (
+          <p style={{ fontSize: 13, color: 'var(--c-text-4)', marginTop: 14 }}>
+            {t('settings.language.switching')}
+          </p>
+        )}
       </>
     ),
 
@@ -691,7 +756,7 @@ export default function SettingsPage() {
           className="settings-sidebar shrink-0 mb-4 md:mb-0 sticky top-6 hidden md:block"
         >
           <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '10px 12px 6px', fontFamily: "'DM Mono', monospace" }}>
-            Settings
+            {t('settings.title')}
           </p>
           {NAV_ITEMS.map(item => {
             const isActive = activeSection === item.id

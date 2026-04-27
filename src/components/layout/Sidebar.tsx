@@ -22,23 +22,24 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const mainNav = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/leads', label: 'Leads', icon: Target },
-  { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/projects', label: 'Projects', icon: Briefcase },
-  { href: '/proposals', label: 'Proposals', icon: FileText },
-  { href: '/daily', label: 'Daily', icon: CalendarCheck },
-];
-const businessNav = [
-  { href: '/invoices', label: 'Invoices', icon: ClipboardList },
-  { href: '/expenses', label: 'Expenses', icon: Receipt },
-  { href: '/reports', label: 'Reports', icon: BarChart2 },
-  { href: '/schedule', label: 'Schedule', icon: Calendar },
-  { href: '/analytics', label: 'Analytics', icon: TrendingUp },
-];
-const accountNav = [{ href: '/settings', label: 'Settings', icon: Settings }];
+const mainNavDefs = [
+  { href: '/dashboard', key: 'nav.dashboard', icon: LayoutDashboard },
+  { href: '/leads',     key: 'nav.leads',     icon: Target },
+  { href: '/customers', key: 'nav.customers', icon: Users },
+  { href: '/projects',  key: 'nav.projects',  icon: Briefcase },
+  { href: '/proposals', key: 'nav.proposals', icon: FileText },
+  { href: '/daily',     key: 'nav.daily',     icon: CalendarCheck },
+] as const;
+const businessNavDefs = [
+  { href: '/invoices',  key: 'nav.invoices',  icon: ClipboardList },
+  { href: '/expenses',  key: 'nav.expenses',  icon: Receipt },
+  { href: '/reports',   key: 'nav.reports',   icon: BarChart2 },
+  { href: '/schedule',  key: 'nav.schedule',  icon: Calendar },
+  { href: '/analytics', key: 'nav.analytics', icon: TrendingUp },
+] as const;
+const accountNavDefs = [{ href: '/settings', key: 'nav.settings', icon: Settings }] as const;
 
 function NavItem({
   href,
@@ -134,7 +135,7 @@ function NavSection({
   pathname,
 }: {
   label: string;
-  items: typeof mainNav;
+  items: { href: string; label: string; icon: React.ComponentType<any> }[];
   pathname: string;
 }) {
   return (
@@ -164,16 +165,26 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    toast.success('Signed out');
+    toast.success(t('nav.signOut'));
     router.push('/login');
     router.refresh();
   };
 
+  const handleToggleLang = async () => {
+    const next = language === 'en' ? 'es' : 'en';
+    await setLanguage(next);
+    toast.success(next === 'es' ? '¡Idioma actualizado!' : 'Language updated!');
+  };
+
   const initials = (userEmail[0] ?? 'U').toUpperCase();
+  const mainNav = mainNavDefs.map(d => ({ ...d, label: t(d.key) }));
+  const businessNav = businessNavDefs.map(d => ({ ...d, label: t(d.key) }));
+  const accountNav = accountNavDefs.map(d => ({ ...d, label: t(d.key) }));
 
   return (
     <aside
@@ -253,9 +264,9 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
 
       {/* Nav */}
       <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }} aria-label="Main navigation">
-        <NavSection label="Main" items={mainNav} pathname={pathname} />
-        <NavSection label="Business" items={businessNav} pathname={pathname} />
-        <NavSection label="Account" items={accountNav} pathname={pathname} />
+        <NavSection label={t('leads.main')} items={mainNav} pathname={pathname} />
+        <NavSection label={t('leads.business')} items={businessNav} pathname={pathname} />
+        <NavSection label={t('leads.account')} items={accountNav} pathname={pathname} />
       </nav>
 
       {/* Footer */}
@@ -329,7 +340,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
           </p>
         </div>
 
-        {/* Theme toggle + sign-out row */}
+        {/* Theme toggle + lang toggle + sign-out row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <button
             onClick={toggleTheme}
@@ -361,6 +372,34 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
             {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
           </button>
 
+          {/* Language quick toggle */}
+          <button
+            onClick={handleToggleLang}
+            title={language === 'en' ? 'Cambiar a Español' : 'Switch to English'}
+            aria-label={language === 'en' ? 'Cambiar a Español' : 'Switch to English'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              height: 30,
+              padding: '0 8px',
+              borderRadius: 8,
+              background: 'transparent',
+              border: '1px solid var(--c-border)',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 150ms',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--c-sidebar-hover)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+          >
+            <span style={{ fontSize: 14, lineHeight: 1 }}>{language === 'en' ? '🇺🇸' : '🇪🇸'}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.04em' }}>
+              {language === 'en' ? 'EN' : 'ES'}
+            </span>
+          </button>
+
           <button
             onClick={handleSignOut}
             style={{
@@ -379,16 +418,12 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               transition: 'color 150ms',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.textDecoration = 'none';
-            }}
+            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline' }}
+            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none' }}
             aria-label="Sign out"
           >
             <LogOut size={12} aria-hidden="true" />
-            <span>Sign out</span>
+            <span>{t('nav.signOut')}</span>
           </button>
         </div>
       </div>

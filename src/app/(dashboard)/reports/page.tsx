@@ -33,6 +33,7 @@ import {
   subMonths as subM,
 } from 'date-fns';
 import { useEffect, useRef } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type Timeframe = 'this_month' | 'last_month' | 'this_year' | 'all_time';
 
@@ -60,6 +61,7 @@ const EXPENSE_COLORS = [
 
 export default function ReportsPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [timeframe, setTimeframe] = useState<Timeframe>('this_year');
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<any[]>([]);
@@ -347,16 +349,16 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Reports</h1>
-          <p className="text-[var(--sg-text-2)] text-sm">Business analytics and insights</p>
+          <h1 className="text-2xl font-bold text-white">{t('reports.title')}</h1>
+          <p className="text-[var(--sg-text-2)] text-sm">{t('reports.insights')}</p>
         </div>
         <div className="flex items-center gap-1 bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg p-1">
           {(
             [
-              ['this_month', 'This Month'],
-              ['last_month', 'Last Month'],
-              ['this_year', 'This Year'],
-              ['all_time', 'All Time'],
+              ['this_month', t('expenses.thisMonth')],
+              ['last_month', t('period.lastMonth')],
+              ['this_year', t('reports.thisYear')],
+              ['all_time', t('period.allTime')],
             ] as [Timeframe, string][]
           ).map(([val, label]) => (
             <button
@@ -373,15 +375,15 @@ export default function ReportsPage() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: formatCurrency(kpi.revenue), color: '#e6ab35' },
-          { label: 'Total Expenses', value: formatCurrency(kpi.totalExp), color: '#ef4444' },
+          { label: t('reports.revenue'), value: formatCurrency(kpi.revenue), color: '#e6ab35' },
+          { label: t('reports.expenses'), value: formatCurrency(kpi.totalExp), color: '#ef4444' },
           {
-            label: 'Gross Profit',
+            label: t('reports.profit'),
             value: formatCurrency(kpi.profit),
             color: kpi.profit >= 0 ? '#22c55e' : '#ef4444',
           },
           {
-            label: 'Profit Margin',
+            label: t('reports.profitMargin'),
             value: `${kpi.margin.toFixed(1)}%`,
             color: kpi.margin >= 20 ? '#22c55e' : kpi.margin < 0 ? '#ef4444' : '#e6ab35',
           },
@@ -402,7 +404,7 @@ export default function ReportsPage() {
 
       {/* Revenue vs Expenses Bar Chart */}
       <div className="bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-xl p-6">
-        <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">Revenue vs Expenses</h3>
+        <h3 className="text-sm font-semibold text-[var(--sg-text-1)] mb-4">{t('reports.revenueVsExpenses')}</h3>
         <div className="chart-scroll-container">
         <div className="chart-min-width">
         <ResponsiveContainer width="100%" height={280}>
@@ -441,9 +443,9 @@ export default function ReportsPage() {
         </div>
         <div className="flex items-center gap-6 mt-2 justify-center">
           {[
-            ['Revenue', '#e6ab35'],
-            ['Expenses', '#ef4444'],
-            ['Profit', '#22c55e'],
+            [t('reports.revenue'), '#e6ab35'],
+            [t('reports.expenses'), '#ef4444'],
+            [t('reports.profit'), '#22c55e'],
           ].map(([l, c]) => (
             <div key={l} className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: c }} />
