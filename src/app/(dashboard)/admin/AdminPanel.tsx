@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
 
 interface Tenant {
   id: string
@@ -465,6 +466,23 @@ export function AdminPanel({ tenants: initialTenants }: { tenants: Tenant[] }) {
   const [modal, setModal] = useState<'invite' | 'create' | null>(null)
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null)
   const [suspending, setSuspending] = useState<string | null>(null)
+
+  // Auto-refresh every 60s + realtime subscription for live tenant updates
+  useEffect(() => {
+    const intervalId = setInterval(() => router.refresh(), 60_000)
+    return () => clearInterval(intervalId)
+  }, [router])
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('admin-tenants-watch')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tenants' }, () => {
+        router.refresh()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [router])
 
   const handleView = (tenantId: string) => {
     sessionStorage.setItem('admin_viewing_tenant', tenantId)

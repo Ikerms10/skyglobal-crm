@@ -264,6 +264,8 @@ function LeadStatCard({ stat }: { stat: LeadStatKind }) {
 export default function DashboardPage() {
   const [timeframe, setTimeframe] = useState<Timeframe>('Month');
   const [time, setTime]           = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [locationCity, setLocationCity] = useState('');
   const shouldReduceMotion        = useReducedMotion();
   const { language, t }           = useLanguage();
 
@@ -284,6 +286,49 @@ export default function DashboardPage() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // User display name
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const name =
+        user.user_metadata?.display_name ||
+        user.user_metadata?.full_name?.split(' ')[0] ||
+        user.user_metadata?.first_name ||
+        user.email?.split('@')[0] ||
+        '';
+      setDisplayName(name);
+    });
+  }, []);
+
+  // Location city — read cache first, fall back to geolocation + Nominatim
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('sg_user_city');
+      if (cached) { setLocationCity(cached); return; }
+    } catch {}
+
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async pos => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+            { headers: { 'User-Agent': 'SkyGlobalCRM/1.0' } }
+          );
+          const json = await res.json();
+          const city = json.address?.city || json.address?.town || json.address?.village || '';
+          const state = json.address?.state_code || json.address?.state || '';
+          const label = [city, state].filter(Boolean).join(', ');
+          if (label) {
+            localStorage.setItem('sg_user_city', label);
+            setLocationCity(label);
+          }
+        } catch {}
+      }, () => {});
+    }
   }, []);
 
   const { data, isLoading } = useQuery({
@@ -440,10 +485,10 @@ export default function DashboardPage() {
           <div className="ios-glass bento-card" style={{ padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>
-                {todayLabel(language)} · Orlando, FL
+                {todayLabel(language)}{locationCity ? ` · ${locationCity}` : ''}
               </p>
               <h1 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', fontWeight: 800, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.035em', lineHeight: 1.1 }}>
-                {new Date().getHours() < 12 ? t('dashboard.greeting.morning') : new Date().getHours() < 17 ? t('dashboard.greeting.afternoon') : t('dashboard.greeting.evening')},&nbsp;<span className="value-shimmer">Iker</span>
+                {new Date().getHours() < 12 ? t('dashboard.greeting.morning') : new Date().getHours() < 17 ? t('dashboard.greeting.afternoon') : t('dashboard.greeting.evening')},{displayName ? <>&nbsp;<span className="value-shimmer">{displayName}</span></> : ''}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--c-text-3)', margin: '8px 0 0', fontFamily: "'DM Mono', monospace" }}>
                 Here's what needs your attention today.

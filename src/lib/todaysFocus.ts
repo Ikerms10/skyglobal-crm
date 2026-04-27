@@ -27,7 +27,6 @@ export async function getTodaysFocusItems(): Promise<FocusItem[]> {
   const [stuckLeads, unrespondedProposals, startingProjects, overdueInvoices] = await Promise.all([
     supabase.from('leads')
       .select('id, title, stage, estimated_value, updated_at')
-      .eq('user_id', user.id)
       .not('stage', 'in', '("Won","Lost")')
       .is('deleted_at', null)
       .lt('updated_at', fiveDaysAgo)
@@ -36,7 +35,6 @@ export async function getTodaysFocusItems(): Promise<FocusItem[]> {
 
     supabase.from('proposals')
       .select('id, client_name, total_investment, created_at, viewed_at, status, share_token')
-      .eq('user_id', user.id)
       .eq('status', 'Sent')
       .is('deleted_at', null)
       .lt('created_at', threeDaysAgo)
@@ -46,7 +44,6 @@ export async function getTodaysFocusItems(): Promise<FocusItem[]> {
 
     supabase.from('projects')
       .select('id, title, start_date, contract_value')
-      .eq('user_id', user.id)
       .gte('start_date', today)
       .lte('start_date', tomorrow)
       .eq('status', 'Scheduled')
@@ -54,7 +51,6 @@ export async function getTodaysFocusItems(): Promise<FocusItem[]> {
 
     supabase.from('invoices')
       .select('id, total, due_date, project_id, customer_id')
-      .eq('user_id', user.id)
       .eq('status', 'sent')
       .lt('due_date', today)
       .is('deleted_at', null)

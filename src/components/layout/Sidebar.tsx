@@ -235,13 +235,13 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
                 style={{ objectFit: 'contain' }}
               />
             ) : (
-              <img
-                src="/skyglobal-logo.svg"
-                width="30"
-                height="30"
-                alt="Logo"
-                style={{ objectFit: 'contain' }}
-              />
+              <span style={{
+                fontSize: 13, fontWeight: 800, color: 'var(--c-gold)',
+                fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.02em',
+              }}>
+                {(tenant?.business_name ?? 'My Business')
+                  .split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || 'MB'}
+              </span>
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -259,7 +259,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
                 whiteSpace: 'nowrap',
               }}
             >
-              {tenant?.business_name ?? 'SkyGlobal'}
+              {tenant?.business_name ?? 'My Business'}
             </p>
             <p
               style={{
