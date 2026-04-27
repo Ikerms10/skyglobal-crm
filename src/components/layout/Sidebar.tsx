@@ -394,7 +394,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--c-sidebar-hover)' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
           >
-            {language === 'en' ? '🇺🇸' : '🇵🇷'}
+            {language === 'en' ? '🇺🇸' : '🇪🇸'}
           </button>
 
           <button

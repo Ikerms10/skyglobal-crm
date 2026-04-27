@@ -142,11 +142,12 @@ export default function AnalyticsPage() {
     return subYears(now, 1)
   }, [range])
 
-  // Revenue chart — last 12 months
+  // Revenue chart — respects selected range
   const revenueChartData = useMemo(() => {
     if (!rawData) return []
-    return Array.from({ length: 12 }, (_, i) => {
-      const d = subMonths(new Date(), 11 - i)
+    const monthCount = range === '30d' ? 1 : range === '90d' ? 3 : range === '6mo' ? 6 : 12
+    return Array.from({ length: monthCount }, (_, i) => {
+      const d = subMonths(new Date(), monthCount - 1 - i)
       const monthStr = format(d, 'yyyy-MM')
       const monthProjects = rawData.projects.filter((p: any) => {
         const pd = (p.start_date ?? p.created_at ?? '').slice(0, 7)
@@ -156,7 +157,7 @@ export default function AnalyticsPage() {
       const outstanding = monthProjects.reduce((s: number, p: any) => s + Math.max(0, (p.contract_value ?? 0) - (p.amount_paid ?? 0)), 0)
       return { month: format(d, 'MMM'), collected: Math.round(collected), outstanding: Math.round(outstanding) }
     })
-  }, [rawData])
+  }, [rawData, range])
 
   // Funnel data
   const funnelData = useMemo(() => {
@@ -193,16 +194,17 @@ export default function AnalyticsPage() {
     return arr.map((item, i) => ({ ...item, isTop: i === 0, pct: Math.round(item.value / maxVal * 100) }))
   }, [rawData, rangeStart])
 
-  // Monthly job count
+  // Monthly job count — respects selected range
   const jobCountData = useMemo(() => {
     if (!rawData) return []
-    return Array.from({ length: 12 }, (_, i) => {
-      const d = subMonths(new Date(), 11 - i)
+    const monthCount = range === '30d' ? 1 : range === '90d' ? 3 : range === '6mo' ? 6 : 12
+    return Array.from({ length: monthCount }, (_, i) => {
+      const d = subMonths(new Date(), monthCount - 1 - i)
       const monthStr = format(d, 'yyyy-MM')
       const count = rawData.projects.filter((p: any) => (p.created_at ?? '').slice(0, 7) === monthStr).length
       return { month: format(d, 'MMM'), count }
     })
-  }, [rawData])
+  }, [rawData, range])
 
   // Top customers
   const topCustomers = useMemo(() => {
@@ -336,7 +338,7 @@ export default function AnalyticsPage() {
               Revenue Pipeline
             </h3>
             <p style={{ fontSize: 11, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-ui)', margin: '0 0 16px' }}>
-              Last 12 months — Collected vs Outstanding
+              {range === '30d' ? 'Last 30 days' : range === '90d' ? 'Last 90 days' : range === '6mo' ? 'Last 6 months' : 'Last 12 months'} — Collected vs Outstanding
             </p>
             <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
               {[['Collected', '#8B6914'], ['Outstanding', '#7A9E7E']].map(([l, c]) => (
