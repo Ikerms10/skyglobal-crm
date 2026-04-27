@@ -570,6 +570,9 @@ export default function ExpensesPage() {
     },
     onSuccess: (_, form) => {
       queryClient.invalidateQueries({ queryKey: ['expenses-all'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['reports'] })
       toast.success(t('expenses.logged'))
       setAddOpen(false)
     },
@@ -593,6 +596,9 @@ export default function ExpensesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses-all'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['reports'] })
       toast.success(t('expenses.updated'))
       setEditExpense(null)
     },
@@ -608,6 +614,9 @@ export default function ExpensesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses-all'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['reports'] })
       toast.success(t('expenses.deleted'))
       setDeleteId(null)
     },

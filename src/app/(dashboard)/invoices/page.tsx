@@ -72,6 +72,8 @@ export default function InvoicesPage() {
     await supabase.from('invoices').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     toast.success(t('invoices.deleted'))
     queryClient.invalidateQueries({ queryKey: ['invoices'] })
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    queryClient.invalidateQueries({ queryKey: ['analytics'] })
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -106,6 +108,8 @@ export default function InvoicesPage() {
           onSaved={() => {
             setCreateOpen(false)
             queryClient.invalidateQueries({ queryKey: ['invoices'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            queryClient.invalidateQueries({ queryKey: ['analytics'] })
           }}
         />
       )}
@@ -116,6 +120,8 @@ export default function InvoicesPage() {
           onSaved={() => {
             setMarkPaidInvoice(null)
             queryClient.invalidateQueries({ queryKey: ['invoices'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            queryClient.invalidateQueries({ queryKey: ['analytics'] })
           }}
         />
       )}

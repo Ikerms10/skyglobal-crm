@@ -106,6 +106,8 @@ export default function CustomersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-lifetime-values'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-last-job-dates'] })
       toast.success(t('customers.deleted'))
       setDeleteId(null)
     },

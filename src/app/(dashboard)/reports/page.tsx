@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatCurrencyCompact, getProfitGrade, exportToCSV } from '@/lib/utils';
@@ -32,7 +33,6 @@ import {
   endOfDay,
   subMonths as subM,
 } from 'date-fns';
-import { useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type Timeframe = 'this_month' | 'last_month' | 'this_year' | 'all_time';
@@ -63,72 +63,50 @@ export default function ReportsPage() {
   const router = useRouter();
   const { t } = useLanguage();
   const [timeframe, setTimeframe] = useState<Timeframe>('this_year');
-  const [loading, setLoading] = useState(true);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [projExpenses, setProjExpenses] = useState<any[]>([]);
-  const [projExpByProject, setProjExpByProject] = useState<any[]>([]);
-  const mounted = useRef(true);
 
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
+  const { data: reportData, isLoading: loading } = useQuery({
+    queryKey: ['reports'],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user || cancelled) return;
+      const [p, l, e, pe] = await Promise.all([
+        supabase
+          .from('projects')
+          .select('id, title, contract_value, amount_paid, lead_cost, type, status, customer_id, start_date, created_at, customers(name, id)')
+          .eq('user_id', user.id)
+          .is('deleted_at', null),
+        supabase
+          .from('leads')
+          .select('id, stage, source, estimated_value, customer_id, created_at')
+          .eq('user_id', user.id)
+          .is('deleted_at', null),
+        supabase
+          .from('expenses')
+          .select('id, amount, category, date')
+          .eq('user_id', user.id)
+          .is('deleted_at', null),
+        supabase
+          .from('project_expenses')
+          .select('id, amount, category, date, project_id')
+          .eq('user_id', user.id),
+      ]);
 
-        const [p, l, e, pe] = await Promise.all([
-          supabase
-            .from('projects')
-            .select(
-              'id, title, contract_value, amount_paid, lead_cost, type, status, customer_id, start_date, created_at, customers(name, id)'
-            )
-            .eq('user_id', user.id)
-            .is('deleted_at', null),
-          supabase
-            .from('leads')
-            .select('id, stage, source, estimated_value, customer_id, created_at')
-            .eq('user_id', user.id)
-            .is('deleted_at', null),
-          supabase
-            .from('expenses')
-            .select('id, amount, category, date')
-            .eq('user_id', user.id)
-            .is('deleted_at', null),
-          supabase
-            .from('project_expenses')
-            .select('id, amount, category, date, project_id')
-            .eq('user_id', user.id),
-        ]);
+      return {
+        projects: p.data ?? [],
+        leads: l.data ?? [],
+        expenses: e.data ?? [],
+        projExpenses: pe.data ?? [],
+      };
+    },
+  });
 
-        if (!cancelled) {
-          setProjects(p.data ?? []);
-          setLeads(l.data ?? []);
-          setExpenses(e.data ?? []);
-          // Same data used for both expense totals and per-project lookup
-          setProjExpenses(pe.data ?? []);
-          setProjExpByProject(pe.data ?? []);
-        }
-      } catch (_) {}
-      if (!cancelled) setLoading(false);
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const projects = reportData?.projects ?? [];
+  const leads = reportData?.leads ?? [];
+  const expenses = reportData?.expenses ?? [];
+  const projExpenses = reportData?.projExpenses ?? [];
+  const projExpByProject = projExpenses;
 
   const { dateStart, dateEnd } = useMemo(() => {
     const now = new Date();

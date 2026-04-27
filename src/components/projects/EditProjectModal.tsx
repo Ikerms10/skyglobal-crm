@@ -98,10 +98,11 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
       if (error) throw new Error(error.message)
     },
     onSuccess: () => {
-      // Invalidate every cache that reads project data so all pages stay in sync
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['reports'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-lifetime-values'] })
       toast.success('Project updated')
       onClose()
       onSuccess()
