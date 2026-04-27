@@ -328,9 +328,9 @@ export default function ProjectDetailPage({
   });
   const [mgmtSaving, setMgmtSaving] = useState(false);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const supabase = createClient();
 
@@ -449,6 +449,7 @@ export default function ProjectDetailPage({
       setProject((p: any) => ({ ...p, status }));
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['focus'] });
       toast.success(`Status updated to ${status}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update status');
@@ -801,7 +802,7 @@ export default function ProjectDetailPage({
     return (
       <div className="p-4 md:p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
         <p className="text-[var(--sg-danger)]">{error}</p>
-        <Button onClick={loadData}>Try Again</Button>
+        <Button onClick={() => loadData()}>Try Again</Button>
       </div>
     );
   }
@@ -1931,9 +1932,13 @@ export default function ProjectDetailPage({
         project={project}
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        onSuccess={() => {
+        onSuccess={(updated) => {
+          // Apply updated fields immediately so the header shows new dates/status
+          // before the background re-fetch completes
+          setProject((prev: any) => ({ ...prev, ...updated }));
           setEditOpen(false);
-          loadData();
+          // Silent refresh to sync all related data (expenses, activities, etc.)
+          loadData(true);
         }}
       />
       <AddActivityModal

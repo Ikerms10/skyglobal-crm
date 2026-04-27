@@ -150,6 +150,9 @@ export function NewProjectModal({ open, onClose, preselectedCustomerId }: NewPro
     onSuccess: ({ projectId, customerId }) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       queryClient.invalidateQueries({ queryKey: ['customer-projects', customerId] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-lifetime-values'] })
       toast.success('Project created!')
       onClose()
       router.push(`/customers/${customerId}/projects/${projectId}`)

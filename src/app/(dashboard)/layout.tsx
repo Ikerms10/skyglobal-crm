@@ -5,6 +5,7 @@ import { MobileNav } from '@/components/layout/MobileNav'
 import { NotificationBell } from '@/components/layout/NotificationBell'
 import { GlobalSearch } from '@/components/layout/GlobalSearch'
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton'
+import { RealtimeSync } from '@/components/layout/RealtimeSync'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -83,6 +84,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+          <RealtimeSync />
           {children}
         </main>
       </div>
