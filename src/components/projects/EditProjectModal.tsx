@@ -33,7 +33,7 @@ interface EditProjectModalProps {
   project: Project | null
   open: boolean
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (updated: Project) => void
 }
 
 export function EditProjectModal({ project, open, onClose, onSuccess }: EditProjectModalProps) {
@@ -80,7 +80,7 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
     mutationFn: async (data: FormData) => {
       if (!project) throw new Error('No project selected')
       const supabase = createClient()
-      const { error } = await supabase.from('projects').update({
+      const { data: updated, error } = await supabase.from('projects').update({
         title: data.title,
         type: data.type as 'Residential' | 'Commercial',
         status: data.status as 'Scheduled' | 'In Progress' | 'On Hold' | 'Completed' | 'Cancelled',
@@ -94,18 +94,20 @@ export function EditProjectModal({ project, open, onClose, onSuccess }: EditProj
         payment_status: data.payment_status as 'Unpaid' | 'Partial' | 'Paid' | 'Overdue',
         notes: data.notes || null,
         updated_at: new Date().toISOString(),
-      }).eq('id', project.id)
+      }).eq('id', project.id).select().single()
       if (error) throw new Error(error.message)
+      return updated as Project
     },
-    onSuccess: () => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['analytics'] })
       queryClient.invalidateQueries({ queryKey: ['reports'] })
+      queryClient.invalidateQueries({ queryKey: ['focus'] })
       queryClient.invalidateQueries({ queryKey: ['customer-lifetime-values'] })
       toast.success('Project updated')
       onClose()
-      onSuccess()
+      onSuccess(updated)
     },
     onError: () => toast.error('Failed to update project'),
   })

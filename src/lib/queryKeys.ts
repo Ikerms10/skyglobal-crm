@@ -37,6 +37,9 @@ export const keys = {
   reports: {
     all: () => ['reports'] as const,
   },
+  focus: {
+    all: () => ['focus'] as const,
+  },
   schedule: {
     all: () => ['schedule'] as const,
     events: () => ['calendar-events'] as const,
@@ -48,18 +51,18 @@ export const keys = {
 export function getKeysForTable(table: string): ReadonlyArray<readonly string[]> {
   switch (table) {
     case 'leads':
-      return [keys.leads.all(), keys.leads.activities(), keys.dashboard.all(), keys.analytics.all(), keys.reports.all()]
+      return [keys.leads.all(), keys.leads.activities(), keys.dashboard.all(), keys.analytics.all(), keys.reports.all(), keys.focus.all()]
     case 'projects':
       return [
         keys.projects.all(), keys.projects.active(),
-        keys.dashboard.all(), keys.analytics.all(), keys.reports.all(),
+        keys.dashboard.all(), keys.analytics.all(), keys.reports.all(), keys.focus.all(),
         keys.customers.lifetimeValues(), keys.customers.lastJobDates(),
       ]
     case 'expenses':
     case 'project_expenses':
       return [keys.expenses.all(), keys.dashboard.all(), keys.analytics.all(), keys.reports.all()]
     case 'invoices':
-      return [keys.invoices.all(), keys.dashboard.all(), keys.analytics.all()]
+      return [keys.invoices.all(), keys.dashboard.all(), keys.analytics.all(), keys.focus.all()]
     case 'proposals':
       return [keys.proposals.all(), keys.proposals.values(), keys.dashboard.all()]
     case 'customers':

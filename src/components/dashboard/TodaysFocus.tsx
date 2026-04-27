@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Zap, MessageCircle, FileText, Briefcase, DollarSign, RefreshCw, Loader2 } from 'lucide-react'
 
 import { getTodaysFocusItems, FocusItem } from '@/lib/todaysFocus'
@@ -21,20 +21,15 @@ const PRIORITY_DOT: Record<FocusItem['priority'], string> = {
 
 export function TodaysFocus() {
   const router = useRouter()
-  const [items, setItems] = useState<FocusItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await getTodaysFocusItems()
-      setItems(data)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { load() }, [load])
+  const { data: items = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['focus'],
+    queryFn: getTodaysFocusItems,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  })
 
   const visible = items.slice(0, 4)
   const hasMore = items.length > 4
@@ -54,7 +49,7 @@ export function TodaysFocus() {
           )}
         </div>
         <button
-          onClick={load}
+          onClick={() => refetch()}
           disabled={loading}
           style={{ background: 'none', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', color: 'var(--c-text-3)', padding: 4, display: 'flex', alignItems: 'center' }}
           title="Refresh"
