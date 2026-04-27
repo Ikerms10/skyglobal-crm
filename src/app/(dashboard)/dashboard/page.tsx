@@ -303,27 +303,27 @@ export default function DashboardPage() {
         followUpsRes, overdueRes,
       ] = await Promise.all([
         supabase.from('projects').select('id,contract_value,amount_paid,payment_status,status,created_at,customer_id,title,customers(name)')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .gte(startDate ? 'created_at' : 'id', startDate ?? fallbackId),
         supabase.from('leads').select('id,stage,source,estimated_value,follow_up_date,title,customer_id,created_at')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .gte(startDate ? 'created_at' : 'id', startDate ?? fallbackId),
         supabase.from('expenses').select('id,amount,category,date')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .gte(startDate ? 'date' : 'id', startDate ? startDate.split('T')[0] : fallbackId),
         supabase.from('project_expenses').select('id,amount,date').eq('user_id', user.id),
         supabase.from('activities').select('id,type,content,created_at,customer_id')
           .eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
-        supabase.from('projects').select('contract_value,created_at,status').eq('user_id', user.id).is('deleted_at', null),
-        supabase.from('expenses').select('amount,date').eq('user_id', user.id).is('deleted_at', null),
+        supabase.from('projects').select('contract_value,created_at,status').is('deleted_at', null),
+        supabase.from('expenses').select('amount,date').is('deleted_at', null),
         supabase.from('project_expenses').select('amount,date').eq('user_id', user.id),
         supabase.from('leads').select('id,title,follow_up_date,customers(name)')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .lte('follow_up_date', subMonths(new Date(), -1).toISOString().split('T')[0])
           .gte('follow_up_date', today).not('stage', 'in', '("Won","Lost")')
           .order('follow_up_date', { ascending: true }).limit(5),
         supabase.from('projects').select('id,title,contract_value,amount_paid,customer_id,customers(name)')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .in('payment_status', ['Unpaid', 'Partial', 'Overdue']).lt('end_date', today).limit(4),
       ]);
 

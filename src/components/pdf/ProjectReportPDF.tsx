@@ -2,7 +2,6 @@
 import {
   Document, Page, Text, View, StyleSheet, PDFDownloadLink, Image,
 } from '@react-pdf/renderer'
-import { useState } from 'react'
 
 function fmt(n: number | null | undefined) {
   if (!n && n !== 0) return '$0.00'
@@ -381,7 +380,6 @@ function ReportDocument({ data }: { data: ReportData }) {
 }
 
 export function DownloadProjectReportButton({ data }: { data: ReportData }) {
-  const [ready, setReady] = useState(false)
   const customer = data.customer ?? {}
   const filename = `SkyGlobal-Report-${(customer.name ?? 'Project').replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`
 
@@ -389,7 +387,6 @@ export function DownloadProjectReportButton({ data }: { data: ReportData }) {
     <PDFDownloadLink
       document={<ReportDocument data={data} />}
       fileName={filename}
-      onLoadingComplete={() => setReady(true)}
       style={{ textDecoration: 'none' }}
     >
       {({ loading }) => (

@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { downloadProposalPDF } from '@/components/proposals/ProposalPDF'
 import { format } from 'date-fns'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useTenant } from '@/contexts/TenantContext'
 
 const STATUS_COLORS: Record<ProposalStatus, { bg: string; text: string }> = {
   Draft:    { bg: 'var(--c-nested)', text: 'var(--c-text-4)' },
@@ -37,6 +38,7 @@ export default function ProposalsPage() {
   const [showSelector, setShowSelector] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const { t } = useLanguage()
+  const { tenant } = useTenant()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -120,9 +122,16 @@ export default function ProposalsPage() {
       scopeOfWork: td.scopeOfWork ?? '',
     }
     const clientSlug = (proposal.client_name || 'Client').replace(/\s+/g, '')
+    const businessSlug = (tenant?.business_name ?? 'CRM').replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '')
     const dateStr = format(new Date(), 'MMMd')
-    const fileName = `SkyGlobal-${TEMPLATE_LABELS[proposal.template as ProposalTemplate].replace(/\s+/g, '')}-${clientSlug}-${dateStr}.pdf`
-    await downloadProposalPDF(proposal.template, data, fileName)
+    const fileName = `${businessSlug}-${TEMPLATE_LABELS[proposal.template as ProposalTemplate].replace(/\s+/g, '')}-${clientSlug}-${dateStr}.pdf`
+    const businessInfo = tenant ? {
+      name: tenant.business_name,
+      phone: tenant.business_phone,
+      email: tenant.business_email,
+      website: tenant.business_website,
+    } : undefined
+    await downloadProposalPDF(proposal.template, data, fileName, businessInfo)
   }
 
   const handleStatusChange = async (id: string, status: ProposalStatus) => {
