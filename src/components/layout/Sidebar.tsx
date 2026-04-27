@@ -381,20 +381,23 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 30,
+              gap: 4,
               height: 30,
+              padding: '0 8px',
               borderRadius: 8,
               background: 'transparent',
               border: '1px solid var(--c-border)',
               cursor: 'pointer',
-              fontSize: 14,
               flexShrink: 0,
               transition: 'all 150ms',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--c-sidebar-hover)' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
           >
-            {language === 'en' ? '🇺🇸' : '🇪🇸'}
+            <span style={{ fontSize: 14, lineHeight: 1 }}>{language === 'en' ? '🇺🇸' : '🇪🇸'}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.04em' }}>
+              {language === 'en' ? 'EN' : 'ES'}
+            </span>
           </button>
 
           <button
