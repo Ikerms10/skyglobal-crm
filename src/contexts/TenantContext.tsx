@@ -14,6 +14,8 @@ export interface Tenant {
   industry: string | null
   status: string
   plan: string
+  trial_ends_at: string | null
+  created_at: string | null
 }
 
 interface TenantContextValue {
@@ -42,20 +44,24 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const fetchTenant = useCallback(async () => {
     const supabase = createClient()
 
+    const { data: { user } } = await supabase.auth.getUser()
+
     // Check for admin impersonation
     const impersonatingId = typeof window !== 'undefined'
       ? sessionStorage.getItem('admin_viewing_tenant')
       : null
 
-    const [{ data: tenantData }, { data: adminData }] = await Promise.all([
+    const [{ data: tenantData }, { data: adminRow }] = await Promise.all([
       impersonatingId
         ? supabase.from('tenants').select('*').eq('id', impersonatingId).single()
         : supabase.from('tenants').select('*').single(),
-      supabase.from('master_admins').select('user_id').limit(1),
+      user
+        ? supabase.from('master_admins').select('user_id').eq('user_id', user.id).single()
+        : Promise.resolve({ data: null }),
     ])
 
     setTenant(tenantData ?? null)
-    setIsMasterAdmin((adminData?.length ?? 0) > 0)
+    setIsMasterAdmin(adminRow !== null)
     setIsLoading(false)
   }, [])
 

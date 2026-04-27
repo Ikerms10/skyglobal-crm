@@ -264,6 +264,8 @@ function LeadStatCard({ stat }: { stat: LeadStatKind }) {
 export default function DashboardPage() {
   const [timeframe, setTimeframe] = useState<Timeframe>('Month');
   const [time, setTime]           = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [locationCity, setLocationCity] = useState('');
   const shouldReduceMotion        = useReducedMotion();
   const { language, t }           = useLanguage();
 
@@ -286,6 +288,49 @@ export default function DashboardPage() {
     return () => clearInterval(id);
   }, []);
 
+  // User display name
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const name =
+        user.user_metadata?.display_name ||
+        user.user_metadata?.full_name?.split(' ')[0] ||
+        user.user_metadata?.first_name ||
+        user.email?.split('@')[0] ||
+        '';
+      setDisplayName(name);
+    });
+  }, []);
+
+  // Location city — read cache first, fall back to geolocation + Nominatim
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('sg_user_city');
+      if (cached) { setLocationCity(cached); return; }
+    } catch {}
+
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async pos => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+            { headers: { 'User-Agent': 'SkyGlobalCRM/1.0' } }
+          );
+          const json = await res.json();
+          const city = json.address?.city || json.address?.town || json.address?.village || '';
+          const state = json.address?.state_code || json.address?.state || '';
+          const label = [city, state].filter(Boolean).join(', ');
+          if (label) {
+            localStorage.setItem('sg_user_city', label);
+            setLocationCity(label);
+          }
+        } catch {}
+      }, () => {});
+    }
+  }, []);
+
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', timeframe],
     queryFn: async () => {
@@ -303,27 +348,27 @@ export default function DashboardPage() {
         followUpsRes, overdueRes,
       ] = await Promise.all([
         supabase.from('projects').select('id,contract_value,amount_paid,payment_status,status,created_at,customer_id,title,customers(name)')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .gte(startDate ? 'created_at' : 'id', startDate ?? fallbackId),
         supabase.from('leads').select('id,stage,source,estimated_value,follow_up_date,title,customer_id,created_at')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .gte(startDate ? 'created_at' : 'id', startDate ?? fallbackId),
         supabase.from('expenses').select('id,amount,category,date')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .gte(startDate ? 'date' : 'id', startDate ? startDate.split('T')[0] : fallbackId),
         supabase.from('project_expenses').select('id,amount,date').eq('user_id', user.id),
         supabase.from('activities').select('id,type,content,created_at,customer_id')
           .eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
-        supabase.from('projects').select('contract_value,created_at,status').eq('user_id', user.id).is('deleted_at', null),
-        supabase.from('expenses').select('amount,date').eq('user_id', user.id).is('deleted_at', null),
+        supabase.from('projects').select('contract_value,created_at,status').is('deleted_at', null),
+        supabase.from('expenses').select('amount,date').is('deleted_at', null),
         supabase.from('project_expenses').select('amount,date').eq('user_id', user.id),
         supabase.from('leads').select('id,title,follow_up_date,customers(name)')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .lte('follow_up_date', subMonths(new Date(), -1).toISOString().split('T')[0])
           .gte('follow_up_date', today).not('stage', 'in', '("Won","Lost")')
           .order('follow_up_date', { ascending: true }).limit(5),
         supabase.from('projects').select('id,title,contract_value,amount_paid,customer_id,customers(name)')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .in('payment_status', ['Unpaid', 'Partial', 'Overdue']).lt('end_date', today).limit(4),
       ]);
 
@@ -440,10 +485,10 @@ export default function DashboardPage() {
           <div className="ios-glass bento-card" style={{ padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>
-                {todayLabel(language)} · Orlando, FL
+                {todayLabel(language)}{locationCity ? ` · ${locationCity}` : ''}
               </p>
               <h1 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', fontWeight: 800, color: 'var(--c-text-1)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.035em', lineHeight: 1.1 }}>
-                {new Date().getHours() < 12 ? t('dashboard.greeting.morning') : new Date().getHours() < 17 ? t('dashboard.greeting.afternoon') : t('dashboard.greeting.evening')},&nbsp;<span className="value-shimmer">Iker</span>
+                {new Date().getHours() < 12 ? t('dashboard.greeting.morning') : new Date().getHours() < 17 ? t('dashboard.greeting.afternoon') : t('dashboard.greeting.evening')},{displayName ? <>&nbsp;<span className="value-shimmer">{displayName}</span></> : ''}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--c-text-3)', margin: '8px 0 0', fontFamily: "'DM Mono', monospace" }}>
                 Here's what needs your attention today.

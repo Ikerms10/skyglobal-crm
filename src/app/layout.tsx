@@ -13,7 +13,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'SkyGlobal CRM',
-  description: 'CRM for SkyGlobal Renovations painting contractor business',
+  description: 'Business management platform for contractors and service businesses.',
 };
 
 // Injected before React hydrates to prevent flash of wrong theme on load.

@@ -39,48 +39,51 @@ function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function PDFHeader({ projectName, proposalType, issueDate, validUntil, pageNum, totalPages }: any) {
+interface BusinessInfo {
+  name: string
+  phone?: string | null
+  email?: string | null
+  website?: string | null
+}
+
+function PDFHeader({ projectName, proposalType, issueDate, validUntil, business }: any) {
   return (
     <>
       <View style={styles.header}>
         <View>
-          <Text style={{ fontSize: 8, color: '#9a9585' }}>SkyGlobal Renovations LLC</Text>
+          <Text style={{ fontSize: 8, color: '#9a9585' }}>{business.name}</Text>
         </View>
         <View>
-          <Text style={styles.companyName}>SkyGlobal Renovations LLC</Text>
-          <Text style={styles.companySubtitle}>Professional Renovation Services</Text>
+          <Text style={styles.companyName}>{business.name}</Text>
+          <Text style={styles.companySubtitle}>Professional Services</Text>
         </View>
       </View>
       <View style={styles.titleBar}>
         <Text>{(projectName || 'PROPOSAL').toUpperCase()} | {proposalType}</Text>
       </View>
       <View style={styles.metaRow}>
-        <Text style={{ fontFamily: 'Helvetica-Bold' }}>SkyGlobal Renovations LLC</Text>
+        <Text style={{ fontFamily: 'Helvetica-Bold' }}>{business.name}</Text>
         <View style={{ alignItems: 'flex-end' }}>
           <Text>Date of Issuance: {issueDate || '—'}</Text>
           <Text>Proposal Valid Until: {validUntil || '—'}</Text>
         </View>
       </View>
       <View style={styles.confBox}>
-        <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>CONFIDENTIAL:</Text> This proposal and all associated pricing, processes, and materials are proprietary to SkyGlobal Renovations LLC.</Text>
+        <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>CONFIDENTIAL:</Text> This proposal and all associated pricing, processes, and materials are proprietary to {business.name}.</Text>
       </View>
     </>
   )
 }
 
-function PDFBusinessContact() {
+function PDFBusinessContact({ business }: { business: BusinessInfo }) {
   return (
     <>
       <Text style={styles.sectionHeader}>Section I — Business Contact</Text>
       <View style={{ flexDirection: 'row', gap: 20, fontSize: 9 }}>
         <View>
-          <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Phone:</Text> 352-782-2460 | 470-469-9961</Text>
-          <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Email:</Text> skyglobalsvcs@gmail.com</Text>
-          <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Web:</Text> skyglobalsvcs.com</Text>
-        </View>
-        <View>
-          <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Instagram & Facebook:</Text> @skyglobalp</Text>
-          <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Credentials:</Text> Thumbtack Profile — 75+ Verified Reviews</Text>
+          {business.phone && <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Phone:</Text> {business.phone}</Text>}
+          {business.email && <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Email:</Text> {business.email}</Text>}
+          {business.website && <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Web:</Text> {business.website}</Text>}
         </View>
       </View>
     </>
@@ -131,7 +134,7 @@ function PDFLineItems({ items }: { items: LineItem[] }) {
   )
 }
 
-function PDFPaymentSchedule({ total, depositPct, progressPct, finalPct }: any) {
+function PDFPaymentSchedule({ total, depositPct, progressPct, finalPct, business }: any) {
   const d = total ? total * (depositPct / 100) : null
   const p = total ? total * (progressPct / 100) : null
   const f2 = total ? total * (finalPct / 100) : null
@@ -150,7 +153,7 @@ function PDFPaymentSchedule({ total, depositPct, progressPct, finalPct }: any) {
         <Text style={{ fontFamily: 'Helvetica-Bold' }}>{f2 != null ? `$${fmt(f2)}` : '—'}</Text>
       </View>
       <Text style={{ fontSize: 8, color: '#6b7280', fontStyle: 'italic', marginTop: 6 }}>
-        SkyGlobal Renovations operates with full financial transparency. All material costs are invoiced at direct Sherwin-Williams contractor pricing with zero markup.
+        {business?.name ?? 'We'} operate with full financial transparency. All material costs are invoiced at direct contractor pricing with zero markup.
       </Text>
     </>
   )
@@ -179,20 +182,19 @@ function PDFSignature() {
   )
 }
 
-function PDFInsurance() {
+function PDFInsurance({ business }: { business: BusinessInfo }) {
   return (
     <>
       <Text style={styles.sectionHeader}>Certificate of Insurance</Text>
       <View style={styles.insBox}>
         <View style={styles.insGrid}>
           <View>
-            <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Insured:</Text> SkyGlobal Renovations LLC</Text>
-            <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Policy Number:</Text> CEG-00312198-00</Text>
-            <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Coverage:</Text> $2,000,000 General Liability</Text>
+            <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Insured:</Text> {business.name}</Text>
+            <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Coverage:</Text> General Liability</Text>
           </View>
           <View>
-            <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Phone:</Text> 352-782-2460</Text>
-            <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Email:</Text> skyglobalsvcs@gmail.com</Text>
+            {business.phone && <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Phone:</Text> {business.phone}</Text>}
+            {business.email && <Text><Text style={{ fontFamily: 'Helvetica-Bold' }}>Email:</Text> {business.email}</Text>}
           </View>
         </View>
         <View style={styles.insNote}>
@@ -203,10 +205,10 @@ function PDFInsurance() {
   )
 }
 
-function PDFFooter({ page, total }: { page: number; total: number }) {
+function PDFFooter({ page, total, business }: { page: number; total: number; business: BusinessInfo }) {
   return (
     <View style={styles.footer} fixed>
-      <Text>SkyGlobal Renovations LLC · Confidential</Text>
+      <Text>{business.name} · Confidential</Text>
       <Text>Page {page} of {total}</Text>
     </View>
   )
@@ -214,50 +216,50 @@ function PDFFooter({ page, total }: { page: number; total: number }) {
 
 // ─── INTERIOR PDF ────────────────────────────────────────────────────────────
 
-function InteriorPDF({ data }: { data: any }) {
+function InteriorPDF({ data, business }: { data: any; business: BusinessInfo }) {
   const steps = [
     { step: 'Step 1: Preparation & Protection', bullets: ['Environment Shielding: All furniture, flooring, fixtures, and hardware fully masked and protected.', 'Surface Cleaning: All paintable surfaces wiped clean prior to application.'] },
     { step: 'Step 2: Remediation & Priming', bullets: ['Drywall Restoration: Holes, cracks, and imperfections filled and sanded flush.', 'Priming: Stain-blocking primer applied to all repaired areas and bare surfaces.'] },
-    { step: 'Step 3: Premium Application', bullets: ['Execution: Two full coats of Sherwin-Williams premium interior paint applied.', 'Detailing: Clean sharp lines at all transitions executed with precision.'] },
+    { step: 'Step 3: Premium Application', bullets: ['Execution: Two full coats of premium interior paint applied.', 'Detailing: Clean sharp lines at all transitions executed with precision.'] },
     { step: 'Step 4: Site Restoration & Quality Control', bullets: ['Cleanup: All masking removed, surfaces wiped clean, furniture returned.', 'Final Walkthrough: On-site inspection with client to verify satisfaction.'] },
   ]
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
-        <PDFHeader projectName={data.projectName} proposalType="PROFESSIONAL SERVICE PROPOSAL" issueDate={data.issueDate} validUntil={data.validUntil} />
-        <PDFBusinessContact />
-        <PDFFooter page={1} total={data.showInsurancePage ? 4 : 3} />
+        <PDFHeader projectName={data.projectName} proposalType="PROFESSIONAL SERVICE PROPOSAL" issueDate={data.issueDate} validUntil={data.validUntil} business={business} />
+        <PDFBusinessContact business={business} />
+        <PDFFooter page={1} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       <Page size="LETTER" style={styles.page}>
         <PDFClientSummary clientName={data.clientName} clientContact={data.clientContact} clientAddress={data.clientAddress} projectScope={data.projectScope} total={data.totalInvestment} />
-        <Text style={styles.sectionHeader}>Section III — The SkyGlobal Interior Process</Text>
+        <Text style={styles.sectionHeader}>Section III — Interior Painting Process</Text>
         {steps.map(({ step, bullets }, i) => (
           <View key={i}>
             <Text style={styles.stepTitle}>{step}</Text>
             {bullets.map((b, j) => <Text key={j} style={styles.bullet}>• {b}</Text>)}
           </View>
         ))}
-        <PDFFooter page={2} total={data.showInsurancePage ? 4 : 3} />
+        <PDFFooter page={2} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       <Page size="LETTER" style={styles.page}>
         <Text style={styles.sectionHeader}>Section IV — Material Specifications</Text>
-        <Text style={{ fontSize: 9, fontStyle: 'italic', marginBottom: 8 }}>We use exclusively Sherwin-Williams products. Zero Material Markup.</Text>
+        <Text style={{ fontSize: 9, fontStyle: 'italic', marginBottom: 8 }}>Zero Material Markup — all materials invoiced at direct contractor pricing.</Text>
         <PDFLineItems items={data.lineItems} />
         <Text style={styles.sectionHeader}>Section V — Investment & Payment Schedule</Text>
-        <PDFPaymentSchedule total={data.totalInvestment} depositPct={data.depositPct} progressPct={data.progressPct} finalPct={data.finalPct} />
+        <PDFPaymentSchedule total={data.totalInvestment} depositPct={data.depositPct} progressPct={data.progressPct} finalPct={data.finalPct} business={business} />
         <Text style={styles.sectionHeader}>Section VI — Warranty & Provisions</Text>
         {PDFWarranty([
           ['White Glove Cleanup', '30–45 minutes of dedicated site cleanup at end of each work day.'],
           ['5-Year Workmanship Warranty', 'All defects remediated at no cost within 5 years.'],
-          ['Insurance Coverage', '$2,000,000 General Liability. Policy No. CEG-00312198-00.'],
+          ['Insurance Coverage', 'General Liability insurance. Certificate available upon request.'],
         ])}
         <PDFSignature />
-        <PDFFooter page={3} total={data.showInsurancePage ? 4 : 3} />
+        <PDFFooter page={3} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       {data.showInsurancePage && (
         <Page size="LETTER" style={styles.page}>
-          <PDFInsurance />
-          <PDFFooter page={4} total={4} />
+          <PDFInsurance business={business} />
+          <PDFFooter page={4} total={4} business={business} />
         </Page>
       )}
     </Document>
@@ -266,22 +268,22 @@ function InteriorPDF({ data }: { data: any }) {
 
 // ─── EXTERIOR PDF ────────────────────────────────────────────────────────────
 
-function ExteriorPDF({ data }: { data: any }) {
+function ExteriorPDF({ data, business }: { data: any; business: BusinessInfo }) {
   const tierNames: Record<string, string> = { tier1: 'Tier 1: Latitude®', tier2: 'Tier 2: Duration®', tier3: 'Tier 3: Emerald®' }
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
-        <PDFHeader projectName={data.projectName} proposalType="EXTERIOR PROTECTION & FINISHING PROPOSAL" issueDate={data.issueDate} validUntil={data.validUntil} />
-        <PDFBusinessContact />
-        <PDFFooter page={1} total={data.showInsurancePage ? 4 : 3} />
+        <PDFHeader projectName={data.projectName} proposalType="EXTERIOR PROTECTION & FINISHING PROPOSAL" issueDate={data.issueDate} validUntil={data.validUntil} business={business} />
+        <PDFBusinessContact business={business} />
+        <PDFFooter page={1} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       <Page size="LETTER" style={styles.page}>
         <PDFClientSummary clientName={data.clientName} clientContact={data.clientContact} clientAddress={data.clientAddress} projectScope="Exterior Protection & Level 2 Prep" total={data.totalInvestment} />
-        <Text style={styles.sectionHeader}>Section III — The SkyGlobal 4-Step Exterior Process</Text>
+        <Text style={styles.sectionHeader}>Section III — 4-Step Exterior Process</Text>
         {[
           { step: 'Step 01: Power Washing', bullets: ['Full exterior pressure wash at 2,500–3,500 PSI.', 'Soft Chemical Wash: mildicide solution to eradicate mold and algae.'] },
           { step: 'Step 02: Scraping, Priming & Stabilization', bullets: ['Level 2 Prep: Hand-scraping all peeling and failing paint.', 'Elastomeric sealant applied to cracks and gaps.'] },
-          { step: 'Step 03: Expert Paint Application', bullets: ['Airless sprayers for uniform, millage-controlled coverage.', 'Sherwin-Williams premium coatings in HOA-approved colors.'] },
+          { step: 'Step 03: Expert Paint Application', bullets: ['Airless sprayers for uniform, millage-controlled coverage.', 'Premium coatings in HOA-approved colors.'] },
           { step: 'Step 04: Final Cleanup & Quality Assurance', bullets: ['Complete removal of all masking and protective materials.', 'Final Walkthrough with client before sign-off.'] },
         ].map(({ step, bullets }, i) => (
           <View key={i}>
@@ -289,7 +291,7 @@ function ExteriorPDF({ data }: { data: any }) {
             {bullets.map((b, j) => <Text key={j} style={styles.bullet}>• {b}</Text>)}
           </View>
         ))}
-        <PDFFooter page={2} total={data.showInsurancePage ? 4 : 3} />
+        <PDFFooter page={2} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       <Page size="LETTER" style={styles.page}>
         <Text style={styles.sectionHeader}>Section IV — Material Specifications</Text>
@@ -297,34 +299,34 @@ function ExteriorPDF({ data }: { data: any }) {
         <Text style={{ fontSize: 9, marginBottom: 8 }}><Text style={{ fontFamily: 'Helvetica-Bold' }}>Sheen: </Text>{data.sheen}</Text>
         <PDFLineItems items={data.lineItems} />
         <Text style={styles.sectionHeader}>Section V — Investment & Payment Schedule</Text>
-        <PDFPaymentSchedule total={data.totalInvestment} depositPct={data.depositPct} progressPct={data.progressPct} finalPct={data.finalPct} />
+        <PDFPaymentSchedule total={data.totalInvestment} depositPct={data.depositPct} progressPct={data.progressPct} finalPct={data.finalPct} business={business} />
         <Text style={styles.sectionHeader}>Section VI — Warranty & Provisions</Text>
         {PDFWarranty([
           ['5-Year Workmanship Warranty', 'All workmanship defects remediated at no cost within 5 years.'],
-          ['Insurance Coverage', '$2,000,000 General Liability. Policy No. CEG-00312198-00.'],
+          ['Insurance Coverage', 'General Liability insurance. Certificate available upon request.'],
         ])}
         <PDFSignature />
-        <PDFFooter page={3} total={data.showInsurancePage ? 4 : 3} />
+        <PDFFooter page={3} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
-      {data.showInsurancePage && <Page size="LETTER" style={styles.page}><PDFInsurance /><PDFFooter page={4} total={4} /></Page>}
+      {data.showInsurancePage && <Page size="LETTER" style={styles.page}><PDFInsurance business={business} /><PDFFooter page={4} total={4} business={business} /></Page>}
     </Document>
   )
 }
 
 // ─── CABINET PDF ─────────────────────────────────────────────────────────────
 
-function CabinetPDF({ data }: { data: any }) {
+function CabinetPDF({ data, business }: { data: any; business: BusinessInfo }) {
   const tierNames: Record<string, string> = { signature: 'Signature: Emerald® Urethane', elite: 'Elite: Gallery Series™' }
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
-        <PDFHeader projectName={data.projectName} proposalType="CABINET REFINISHING & RESTORATION PROPOSAL" issueDate={data.issueDate} validUntil={data.validUntil} />
-        <PDFBusinessContact />
-        <PDFFooter page={1} total={data.showInsurancePage ? 4 : 3} />
+        <PDFHeader projectName={data.projectName} proposalType="CABINET REFINISHING & RESTORATION PROPOSAL" issueDate={data.issueDate} validUntil={data.validUntil} business={business} />
+        <PDFBusinessContact business={business} />
+        <PDFFooter page={1} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       <Page size="LETTER" style={styles.page}>
         <PDFClientSummary clientName={data.clientName} clientContact={data.clientContact} clientAddress={data.clientAddress} projectScope="Factory-Grade Cabinet Refinishing" total={data.totalInvestment} />
-        <Text style={styles.sectionHeader}>Section III — The SkyGlobal 10-Phase Refinishing Process</Text>
+        <Text style={styles.sectionHeader}>Section III — 10-Phase Refinishing Process</Text>
         {[
           { step: 'Phase 1: Teardown & Precision Labeling', bullets: ['Careful removal of all doors and drawer fronts.', 'Proprietary labeling system for exact reinstallation.'] },
           { step: 'Phase 2: Protection & Surface Prep', bullets: ['Chemical Degreasing to strip cooking oils and contaminants.', 'EKASANDER Dustless Orbital System sanding.'] },
@@ -336,73 +338,74 @@ function CabinetPDF({ data }: { data: any }) {
             {bullets.map((b, j) => <Text key={j} style={styles.bullet}>• {b}</Text>)}
           </View>
         ))}
-        <PDFFooter page={2} total={data.showInsurancePage ? 4 : 3} />
+        <PDFFooter page={2} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       <Page size="LETTER" style={styles.page}>
         <Text style={styles.sectionHeader}>Section IV — Coating Specifications</Text>
         <Text style={{ fontSize: 9, marginBottom: 8 }}><Text style={{ fontFamily: 'Helvetica-Bold' }}>Selected Coating: </Text>{tierNames[data.coatingTier] || data.coatingTier}</Text>
         <PDFLineItems items={data.lineItems} />
         <Text style={styles.sectionHeader}>Section V — Investment & Payment Schedule</Text>
-        <PDFPaymentSchedule total={data.totalInvestment} depositPct={data.depositPct} progressPct={data.progressPct} finalPct={data.finalPct} />
+        <PDFPaymentSchedule total={data.totalInvestment} depositPct={data.depositPct} progressPct={data.progressPct} finalPct={data.finalPct} business={business} />
         <Text style={styles.sectionHeader}>Section VI — Warranty & Provisions</Text>
         {PDFWarranty([
           ['White Glove Cleanup', '30–45 minutes of dedicated cleanup daily.'],
           ['5-Year Workmanship Warranty', 'All workmanship defects remediated at no cost within 5 years.'],
-          ['Insurance Coverage', '$2,000,000 General Liability. Policy No. CEG-00312198-00.'],
+          ['Insurance Coverage', 'General Liability insurance. Certificate available upon request.'],
           ['Coating Cure Maintenance', 'No abrasive cleaners for 30 days while coating cures.'],
         ])}
         <PDFSignature />
-        <PDFFooter page={3} total={data.showInsurancePage ? 4 : 3} />
+        <PDFFooter page={3} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
-      {data.showInsurancePage && <Page size="LETTER" style={styles.page}><PDFInsurance /><PDFFooter page={4} total={4} /></Page>}
+      {data.showInsurancePage && <Page size="LETTER" style={styles.page}><PDFInsurance business={business} /><PDFFooter page={4} total={4} business={business} /></Page>}
     </Document>
   )
 }
 
 // ─── CUSTOM PDF ──────────────────────────────────────────────────────────────
 
-function CustomPDF({ data }: { data: any }) {
+function CustomPDF({ data, business }: { data: any; business: BusinessInfo }) {
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
-        <PDFHeader projectName={data.projectName} proposalType="PROFESSIONAL SERVICE PROPOSAL" issueDate={data.issueDate} validUntil={data.validUntil} />
-        <PDFBusinessContact />
-        <PDFFooter page={1} total={data.showInsurancePage ? 4 : 3} />
+        <PDFHeader projectName={data.projectName} proposalType="PROFESSIONAL SERVICE PROPOSAL" issueDate={data.issueDate} validUntil={data.validUntil} business={business} />
+        <PDFBusinessContact business={business} />
+        <PDFFooter page={1} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       <Page size="LETTER" style={styles.page}>
         <PDFClientSummary clientName={data.clientName} clientContact={data.clientContact} clientAddress={data.clientAddress} projectScope={data.projectScope} total={data.totalInvestment} />
         <Text style={styles.sectionHeader}>Section III — Scope of Work</Text>
         <Text style={{ fontSize: 9, lineHeight: 1.6 }}>{data.scopeOfWork || '—'}</Text>
-        <PDFFooter page={2} total={data.showInsurancePage ? 4 : 3} />
+        <PDFFooter page={2} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
       <Page size="LETTER" style={styles.page}>
         <Text style={styles.sectionHeader}>Section IV — Materials & Specifications</Text>
         <PDFLineItems items={data.lineItems} />
         <Text style={styles.sectionHeader}>Section V — Investment & Payment Schedule</Text>
-        <PDFPaymentSchedule total={data.totalInvestment} depositPct={data.depositPct} progressPct={data.progressPct} finalPct={data.finalPct} />
+        <PDFPaymentSchedule total={data.totalInvestment} depositPct={data.depositPct} progressPct={data.progressPct} finalPct={data.finalPct} business={business} />
         <Text style={styles.sectionHeader}>Section VI — Warranty & Provisions</Text>
         {PDFWarranty([
           ['White Glove Cleanup', '30–45 minutes of dedicated cleanup at end of each work day.'],
           ['5-Year Workmanship Warranty', 'All workmanship defects remediated at no cost within 5 years.'],
-          ['Insurance Coverage', '$2,000,000 General Liability. Policy No. CEG-00312198-00.'],
+          ['Insurance Coverage', 'General Liability insurance. Certificate available upon request.'],
         ])}
         <PDFSignature />
-        <PDFFooter page={3} total={data.showInsurancePage ? 4 : 3} />
+        <PDFFooter page={3} total={data.showInsurancePage ? 4 : 3} business={business} />
       </Page>
-      {data.showInsurancePage && <Page size="LETTER" style={styles.page}><PDFInsurance /><PDFFooter page={4} total={4} /></Page>}
+      {data.showInsurancePage && <Page size="LETTER" style={styles.page}><PDFInsurance business={business} /><PDFFooter page={4} total={4} business={business} /></Page>}
     </Document>
   )
 }
 
 // ─── EXPORT ──────────────────────────────────────────────────────────────────
 
-export async function downloadProposalPDF(template: ProposalTemplate, data: any, fileName: string) {
+export async function downloadProposalPDF(template: ProposalTemplate, data: any, fileName: string, businessInfo?: BusinessInfo) {
+  const business: BusinessInfo = businessInfo ?? { name: 'Business' }
   let doc: React.ReactElement
   switch (template) {
-    case 'interior': doc = <InteriorPDF data={data} />; break
-    case 'exterior': doc = <ExteriorPDF data={data} />; break
-    case 'cabinet': doc = <CabinetPDF data={data} />; break
-    default: doc = <CustomPDF data={data} />
+    case 'interior': doc = <InteriorPDF data={data} business={business} />; break
+    case 'exterior': doc = <ExteriorPDF data={data} business={business} />; break
+    case 'cabinet': doc = <CabinetPDF data={data} business={business} />; break
+    default: doc = <CustomPDF data={data} business={business} />
   }
   const blob = await pdf(doc).toBlob()
   const url = URL.createObjectURL(blob)

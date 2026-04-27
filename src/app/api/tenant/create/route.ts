@@ -55,6 +55,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: memberError.message }, { status: 500 })
     }
 
+    // Notify master admin — fire-and-forget, non-critical
+    try {
+      const { data: adminRow } = await db.from('master_admins').select('user_id').single()
+      if (adminRow) {
+        const { data: adminTenantUser } = await db
+          .from('tenant_users')
+          .select('tenant_id')
+          .eq('user_id', adminRow.user_id)
+          .single()
+
+        if (adminTenantUser) {
+          await db.from('notifications').insert({
+            tenant_id: adminTenantUser.tenant_id,
+            user_id: adminRow.user_id,
+            title: 'New Business Signed Up',
+            body: `${business_name} just created an account.`,
+            type: 'info',
+          })
+        }
+      }
+    } catch {}
+
+    // Send admin email — fire-and-forget
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+    if (appUrl) {
+      fetch(`${appUrl}/api/emails/admin-new-tenant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ business_name, business_email, tenant_id: tenant.id }),
+      }).catch(() => {})
+    }
+
     return NextResponse.json({ tenant_id: tenant.id }, { status: 201 })
   } catch (err: any) {
     return NextResponse.json({ error: err.message ?? 'Internal error' }, { status: 500 })

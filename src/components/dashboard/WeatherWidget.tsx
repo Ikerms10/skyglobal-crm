@@ -30,6 +30,7 @@ function getWeatherInfo(code: number) {
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const CACHE_KEY = 'sg_weather_cache'
+const CITY_CACHE_KEY = 'sg_user_city'
 const CACHE_TTL = 30 * 60 * 1000 // 30 min
 
 interface WeatherData {
@@ -37,6 +38,7 @@ interface WeatherData {
   weatherCode: number
   windSpeed: number
   rainChance: number
+  city: string
   forecast: Array<{
     day: string
     code: number
@@ -44,6 +46,35 @@ interface WeatherData {
     low: number
     rain: number
   }>
+}
+
+async function getUserLocation(): Promise<{ lat: number; lon: number } | null> {
+  return new Promise(resolve => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      resolve(null)
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      () => resolve(null),
+      { timeout: 8000 }
+    )
+  })
+}
+
+async function reverseGeocode(lat: number, lon: number): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+      { headers: { 'User-Agent': 'SkyGlobalCRM/1.0' } }
+    )
+    const json = await res.json()
+    const city = json.address?.city || json.address?.town || json.address?.village || json.address?.county || ''
+    const state = json.address?.state_code || json.address?.state || ''
+    return [city, state].filter(Boolean).join(', ')
+  } catch {
+    return ''
+  }
 }
 
 export function WeatherWidget() {
@@ -65,23 +96,36 @@ export function WeatherWidget() {
       } catch {}
 
       try {
-        const res = await fetch(
-          'https://api.open-meteo.com/v1/forecast?' +
-          'latitude=28.5383&longitude=-81.3792' +
-          '&current=temperature_2m,weather_code,wind_speed_10m,precipitation_probability' +
-          '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
-          '&temperature_unit=fahrenheit&wind_speed_unit=mph' +
-          '&timezone=America%2FNew_York&forecast_days=4'
-        )
-        if (!res.ok) throw new Error('fetch failed')
-        const json = await res.json()
+        // Get user's real location; fall back to nothing (city label will be blank)
+        const location = await getUserLocation()
+        const lat = location?.lat ?? 28.5383
+        const lon = location?.lon ?? -81.3792
+
+        const [cityLabel, weatherRes] = await Promise.all([
+          location ? reverseGeocode(lat, lon) : Promise.resolve(''),
+          fetch(
+            'https://api.open-meteo.com/v1/forecast?' +
+            `latitude=${lat}&longitude=${lon}` +
+            '&current=temperature_2m,weather_code,wind_speed_10m,precipitation_probability' +
+            '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+            '&temperature_unit=fahrenheit&wind_speed_unit=mph' +
+            '&timezone=auto&forecast_days=4'
+          ),
+        ])
+
+        if (!weatherRes.ok) throw new Error('fetch failed')
+        const json = await weatherRes.json()
         const { current, daily } = json
+
+        // Cache city for dashboard greeting
+        if (cityLabel) localStorage.setItem(CITY_CACHE_KEY, cityLabel)
 
         const data: WeatherData = {
           temp: Math.round(current.temperature_2m),
           weatherCode: current.weather_code,
           windSpeed: Math.round(current.wind_speed_10m),
           rainChance: current.precipitation_probability ?? 0,
+          city: cityLabel,
           forecast: daily.time.slice(1, 4).map((date: string, i: number) => ({
             day: DAYS[new Date(date + 'T12:00:00').getDay()],
             code: daily.weather_code[i + 1],
@@ -110,7 +154,7 @@ export function WeatherWidget() {
       }}>
         <span style={{ fontSize: 32 }}>🌤️</span>
         <div>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>Orlando, FL</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>Weather</p>
           <p style={{ fontSize: 12, color: 'var(--c-text-4)', margin: 0 }}>
             {error ? 'Weather unavailable' : 'Loading…'}
           </p>
@@ -121,6 +165,7 @@ export function WeatherWidget() {
 
   const { emoji, label } = getWeatherInfo(weather.weatherCode)
   const rain = weather.rainChance
+  const cityDisplay = weather.city || 'Your Location'
 
   const alertStyle: React.CSSProperties | null =
     rain > 80
@@ -157,7 +202,7 @@ export function WeatherWidget() {
             </span>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>Orlando, FL</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-1)', margin: 0 }}>{cityDisplay}</p>
             <p style={{ fontSize: 11, color: 'var(--c-text-4)', margin: 0 }}>for painting crews</p>
           </div>
         </div>

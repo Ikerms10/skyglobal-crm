@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { Resend } from 'resend'
 import { z } from 'zod'
+import { rateLimit, getClientIp } from '@/lib/ratelimit'
 
 const bodySchema = z.object({
   business_name: z.string().min(1),
@@ -12,7 +14,20 @@ const bodySchema = z.object({
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crm.skyglobalsvcs.com'
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req)
+  if (!rateLimit(`admin-create:${ip}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   try {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const db = createServiceClient()
+    const { data: adminRow } = await db.from('master_admins').select('user_id').eq('user_id', user.id).single()
+    if (!adminRow) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
     const body = await req.json()
     const parsed = bodySchema.safeParse(body)
     if (!parsed.success) {
@@ -20,7 +35,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { business_name, email, password } = parsed.data
-    const db = createServiceClient()
 
     // 1. Create auth user with confirmed email (service role skips confirmation flow)
     const { data: authData, error: authError } = await db.auth.admin.createUser({

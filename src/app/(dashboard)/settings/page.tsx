@@ -724,15 +724,15 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Thumbtack webhook */}
+        {/* Thumbtack / lead webhook */}
         <div style={{ background: 'var(--c-nested)', border: '1px solid var(--c-border)', borderRadius: 12, padding: '16px 20px' }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-2)', marginBottom: 10 }}>Thumbtack Webhook URL</p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-text-2)', marginBottom: 10 }}>Lead Webhook URL (Thumbtack / Zapier)</p>
           <div style={{
             background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 8,
             padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', color: '#3583b3', wordBreak: 'break-all',
           }}>
-            {typeof window !== 'undefined' ? window.location.origin : 'https://crm.skyglobalsvcs.com'}
-            /api/webhooks/thumbtack
+            {(typeof window !== 'undefined' ? window.location.origin : 'https://crm.skyglobalsvcs.com')}
+            {tenantId ? `/api/webhooks/leads/${tenantId}` : '/api/webhooks/leads/<your-tenant-id>'}
           </div>
           <p style={{ fontSize: 12, color: 'var(--c-text-4)', marginTop: 8 }}>
             Set header: <code style={{ fontFamily: 'monospace', color: 'var(--c-gold)' }}>x-webhook-secret: {'<THUMBTACK_WEBHOOK_SECRET>'}</code>
