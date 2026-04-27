@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart2, Receipt, Settings, LogOut, X, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart2, Receipt, Settings, LogOut, X, ClipboardList, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -16,10 +16,11 @@ const primaryNavDefs = [
 ] as const
 
 const moreNavDefs = [
-  { href: '/invoices', key: 'nav.invoices', icon: ClipboardList },
-  { href: '/expenses', key: 'nav.expenses', icon: Receipt },
-  { href: '/reports',  key: 'nav.reports',  icon: BarChart2 },
-  { href: '/settings', key: 'nav.settings', icon: Settings },
+  { href: '/proposals', key: 'nav.proposals', icon: FileText },
+  { href: '/invoices',  key: 'nav.invoices',  icon: ClipboardList },
+  { href: '/expenses',  key: 'nav.expenses',  icon: Receipt },
+  { href: '/reports',   key: 'nav.reports',   icon: BarChart2 },
+  { href: '/settings',  key: 'nav.settings',  icon: Settings },
 ] as const
 
 export function MobileNav() {
@@ -31,7 +32,7 @@ export function MobileNav() {
   const primaryItems = primaryNavDefs.map(d => ({ ...d, label: t(d.key) }))
   const moreItems = moreNavDefs.map(d => ({ ...d, label: t(d.key) }))
 
-  const isMoreActive = ['/expenses', '/reports', '/settings'].some(p => pathname.startsWith(p))
+  const isMoreActive = ['/proposals', '/invoices', '/expenses', '/reports', '/settings'].some(p => pathname.startsWith(p))
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -137,9 +138,9 @@ export function MobileNav() {
                     onClick={() => setMoreOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
                     style={{
-                      background: isActive ? 'var(--sg-sky-dim)' : 'transparent',
-                      color: isActive ? 'var(--sg-sky)' : 'var(--sg-text-1)',
-                      border: isActive ? '1px solid var(--sg-border-bright)' : '1px solid transparent',
+                      background: isActive ? 'var(--c-sidebar-active)' : 'transparent',
+                      color: isActive ? 'var(--c-sage)' : 'var(--c-text-1)',
+                      border: isActive ? '1px solid var(--c-border-mid)' : '1px solid transparent',
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
                     aria-current={isActive ? 'page' : undefined}
@@ -153,7 +154,7 @@ export function MobileNav() {
                 onClick={handleSignOut}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
                 style={{
-                  color: 'var(--sg-danger)',
+                  color: 'var(--c-danger)',
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                   background: 'transparent',
                   border: 'none',

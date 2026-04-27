@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/Input'
 import {
   User, Languages, Building2, Calendar, Database,
   ExternalLink, Check, Sun, Moon, Monitor, Palette,
-  Bell, Shield, TrendingUp, ChevronRight,
+  Bell, Shield, TrendingUp, ChevronRight, Upload, Loader2,
 } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useTenant } from '@/contexts/TenantContext'
 
 // ─── Sidebar nav ─────────────────────────────────────────────────────────────
 
@@ -137,6 +138,7 @@ export default function SettingsPage() {
   const supabase = createClient()
   const { preference, setTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
+  const { tenant, tenantId, updateTenant } = useTenant()
   const [langSwitching, setLangSwitching] = useState(false)
 
   const [activeSection, setActiveSection] = useState<Section>('profile')
@@ -158,6 +160,9 @@ export default function SettingsPage() {
   const [businessEmail, setBusinessEmail] = useState('')
   const [businessAddress, setBusinessAddress] = useState('')
   const [businessLoading, setBusinessLoading] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
 
   // Notifications
   const [notifyWeeklyReport, setNotifyWeeklyReport] = useState(true)
@@ -261,11 +266,35 @@ export default function SettingsPage() {
     }
   }
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  const uploadLogo = async (): Promise<{ url: string; path: string } | null> => {
+    if (!logoFile || !tenantId) return null
+    setLogoUploading(true)
+    try {
+      const ext = logoFile.name.split('.').pop()
+      const path = `${tenantId}/logo.${ext}`
+      const { error } = await supabase.storage.from('business-logos').upload(path, logoFile, { upsert: true })
+      if (error) throw error
+      const { data: urlData } = supabase.storage.from('business-logos').getPublicUrl(path)
+      return { url: urlData.publicUrl, path }
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
   const saveBusiness = async () => {
     setBusinessLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
+
+      // Save to business_settings kv table (used by reports/proposals)
       const { error } = await supabase.from('business_settings').upsert([
         { user_id: user.id, key: 'business_name',    value: businessName },
         { user_id: user.id, key: 'business_phone',   value: businessPhone },
@@ -273,6 +302,29 @@ export default function SettingsPage() {
         { user_id: user.id, key: 'business_address', value: businessAddress },
       ], { onConflict: 'user_id,key' })
       if (error) throw new Error(error.message)
+
+      // Upload logo if a new one was selected
+      let logoUpdate: Record<string, string> = {}
+      if (logoFile) {
+        const uploaded = await uploadLogo()
+        if (uploaded) {
+          logoUpdate = { business_logo_url: uploaded.url, business_logo_path: uploaded.path }
+          setLogoFile(null)
+        }
+      }
+
+      // Also sync to tenants table so sidebar/header shows current name/logo
+      if (tenantId) {
+        await supabase.from('tenants').update({
+          business_name: businessName,
+          business_email: businessEmail || null,
+          business_phone: businessPhone || null,
+          business_address: businessAddress || null,
+          ...logoUpdate,
+        }).eq('id', tenantId)
+        updateTenant({ business_name: businessName, business_email: businessEmail || null, business_phone: businessPhone || null, business_address: businessAddress || null, ...logoUpdate })
+      }
+
       toast.success('Business info saved')
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to save')
@@ -517,7 +569,39 @@ export default function SettingsPage() {
 
     business: (
       <>
-        <SectionHead title="Business Info" description="This information is used on proposals and invoices." />
+        <SectionHead title="Business Info" description="This information is used on proposals, invoices, and the sidebar." />
+
+        {/* Logo upload */}
+        <FieldRow label="Business Logo">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 64, height: 64, borderRadius: 10, background: '#fff', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+              {(logoPreview || tenant?.business_logo_url) ? (
+                <img src={logoPreview ?? tenant?.business_logo_url ?? ''} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
+                <Building2 size={28} style={{ color: 'var(--c-text-4)' }} />
+              )}
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--c-border)', cursor: 'pointer', background: 'var(--c-nested)', transition: 'border-color 150ms' }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--c-gold-border)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--c-border)')}
+            >
+              {logoUploading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Upload size={14} style={{ color: 'var(--c-text-4)' }} />}
+              <span style={{ fontSize: 13, color: 'var(--c-text-3)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                {logoFile ? logoFile.name : 'Upload logo'}
+              </span>
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
+            </label>
+            {logoFile && (
+              <button onClick={() => { setLogoFile(null); setLogoPreview(null) }} style={{ fontSize: 11, color: 'var(--c-danger)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'DM Mono', monospace" }}>
+                Remove
+              </button>
+            )}
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--c-text-4)', marginTop: 6, fontFamily: "'DM Mono', monospace" }}>
+            PNG, JPG, or SVG — appears in the sidebar, proposals, and invoices.
+          </p>
+        </FieldRow>
+
         <FieldRow label="Business Name">
           <input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="SkyGlobal Renovations LLC" style={inputStyle}
             onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
@@ -538,7 +622,7 @@ export default function SettingsPage() {
             onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-gold)' }}
             onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }} />
         </FieldRow>
-        <Button onClick={saveBusiness} loading={businessLoading}>Save Business Info</Button>
+        <Button onClick={saveBusiness} loading={businessLoading || logoUploading}>Save Business Info</Button>
       </>
     ),
 

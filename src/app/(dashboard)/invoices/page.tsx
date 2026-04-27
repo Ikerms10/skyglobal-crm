@@ -142,25 +142,26 @@ export default function InvoicesPage() {
       </div>
 
       {/* Totals bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <div className="grid grid-cols-3 gap-3">
         {[
           { label: t('invoices.totalOutstanding'), value: outstanding, icon: DollarSign, color: 'var(--c-gold)' },
           { label: t('invoices.totalOverdue'), value: overdue, icon: AlertTriangle, color: overdue > 0 ? 'var(--c-danger)' : 'var(--c-text-3)' },
           { label: t('invoices.paidThisMonth'), value: paidThisMonth, icon: CheckCircle2, color: 'var(--c-sage)' },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--c-nested)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Icon size={18} style={{ color }} />
+          <div key={label} style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }} className="p-3 md:p-5">
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--c-nested)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} className="hidden sm:flex">
+              <Icon size={16} style={{ color }} />
             </div>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace", marginTop: 1 }} className={label === 'Outstanding' && value > 0 ? 'value-shimmer' : ''}>{formatCurrency(value)}</div>
+            <div className="min-w-0">
+              <div style={{ fontSize: 10, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.08em', textTransform: 'uppercase' }} className="truncate">{label}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color, fontFamily: "'DM Mono', monospace", marginTop: 1 }} className="md:text-xl">{formatCurrency(value)}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Filter tabs */}
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any, scrollbarWidth: 'none' as any }}>
       <div style={{ display: 'flex', gap: 2, padding: 3, background: 'var(--c-nested)', borderRadius: 10, border: '1px solid var(--c-border)', width: 'fit-content', position: 'relative' }}>
         {FILTER_VALUES.map(val => (
           <button
@@ -193,102 +194,173 @@ export default function InvoicesPage() {
           </button>
         ))}
       </div>
+      </div>
 
-      {/* Table */}
-      <div style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 12, overflow: 'hidden' }}>
-        {isLoading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
-            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--c-gold)' }} />
+      {isLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
+          <Loader2 size={24} className="animate-spin" style={{ color: 'var(--c-gold)' }} />
+        </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title={t('invoices.noInvoices')}
+          description={filter === 'all' ? t('invoices.noInvoicesDesc') : t('invoices.noInvoicesDesc')}
+          action={filter === 'all' ? { label: `+ ${t('invoices.new')}`, onClick: () => setCreateOpen(true) } : undefined}
+        />
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className="hidden sm:block" style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 12, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--c-elevated)', borderBottom: '1px solid var(--c-border-mid)' }}>
+                  {[t('invoices.colNumber'), t('invoices.colClient'), t('invoices.colProject'), t('invoices.colAmount'), t('invoices.dueDate'), t('form.status'), ''].map(h => (
+                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'var(--c-text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'DM Mono', monospace" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((inv, idx) => {
+                  const isOverdue = inv.status === 'sent' && inv.due_date && inv.due_date < today
+                  const effectiveStatus: InvoiceStatus = isOverdue ? 'overdue' : inv.status
+                  const st = STATUS_STYLE[effectiveStatus]
+                  const daysOverdue = isOverdue && inv.due_date
+                    ? differenceInDays(new Date(), parseISO(inv.due_date))
+                    : null
+
+                  return (
+                    <tr
+                      key={inv.id}
+                      style={{ borderBottom: idx < filtered.length - 1 ? '1px solid var(--c-border)' : 'none', cursor: 'pointer' }}
+                      className="hover:bg-[var(--c-elevated)] transition-colors group"
+                      onClick={() => inv.status !== 'paid' && setMarkPaidInvoice(inv)}
+                    >
+                      <td style={{ padding: '12px 16px', fontFamily: "'DM Mono', monospace", fontWeight: 700, color: 'var(--c-gold)', fontSize: 13 }}>
+                        {inv.invoice_number}
+                      </td>
+                      <td style={{ padding: '12px 16px', color: 'var(--c-text-1)', fontWeight: 500 }}>
+                        {inv.customer?.name ?? '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', color: 'var(--c-text-2)', fontSize: 13 }}>
+                        {inv.project?.title ?? '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontFamily: "'DM Mono', monospace", fontWeight: 600, color: 'var(--c-text-1)' }}>
+                        {formatCurrency(inv.total)}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, fontFamily: "'DM Mono', monospace", color: 'var(--c-text-2)' }}>
+                        {inv.due_date ? formatDate(inv.due_date) : '—'}
+                        {daysOverdue !== null && (
+                          <div style={{ fontSize: 10, color: 'var(--c-danger)', fontWeight: 600 }}>{daysOverdue}d {t('invoices.daysOverdue')}</div>
+                        )}
+                        {inv.status === 'paid' && inv.paid_at && (
+                          <div style={{ fontSize: 10, color: 'var(--c-sage)', fontWeight: 600 }}>Paid {formatDate(inv.paid_at)}</div>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ background: st.bg, color: st.text, borderRadius: 20, fontSize: 11, fontWeight: 700, padding: '3px 10px', fontFamily: "'DM Mono', monospace" }}>
+                          {st.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {inv.status !== 'paid' && (
+                            <button
+                              onClick={() => setMarkPaidInvoice(inv)}
+                              style={{ fontSize: 11, color: 'var(--c-sage)', background: 'rgba(122,158,126,0.10)', border: '1px solid rgba(122,158,126,0.25)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, fontFamily: "'DM Mono', monospace", whiteSpace: 'nowrap' }}
+                            >
+                              {t('invoices.markPaid')}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => downloadInvoicePDF(inv)}
+                            style={{ fontSize: 11, color: 'var(--c-text-3)', background: 'none', border: '1px solid var(--c-border)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: "'DM Mono', monospace" }}
+                          >
+                            PDF
+                          </button>
+                          <button
+                            onClick={() => handleDelete(inv.id)}
+                            style={{ fontSize: 11, color: 'var(--c-danger)', background: 'none', border: '1px solid transparent', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontFamily: "'DM Mono', monospace" }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={FileText}
-            title={t('invoices.noInvoices')}
-            description={filter === 'all' ? t('invoices.noInvoicesDesc') : t('invoices.noInvoicesDesc')}
-            action={filter === 'all' ? { label: `+ ${t('invoices.new')}`, onClick: () => setCreateOpen(true) } : undefined}
-          />
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: 'var(--c-elevated)', borderBottom: '1px solid var(--c-border-mid)' }}>
-                {[t('invoices.colNumber'), t('invoices.colClient'), t('invoices.colProject'), t('invoices.colAmount'), t('invoices.dueDate'), t('form.status'), ''].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'var(--c-text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'DM Mono', monospace" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((inv, idx) => {
-                const isOverdue = inv.status === 'sent' && inv.due_date && inv.due_date < today
-                const effectiveStatus: InvoiceStatus = isOverdue ? 'overdue' : inv.status
-                const st = STATUS_STYLE[effectiveStatus]
-                const daysOverdue = isOverdue && inv.due_date
-                  ? differenceInDays(new Date(), parseISO(inv.due_date))
-                  : null
 
-                return (
-                  <tr
-                    key={inv.id}
-                    style={{ borderBottom: idx < filtered.length - 1 ? '1px solid var(--c-border)' : 'none', cursor: 'pointer' }}
-                    className="hover:bg-[var(--c-elevated)] transition-colors group"
-                    onClick={() => inv.status !== 'paid' && setMarkPaidInvoice(inv)}
-                  >
-                    <td style={{ padding: '12px 16px', fontFamily: "'DM Mono', monospace", fontWeight: 700, color: 'var(--c-gold)', fontSize: 13 }}>
+          {/* Mobile cards */}
+          <div className="sm:hidden flex flex-col gap-3">
+            {filtered.map(inv => {
+              const isOverdue = inv.status === 'sent' && inv.due_date && inv.due_date < today
+              const effectiveStatus: InvoiceStatus = isOverdue ? 'overdue' : inv.status
+              const st = STATUS_STYLE[effectiveStatus]
+              const daysOverdue = isOverdue && inv.due_date
+                ? differenceInDays(new Date(), parseISO(inv.due_date))
+                : null
+
+              return (
+                <div
+                  key={inv.id}
+                  style={{ background: 'var(--c-card)', border: '1px solid var(--c-border)', borderRadius: 14, padding: '14px 16px' }}
+                  className="flex flex-col gap-2 active:opacity-80 cursor-pointer"
+                  onClick={() => inv.status !== 'paid' && setMarkPaidInvoice(inv)}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: 'var(--c-gold)', fontSize: 13 }}>
                       {inv.invoice_number}
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--c-text-1)', fontWeight: 500 }}>
-                      {inv.customer?.name ?? '—'}
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--c-text-2)', fontSize: 13 }}>
-                      {inv.project?.title ?? '—'}
-                    </td>
-                    <td style={{ padding: '12px 16px', fontFamily: "'DM Mono', monospace", fontWeight: 600, color: 'var(--c-text-1)' }}>
-                      {formatCurrency(inv.total)}
-                    </td>
-                    <td style={{ padding: '12px 16px', fontSize: 12, fontFamily: "'DM Mono', monospace", color: 'var(--c-text-2)' }}>
-                      {inv.due_date ? formatDate(inv.due_date) : '—'}
+                    </span>
+                    <span style={{ background: st.bg, color: st.text, borderRadius: 20, fontSize: 11, fontWeight: 700, padding: '3px 10px', fontFamily: "'DM Mono', monospace" }}>
+                      {st.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span style={{ fontWeight: 600, color: 'var(--c-text-1)', fontSize: 14 }}>{inv.customer?.name ?? '—'}</span>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: 'var(--c-text-1)', fontSize: 16 }}>{formatCurrency(inv.total)}</span>
+                  </div>
+                  {inv.project?.title && (
+                    <span style={{ fontSize: 12, color: 'var(--c-text-3)' }}>{inv.project.title}</span>
+                  )}
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <div>
+                      {inv.due_date && (
+                        <span style={{ fontSize: 11, fontFamily: "'DM Mono', monospace", color: 'var(--c-text-4)' }}>
+                          Due {formatDate(inv.due_date)}
+                        </span>
+                      )}
                       {daysOverdue !== null && (
-                        <div style={{ fontSize: 10, color: 'var(--c-danger)', fontWeight: 600 }}>{daysOverdue}d {t('invoices.daysOverdue')}</div>
+                        <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--c-danger)', fontWeight: 600 }}>{daysOverdue}d overdue</span>
                       )}
                       {inv.status === 'paid' && inv.paid_at && (
-                        <div style={{ fontSize: 10, color: 'var(--c-sage)', fontWeight: 600 }}>Paid {formatDate(inv.paid_at)}</div>
+                        <span style={{ fontSize: 11, color: 'var(--c-sage)', fontWeight: 600 }}>Paid {formatDate(inv.paid_at)}</span>
                       )}
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ background: st.bg, color: st.text, borderRadius: 20, fontSize: 11, fontWeight: 700, padding: '3px 10px', fontFamily: "'DM Mono', monospace" }}>
-                        {st.label}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        {inv.status !== 'paid' && (
-                          <button
-                            onClick={() => setMarkPaidInvoice(inv)}
-                            style={{ fontSize: 11, color: 'var(--c-sage)', background: 'rgba(122,158,126,0.10)', border: '1px solid rgba(122,158,126,0.25)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, fontFamily: "'DM Mono', monospace", whiteSpace: 'nowrap' }}
-                          >
-                            {t('invoices.markPaid')}
-                          </button>
-                        )}
+                    </div>
+                    <div className="flex gap-2">
+                      {inv.status !== 'paid' && (
                         <button
-                          onClick={() => downloadInvoicePDF(inv)}
-                          style={{ fontSize: 11, color: 'var(--c-text-3)', background: 'none', border: '1px solid var(--c-border)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: "'DM Mono', monospace" }}
+                          onClick={e => { e.stopPropagation(); setMarkPaidInvoice(inv) }}
+                          style={{ fontSize: 12, color: 'var(--c-sage)', background: 'rgba(122,158,126,0.10)', border: '1px solid rgba(122,158,126,0.25)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontWeight: 600, minHeight: 36 }}
                         >
-                          PDF
+                          {t('invoices.markPaid')}
                         </button>
-                        <button
-                          onClick={() => handleDelete(inv.id)}
-                          style={{ fontSize: 11, color: 'var(--c-danger)', background: 'none', border: '1px solid transparent', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontFamily: "'DM Mono', monospace" }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                      )}
+                      <button
+                        onClick={e => { e.stopPropagation(); downloadInvoicePDF(inv) }}
+                        style={{ fontSize: 12, color: 'var(--c-text-3)', background: 'none', border: '1px solid var(--c-border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', minHeight: 36 }}
+                      >
+                        PDF
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }

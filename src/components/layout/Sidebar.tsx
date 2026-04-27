@@ -18,11 +18,13 @@ import {
   Sun,
   Moon,
   ClipboardList,
+  ShieldCheck,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTenant } from '@/contexts/TenantContext';
 
 const mainNavDefs = [
   { href: '/dashboard', key: 'nav.dashboard', icon: LayoutDashboard },
@@ -166,6 +168,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const { tenant, isMasterAdmin } = useTenant();
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -208,7 +211,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* SkyGlobal logo */}
+          {/* Business logo */}
           <div
             style={{
               width: 36,
@@ -223,15 +226,25 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
               overflow: 'hidden',
             }}
           >
-            <img
-              src="/skyglobal-logo.svg"
-              width="30"
-              height="30"
-              alt="SkyGlobal"
-              style={{ objectFit: 'contain' }}
-            />
+            {tenant?.business_logo_url ? (
+              <img
+                src={tenant.business_logo_url}
+                width="30"
+                height="30"
+                alt={tenant.business_name}
+                style={{ objectFit: 'contain' }}
+              />
+            ) : (
+              <img
+                src="/skyglobal-logo.svg"
+                width="30"
+                height="30"
+                alt="Logo"
+                style={{ objectFit: 'contain' }}
+              />
+            )}
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <p
               style={{
                 fontSize: 15,
@@ -241,9 +254,12 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 letterSpacing: '-0.03em',
                 margin: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
-              SkyGlobal
+              {tenant?.business_name ?? 'SkyGlobal'}
             </p>
             <p
               style={{
@@ -267,6 +283,31 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
         <NavSection label={t('leads.main')} items={mainNav} pathname={pathname} />
         <NavSection label={t('leads.business')} items={businessNav} pathname={pathname} />
         <NavSection label={t('leads.account')} items={accountNav} pathname={pathname} />
+        {isMasterAdmin && (
+          <div style={{ padding: '8px 8px 0' }}>
+            <Link
+              href="/admin"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '7px 12px',
+                borderRadius: 7,
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--c-gold)',
+                background: 'color-mix(in srgb, var(--c-gold) 10%, transparent)',
+                border: '1px solid var(--c-gold-border)',
+                textDecoration: 'none',
+                fontFamily: "'DM Mono', monospace",
+                letterSpacing: '0.02em',
+              }}
+            >
+              <ShieldCheck size={13} />
+              Admin Panel
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* Footer */}

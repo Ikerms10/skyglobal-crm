@@ -6,6 +6,9 @@ import { NotificationBell } from '@/components/layout/NotificationBell'
 import { GlobalSearch } from '@/components/layout/GlobalSearch'
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton'
 import { RealtimeSync } from '@/components/layout/RealtimeSync'
+import { TenantProvider } from '@/contexts/TenantContext'
+import { MobileBusinessName } from '@/components/layout/MobileBusinessName'
+import { ImpersonationBanner } from '@/components/layout/ImpersonationBanner'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -13,6 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/login')
 
   return (
+    <TenantProvider>
     <div
       className="flex overflow-hidden"
       style={{ height: '100dvh', background: 'var(--c-canvas)', position: 'relative' }}
@@ -24,6 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0" style={{ position: 'relative', zIndex: 10 }}>
+        <ImpersonationBanner />
         {/* Top header */}
         <header
           style={{
@@ -44,17 +49,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           }}
         >
           <div className="md:hidden">
-            <span
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 700,
-                fontSize: 17,
-                color: 'var(--c-text-1)',
-                letterSpacing: '-0.03em',
-              }}
-            >
-              SkyGlobal
-            </span>
+            <MobileBusinessName />
           </div>
           <div className="flex-1">
             <GlobalSearch />
@@ -83,7 +78,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main
+          className="flex-1 overflow-y-auto md:pb-0"
+          style={{
+            paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+          }}
+        >
           <RealtimeSync />
           {children}
         </main>
@@ -97,5 +97,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Floating action button */}
       <FloatingActionButton />
     </div>
+    </TenantProvider>
   )
 }
+

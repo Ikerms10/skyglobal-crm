@@ -35,7 +35,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             border: `1px solid ${error ? 'var(--c-danger)' : 'var(--c-border)'}`,
             borderRadius: 'var(--r-sm)',
             padding: '10px 14px',
-            fontSize: 15,
+            fontSize: 16,
             color: 'var(--sg-text-1)',
             transition: 'border-color 150ms, box-shadow 150ms',
             ...props.style,

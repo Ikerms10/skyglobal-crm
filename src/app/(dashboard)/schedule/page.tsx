@@ -521,7 +521,8 @@ export default function SchedulePage() {
           </div>
 
           {/* Month grid */}
-          <div style={{ background: 'var(--sg-bg-surface)', border: '1px solid var(--sg-border)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+          <div style={{ background: 'var(--sg-bg-surface)', border: '1px solid var(--sg-border)', borderRadius: 12, overflow: 'hidden', minWidth: 560 }}>
             {/* Day headers */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
@@ -577,6 +578,7 @@ export default function SchedulePage() {
                 )
               })}
             </div>
+          </div>
           </div>
 
           {/* Legend */}
@@ -922,7 +924,8 @@ export default function SchedulePage() {
 
       {/* ── MONTH VIEW ── */}
       {view === 'month' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, padding: '0 24px 24px' }}>
+        <div style={{ overflowX: 'auto', padding: '0 24px 24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, minWidth: 560 }}>
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
             <div key={d} style={{
               textAlign: 'center', padding: '6px 0', fontSize: 10,
@@ -988,6 +991,7 @@ export default function SchedulePage() {
               </div>
             )
           })}
+        </div>
         </div>
       )}
 
