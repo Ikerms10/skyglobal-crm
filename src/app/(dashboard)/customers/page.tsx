@@ -155,18 +155,17 @@ export default function CustomersPage() {
       </div>
 
       <div
-        className="flex flex-wrap gap-3 items-center md:static sticky top-0 z-10 md:z-auto md:bg-transparent md:border-0 md:pb-0 md:pt-0"
+        className="flex flex-wrap gap-3 items-center"
         style={{
-          background: 'var(--c-canvas)',
-          borderBottom: '1px solid var(--c-border)',
-          padding: '10px 0',
+          paddingBottom: 4,
         }}
       >
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={t('customers.searchPlaceholder')}
-          className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)] w-64"
+          className="bg-[var(--sg-surface)] border border-[var(--sg-border)] text-[var(--sg-text-1)] placeholder-[var(--sg-text-3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--sg-sky)] focus:border-[var(--sg-sky)]"
+          style={{ flex: '1 1 200px', minWidth: 140, maxWidth: 320 }}
         />
         <select
           value={filterType}

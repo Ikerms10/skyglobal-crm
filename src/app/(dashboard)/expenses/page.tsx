@@ -292,7 +292,7 @@ function ExpenseForm({ open, onClose, onSave, loading, projects, initialValues, 
         {/* Category grid */}
         <div>
           <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Category *</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
             {CATEGORIES.map(cat => {
               const isActive = form.category === cat
               return (
@@ -302,14 +302,14 @@ function ExpenseForm({ open, onClose, onSave, loading, projects, initialValues, 
                   onClick={() => setForm(f => ({ ...f, category: cat }))}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                    padding: '8px 4px', borderRadius: 10,
+                    padding: '8px 2px', borderRadius: 10, minHeight: 56,
                     border: `2px solid ${isActive ? CATEGORY_COLORS[cat] : 'var(--c-border)'}`,
                     background: isActive ? `${CATEGORY_COLORS[cat]}20` : 'var(--c-nested)',
                     cursor: 'pointer', transition: 'all 0.12s ease',
                   }}
                 >
-                  <span style={{ fontSize: 18 }}>{CATEGORY_ICONS[cat]}</span>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: isActive ? CATEGORY_COLORS[cat] : 'var(--c-text-4)', lineHeight: 1.2, textAlign: 'center' }}>
+                  <span style={{ fontSize: 16 }}>{CATEGORY_ICONS[cat]}</span>
+                  <span style={{ fontSize: 8, fontWeight: 600, color: isActive ? CATEGORY_COLORS[cat] : 'var(--c-text-4)', lineHeight: 1.2, textAlign: 'center', wordBreak: 'break-word' }}>
                     {cat}
                   </span>
                 </button>
@@ -319,7 +319,7 @@ function ExpenseForm({ open, onClose, onSave, loading, projects, initialValues, 
         </div>
 
         {/* Description + Date row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Description</label>
             <input
@@ -336,7 +336,7 @@ function ExpenseForm({ open, onClose, onSave, loading, projects, initialValues, 
             <input
               type="date" value={form.date}
               onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-              style={{ ...inputStyle, width: 'auto', colorScheme: 'dark', cursor: 'pointer' }}
+              style={{ ...inputStyle, colorScheme: 'dark', cursor: 'pointer' }}
               onFocus={e => { e.currentTarget.style.borderColor = 'var(--c-sage-soft)' }}
               onBlur={e => { e.currentTarget.style.borderColor = 'var(--c-border)' }}
             />

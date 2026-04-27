@@ -417,7 +417,7 @@ export default function DashboardPage() {
   const stagger = (i: number) => ({
     initial: { opacity: 0, y: shouldReduceMotion ? 0 : 20 },
     animate: { opacity: 1, y: 0 },
-    transition: { delay: i * 0.07, duration: 0.42, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { delay: i * 0.07, duration: 0.42, ease: 'easeOut' as const },
   });
 
   return (
@@ -491,7 +491,7 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-[14px]">
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="skeleton" style={{ height: 168, borderRadius: 22 }} />
@@ -509,7 +509,7 @@ export default function DashboardPage() {
               Leads Overview
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-[12px]">
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 18 }} />)
               : ([
@@ -530,7 +530,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* ROW 5 — Revenue chart + Pipeline */}
-        <motion.div {...stagger(5)} style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }}>
+        <motion.div {...stagger(5)} className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-[14px]">
 
           <Link href="/reports" style={{ textDecoration: 'none' }}>
             <div className="ios-glass bento-card" style={{ padding: '24px 28px', height: '100%' }}>
@@ -605,7 +605,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* ROW 6 — Activity + Follow-ups + Overdue */}
-        <motion.div {...stagger(6)} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        <motion.div {...stagger(6)} className="grid grid-cols-1 md:grid-cols-3 gap-[14px]">
 
           <div className="ios-glass bento-card" style={{ padding: '22px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>

@@ -241,11 +241,12 @@ export function NotificationBell() {
         <div
           role="dialog"
           aria-label="Notifications"
+          className="notif-dropdown"
           style={{
             position: 'absolute',
             right: 0,
             top: 'calc(100% + 8px)',
-            width: 360,
+            width: 'min(360px, calc(100vw - 32px))',
             background: 'var(--c-card)',
             border: '1px solid var(--c-border)',
             borderRadius: 'var(--r-md)',

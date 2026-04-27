@@ -251,7 +251,7 @@ export default function AnalyticsPage() {
   }, [rawData, rangeStart])
 
   return (
-    <div style={{ padding: '32px 24px', minHeight: '100vh', background: 'var(--sg-bg-base)' }}>
+    <div style={{ padding: 'clamp(16px, 4vw, 32px) clamp(12px, 3vw, 24px)', minHeight: '100vh', background: 'var(--sg-bg-base)' }}>
       <style>{`
         @media print {
           aside, header, nav, [class*="MobileNav"] { display: none !important; }
@@ -323,8 +323,7 @@ export default function AnalyticsPage() {
 
       {/* 2-col grid */}
       <div
-        className="analytics-grid"
-        style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }}
+        className="analytics-grid grid grid-cols-1 md:grid-cols-[1fr_340px] gap-6"
       >
         {/* ── LEFT: Charts ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -463,8 +462,8 @@ export default function AnalyticsPage() {
                     axisLine={false} tickLine={false} width={70}
                   />
                   <Tooltip
-                    formatter={(v: number) => [
-                      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v),
+                    formatter={(v: unknown) => [
+                      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v as number),
                       'Revenue',
                     ]}
                     contentStyle={{ background: 'var(--sg-bg-elevated)', border: '1px solid var(--sg-border)', borderRadius: 8 }}

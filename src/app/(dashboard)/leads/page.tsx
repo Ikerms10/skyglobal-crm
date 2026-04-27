@@ -457,7 +457,7 @@ export default function LeadsPage() {
   }
 
   return (
-    <div style={{ padding: '24px', minHeight: '100%' }}>
+    <div style={{ padding: 'clamp(12px, 4vw, 24px)', minHeight: '100%' }}>
 
       {/* Header bar */}
       <div
@@ -519,7 +519,7 @@ export default function LeadsPage() {
 
         {/* Search + Add */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 140 }}>
             <Search
               size={13}
               style={{
@@ -547,7 +547,7 @@ export default function LeadsPage() {
                 paddingTop: 7,
                 paddingBottom: 7,
                 fontSize: 13,
-                width: 200,
+                width: '100%',
                 outline: 'none',
                 transition: 'border-color 150ms',
               }}

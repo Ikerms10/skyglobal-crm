@@ -30,13 +30,15 @@ supabase functions deploy weekly-report
 
 ## Step 3 — Set Secrets
 
-Get your user ID from Supabase → Authentication → Users tab.
+`REPORT_USER_ID` and `REPORT_EMAIL` are no longer used — the function now reads all
+tenants from the database. Only two secrets are required:
 
 ```bash
 supabase secrets set RESEND_API_KEY=re_YOUR_KEY_HERE
-supabase secrets set REPORT_USER_ID=YOUR_SUPABASE_USER_UUID
-supabase secrets set REPORT_EMAIL=ikerms10@gmail.com
+supabase secrets set MASTER_ADMIN_EMAIL=ikerms10@gmail.com
 ```
+
+`MASTER_ADMIN_EMAIL` defaults to `ikerms10@gmail.com` if not set.
 
 ## Step 4 — Schedule (run in Supabase SQL Editor)
 
