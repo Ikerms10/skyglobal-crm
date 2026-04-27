@@ -7,7 +7,12 @@ const bodySchema = z.object({
   user_id: z.string().uuid(),
   tenant_id: z.string().uuid(),
   role: z.enum(['admin', 'member']),
+  // Business profile — provided by invitees who accepted an admin invite (stub tenant)
   business_name: z.string().nullable().optional(),
+  business_phone: z.string().nullable().optional(),
+  industry: z.string().nullable().optional(),
+  business_logo_url: z.string().nullable().optional(),
+  business_logo_path: z.string().nullable().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -18,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
-    const { invite_id, user_id, tenant_id, role, business_name } = parsed.data
+    const { invite_id, user_id, tenant_id, role, business_name, business_phone, industry, business_logo_url, business_logo_path } = parsed.data
     const db = createServiceClient()
 
     // Verify invite is still valid
@@ -32,16 +37,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invite expired or already used' }, { status: 400 })
     }
 
-    // Check if tenant is a stub (no owner) — if so, make this user the owner
+    // Check if this is a stub tenant (no owner) — admin-invited new business
     const { data: tenant } = await db
       .from('tenants')
-      .select('owner_id, business_name')
+      .select('owner_id')
       .eq('id', tenant_id)
       .single()
 
     const isStubTenant = !tenant?.owner_id
 
-    // Add user to tenant
+    // Add user to tenant (owner if stub, else the assigned role)
     const { error: memberError } = await db
       .from('tenant_users')
       .insert({ tenant_id, user_id, role: isStubTenant ? 'owner' : role })
@@ -50,10 +55,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: memberError.message }, { status: 500 })
     }
 
-    // If stub, set this user as the owner and update business_name if provided
+    // For stub tenants: finalize with owner + all business profile data collected in signup flow
     if (isStubTenant) {
       const update: Record<string, any> = { owner_id: user_id, status: 'active' }
-      if (business_name) update.business_name = business_name
+      if (business_name)      update.business_name       = business_name
+      if (business_phone)     update.business_phone      = business_phone
+      if (industry)           update.industry             = industry
+      if (business_logo_url)  update.business_logo_url   = business_logo_url
+      if (business_logo_path) update.business_logo_path  = business_logo_path
       await db.from('tenants').update(update).eq('id', tenant_id)
     }
 
