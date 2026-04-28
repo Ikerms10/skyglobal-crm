@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { TodaysFocus } from '@/components/dashboard/TodaysFocus';
 import { AgendaWidget } from '@/components/dashboard/AgendaWidget';
 import { BibleVerse } from '@/components/dashboard/BibleVerse';
+import { WeatherWidget } from '@/components/dashboard/WeatherWidget';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type Timeframe = 'Week' | 'Month' | 'Year' | 'All';
@@ -752,8 +753,9 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ROW 8 — Agenda */}
-        <motion.div {...stagger(8)}>
+        {/* ROW 8 — Weather + Agenda */}
+        <motion.div {...stagger(8)} className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-[14px]" style={{ alignItems: 'start' }}>
+          <WeatherWidget />
           <AgendaWidget />
         </motion.div>
 
