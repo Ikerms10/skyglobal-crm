@@ -212,38 +212,41 @@ function DocHeader({ business, projectName, issueDate, validUntil, proposalType 
 
   return (
     <>
-      {/* Dark top bar */}
+      {/* Dark top bar — logo + name together on left, proposal label on right */}
       <View style={s.darkHeader}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {business.logoUrl ? (
-            <Image src={business.logoUrl} style={{ height: 44, width: 44, objectFit: 'contain' }} />
+            <Image src={business.logoUrl} style={{ height: 52, width: 52, objectFit: 'contain', marginRight: 14, borderRadius: 4 }} />
           ) : (
-            <View style={s.logoBox}>
+            <View style={[s.logoBox, { marginRight: 14 }]}>
               <Text style={s.logoInitial}>{initial}</Text>
             </View>
           )}
+          <View>
+            <Text style={s.companyName}>{business.name}</Text>
+            {metaParts.length > 0 && (
+              <Text style={s.companyMeta}>{metaParts.join(' · ')}</Text>
+            )}
+          </View>
         </View>
-        <View style={s.companyRight}>
-          <Text style={s.companyName}>{business.name}</Text>
-          {metaParts.length > 0 && (
-            <Text style={s.companyMeta}>{metaParts.join(' · ')}</Text>
-          )}
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+            Professional Proposal
+          </Text>
+          {issueDate && <Text style={s.titleDates}>Issued: {issueDate}</Text>}
+          {validUntil && <Text style={s.titleDates}>Valid until: {validUntil}</Text>}
         </View>
       </View>
 
       {/* Gold rule */}
       <View style={s.goldRule} />
 
-      {/* Title bar */}
+      {/* Title bar — project name + type */}
       <View style={s.titleBar}>
         <Text style={s.titleText}>
           {(projectName || 'Professional Service Proposal').toUpperCase()}
           {proposalType ? ` | ${proposalType}` : ''}
         </Text>
-        <View>
-          <Text style={s.titleDates}>Issued: {issueDate || '—'}</Text>
-          <Text style={s.titleDates}>Valid until: {validUntil || '—'}</Text>
-        </View>
       </View>
     </>
   )
