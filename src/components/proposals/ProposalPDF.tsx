@@ -2,6 +2,7 @@
 import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer'
 import { LineItem } from './EditableTable'
 import { ProposalTemplate } from '@/types'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── DESIGN TOKENS — all hardcoded hex (CSS vars don't work in @react-pdf) ───
 const DARK      = '#1d1c17'
@@ -172,10 +173,22 @@ function fmt(n: number) {
 
 async function fetchLogoDataUrl(url: string): Promise<string | null> {
   try {
-    // Route through server-side proxy to bypass browser CORS on Supabase Storage URLs.
-    const res = await fetch(`/api/proxy-image?url=${encodeURIComponent(url)}`)
-    if (!res.ok) return null
-    return await res.text()
+    // Use the Supabase storage client so the anon key + auth headers are included.
+    // Raw fetch() to Supabase Storage URLs fails silently because the browser
+    // CORS preflight is rejected without those headers.
+    // URL shape: https://{proj}.supabase.co/storage/v1/object/public/{bucket}/{path}
+    const match = url.match(/\/storage\/v1\/object\/(?:public|authenticated)\/([^/?]+)\/(.+?)(?:\?.*)?$/)
+    if (!match) return null
+    const [, bucket, path] = match
+    const supabase = createClient()
+    const { data, error } = await supabase.storage.from(bucket).download(path)
+    if (error || !data) return null
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(data)
+    })
   } catch {
     return null
   }
