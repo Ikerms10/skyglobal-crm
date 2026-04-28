@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase/service'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const ADMIN_EMAIL = 'ikerms10@gmail.com'
 
 export async function POST(req: NextRequest) {
   // Only callable internally (from api/tenant/create) — verify by checking caller has service role context
   // We re-verify the tenant exists to avoid spam
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY)
     const { business_name, business_email, tenant_id } = await req.json()
     if (!tenant_id || !business_name) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
