@@ -172,15 +172,10 @@ function fmt(n: number) {
 
 async function fetchLogoDataUrl(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url, { mode: 'cors' })
+    // Route through server-side proxy to bypass browser CORS on Supabase Storage URLs.
+    const res = await fetch(`/api/proxy-image?url=${encodeURIComponent(url)}`)
     if (!res.ok) return null
-    const blob = await res.blob()
-    return new Promise(resolve => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result as string)
-      reader.onerror = () => resolve(null)
-      reader.readAsDataURL(blob)
-    })
+    return await res.text()
   } catch {
     return null
   }
