@@ -15,6 +15,7 @@ import { InvoiceModal } from '@/components/invoices/InvoiceModal'
 import { MarkPaidModal } from '@/components/invoices/MarkPaidModal'
 import { downloadInvoicePDF } from '@/components/invoices/InvoicePDF'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useTenant } from '@/contexts/TenantContext'
 
 const STATUS_STYLE: Record<InvoiceStatus, { bg: string; text: string; label: string }> = {
   draft:   { bg: 'var(--c-nested)',              text: 'var(--c-text-3)',    label: 'Draft' },
@@ -35,6 +36,7 @@ const FILTER_KEYS: Record<string, string> = {
 export default function InvoicesPage() {
   const queryClient = useQueryClient()
   const { t } = useLanguage()
+  const { tenant } = useTenant()
   const [filter, setFilter] = useState('all')
   const [createOpen, setCreateOpen] = useState(false)
   const [markPaidInvoice, setMarkPaidInvoice] = useState<Invoice | null>(null)
@@ -272,7 +274,7 @@ export default function InvoicesPage() {
                             </button>
                           )}
                           <button
-                            onClick={() => downloadInvoicePDF(inv)}
+                            onClick={() => downloadInvoicePDF(inv, { name: tenant?.business_name ?? '', phone: tenant?.business_phone, email: tenant?.business_email, website: tenant?.business_website, address: tenant?.business_address, logoUrl: tenant?.business_logo_url })}
                             style={{ fontSize: 11, color: 'var(--c-text-3)', background: 'none', border: '1px solid var(--c-border)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: "'DM Mono', monospace" }}
                           >
                             PDF
@@ -348,7 +350,7 @@ export default function InvoicesPage() {
                         </button>
                       )}
                       <button
-                        onClick={e => { e.stopPropagation(); downloadInvoicePDF(inv) }}
+                        onClick={e => { e.stopPropagation(); downloadInvoicePDF(inv, { name: tenant?.business_name ?? '', phone: tenant?.business_phone, email: tenant?.business_email, website: tenant?.business_website, address: tenant?.business_address, logoUrl: tenant?.business_logo_url }) }}
                         style={{ fontSize: 12, color: 'var(--c-text-3)', background: 'none', border: '1px solid var(--c-border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', minHeight: 36 }}
                       >
                         PDF

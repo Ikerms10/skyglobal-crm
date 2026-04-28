@@ -130,6 +130,8 @@ export default function ProposalsPage() {
       phone: tenant.business_phone,
       email: tenant.business_email,
       website: tenant.business_website,
+      address: tenant.business_address,
+      logoUrl: tenant.business_logo_url,
     } : undefined
     await downloadProposalPDF(proposal.template, data, fileName, businessInfo)
   }
