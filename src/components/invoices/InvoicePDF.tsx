@@ -27,15 +27,10 @@ export interface BusinessInfo {
 
 async function fetchLogoDataUrl(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url)
+    // Route through server-side proxy to bypass browser CORS on Supabase Storage URLs.
+    const res = await fetch(`/api/proxy-image?url=${encodeURIComponent(url)}`)
     if (!res.ok) return null
-    const blob = await res.blob()
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
+    return await res.text()
   } catch {
     return null
   }
