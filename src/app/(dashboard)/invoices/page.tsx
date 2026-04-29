@@ -64,7 +64,24 @@ export default function InvoicesPage() {
         .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
-      return (data ?? []) as Invoice[]
+      const rows = (data ?? []) as Invoice[]
+
+      // Auto-mark overdue: write to DB so status is accurate everywhere
+      const overdueIds = rows
+        .filter(i => i.status === 'sent' && i.due_date && i.due_date < new Date().toISOString().split('T')[0])
+        .map(i => i.id)
+      if (overdueIds.length > 0) {
+        await supabase
+          .from('invoices')
+          .update({ status: 'overdue' })
+          .in('id', overdueIds)
+        overdueIds.forEach(id => {
+          const inv = rows.find(r => r.id === id)
+          if (inv) inv.status = 'overdue'
+        })
+      }
+
+      return rows
     },
   })
 
