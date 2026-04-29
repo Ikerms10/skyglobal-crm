@@ -1,8 +1,16 @@
 import { createBrowserClient } from '@supabase/ssr'
 
+// Module-level singleton — createBrowserClient sets up auth state listeners and
+// a Realtime connection, so creating a new instance on every call wastes
+// connections and memory across 127+ call sites.
+let client: ReturnType<typeof createBrowserClient> | null = null
+
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  if (!client) {
+    client = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  }
+  return client
 }
