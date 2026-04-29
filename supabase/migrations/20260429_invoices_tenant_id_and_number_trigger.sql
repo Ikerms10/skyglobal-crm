@@ -1,14 +1,7 @@
--- Add tenant_id to invoices for proper multi-tenant isolation
-ALTER TABLE invoices ADD COLUMN IF NOT EXISTS tenant_id uuid REFERENCES tenants(id);
+-- tenant_id column and backfill already handled in 20260428_multitenant.sql
+-- This migration adds: invoice_number auto-generate trigger + tenant RLS policies
 
--- Backfill tenant_id from users table (assumes users.tenant_id exists)
-UPDATE invoices i
-SET tenant_id = u.tenant_id
-FROM users u
-WHERE i.user_id = u.id
-  AND i.tenant_id IS NULL;
-
--- Index for tenant-scoped queries
+-- Index for tenant-scoped queries (safe to re-run)
 CREATE INDEX IF NOT EXISTS invoices_tenant_id_idx ON invoices(tenant_id);
 
 -- Auto-generate invoice numbers: INV-{YEAR}-{4-digit sequence per tenant}
@@ -41,22 +34,14 @@ CREATE TRIGGER trg_invoice_number
   BEFORE INSERT ON invoices
   FOR EACH ROW EXECUTE FUNCTION generate_invoice_number();
 
--- RLS: allow tenant members to read/write their own invoices
--- (assumes existing user_id policy; adds tenant_id policy alongside it)
+-- RLS: tenant-scoped select and update
+-- get_my_tenant_id() defined in 20260428_multitenant.sql — queries tenant_users
 DROP POLICY IF EXISTS invoices_tenant_select ON invoices;
 CREATE POLICY invoices_tenant_select
   ON invoices FOR SELECT
-  USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
+  USING (tenant_id = get_my_tenant_id());
 
 DROP POLICY IF EXISTS invoices_tenant_update ON invoices;
 CREATE POLICY invoices_tenant_update
   ON invoices FOR UPDATE
-  USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
+  USING (tenant_id = get_my_tenant_id());
