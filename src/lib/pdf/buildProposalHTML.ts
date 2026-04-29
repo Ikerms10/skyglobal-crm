@@ -3,19 +3,23 @@
 // (Letter at 96 dpi). Captured by html2canvas and assembled into a PDF by jsPDF.
 // All colors are hardcoded hex; no CSS variables are used here.
 
-const DARK      = '#1d1c17'
-const GOLD      = '#e6ab35'
-const GOLD_DARK = '#b8891f'
-const GOLD_BG   = '#fdf8ed'
-const TEXT      = '#1d1c17'
-const TEXT_BODY = '#3a3028'
-const TEXT_MUTED= '#5c5240'
-const SURFACE   = '#faf8f4'
-const BORDER    = '#e8e0d0'
-const GREEN     = '#1a7a3c'
-const GREEN_BG  = '#f0faf4'
-const BLUE      = '#2d6fa3'
-const BLUE_BG   = '#f0f5fb'
+const DARK        = '#1d1c17'
+const GOLD        = '#e6ab35'
+const GOLD_DARK   = '#b8891f'
+const GOLD_BG     = '#fdf8ed'
+const TEXT        = '#1d1c17'
+const TEXT_BODY   = '#2a2018'
+const TEXT_MUTED  = '#7a6a5a'
+const TEXT_SEC    = '#5c5240'
+const SURFACE     = '#faf8f4'
+const BORDER      = '#e0d5c0'
+const BORDER_LITE = '#ede8dc'
+const HEADER_BG   = '#fffdf7'
+const HEADER_BOR  = '#e8dcc0'
+const GREEN       = '#1a7a3c'
+const GREEN_BG    = '#f0faf4'
+const BLUE        = '#2d6fa3'
+const BLUE_BG     = '#f0f5fb'
 
 export interface BusinessInfo {
   name: string
@@ -45,33 +49,35 @@ function e(s: string | null | undefined): string {
 
 function hHeader(biz: BusinessInfo, logoDataUrl: string | null, issueDate?: string, validUntil?: string) {
   const initial = (biz.name?.[0] ?? 'B').toUpperCase()
-  const metaParts = [biz.address, biz.phone, biz.website].filter(Boolean)
+  const subtitle = [biz.address].filter(Boolean).join(' · ') || 'Professional Renovation Services'
+  // NOTE: cream background so transparent logos render correctly on white/light surfaces
   const logoHtml = logoDataUrl
-    ? `<img src="${logoDataUrl}" style="width:52px;height:52px;object-fit:contain;border-radius:4px;margin-right:14px;display:block;" />`
-    : `<div style="width:48px;height:48px;min-width:48px;background:${GOLD};border-radius:6px;display:flex;align-items:center;justify-content:center;margin-right:14px;font-size:22px;font-weight:bold;color:${DARK};">${initial}</div>`
+    ? `<img src="${logoDataUrl}" style="height:64px;width:auto;max-width:80px;object-fit:contain;background:transparent;display:block;flex-shrink:0;" />`
+    : `<div style="width:64px;height:64px;min-width:64px;background:${DARK};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:${GOLD};font-family:Arial,sans-serif;flex-shrink:0;">${initial}</div>`
 
   return `
-<div style="background:${DARK};padding:20px 32px;display:flex;justify-content:space-between;align-items:flex-start;">
-  <div style="display:flex;align-items:center;">
+<div style="background:${HEADER_BG};border:1px solid ${HEADER_BOR};border-radius:12px;padding:20px 24px;margin:0 0 0 0;display:flex;justify-content:space-between;align-items:center;">
+  <div style="display:flex;align-items:center;gap:16px;">
     ${logoHtml}
-    <div>
-      <div style="font-size:18px;font-weight:bold;color:#ffffff;line-height:1.1;">${e(biz.name)}</div>
-      ${metaParts.length > 0 ? `<div style="font-size:8px;color:#a09070;margin-top:3px;line-height:1.5;">${e(metaParts.join(' · '))}</div>` : ''}
+    <div style="padding-left:4px;">
+      <div style="font-size:22px;font-weight:900;color:${DARK};font-family:Arial,Helvetica,sans-serif;letter-spacing:-0.02em;line-height:1.1;margin-bottom:3px;">${e(biz.name)}</div>
+      <div style="font-size:10px;color:${TEXT_MUTED};font-family:Arial,sans-serif;">${e(subtitle)}</div>
     </div>
   </div>
   <div style="text-align:right;flex-shrink:0;padding-left:16px;">
-    <div style="font-size:8px;font-weight:bold;color:${GOLD};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Professional Proposal</div>
-    ${issueDate ? `<div style="font-size:8px;color:#a09070;">Issued: ${e(issueDate)}</div>` : ''}
-    ${validUntil ? `<div style="font-size:8px;color:#a09070;">Valid until: ${e(validUntil)}</div>` : ''}
+    <div style="font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${GOLD_DARK};font-family:Arial,Helvetica,sans-serif;margin-bottom:6px;">Professional Proposal</div>
+    <div style="font-size:10px;color:${TEXT_SEC};font-family:Arial,sans-serif;line-height:1.6;">
+      ${issueDate ? `<div>Issued: ${e(issueDate)}</div>` : ''}
+      ${validUntil ? `<div>Valid until: ${e(validUntil)}</div>` : ''}
+    </div>
   </div>
-</div>
-<div style="height:3px;background:${GOLD};"></div>`
+</div>`
 }
 
 function hTitleBar(projectName: string | undefined, proposalType: string) {
   const name = (projectName || 'Professional Service Proposal').toUpperCase()
-  return `<div style="background:${DARK};padding:10px 24px;">
-  <div style="font-size:11px;font-weight:bold;color:${GOLD};letter-spacing:0.5px;text-transform:uppercase;">${e(name)} | ${e(proposalType)}</div>
+  return `<div style="background:${DARK};border-radius:8px;padding:12px 20px;margin-top:12px;margin-bottom:0;">
+  <div style="font-size:12px;font-weight:700;color:${GOLD};letter-spacing:0.07em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">${e(name)} | ${e(proposalType)}</div>
 </div>`
 }
 
@@ -252,8 +258,8 @@ function hFooter(biz: BusinessInfo, pageNum: number, totalPages: number) {
 
 function buildPage(bodyContent: string, headerContent: string, footer: string) {
   return `<div class="pdf-page" style="width:816px;height:1056px;background:#fff;position:relative;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:${TEXT};overflow:hidden;box-sizing:border-box;">
-  ${headerContent}
-  <div style="padding:16px 32px 60px;">
+  <div style="padding:24px 32px 60px;">
+    ${headerContent}
     ${bodyContent}
   </div>
   ${footer}
@@ -272,53 +278,49 @@ function buildPage2(bodyContent: string, footer: string) {
 function buildInsurancePage(biz: BusinessInfo, logoDataUrl: string | null, totalPages: number) {
   const initial = (biz.name?.[0] ?? 'B').toUpperCase()
   const logoHtml = logoDataUrl
-    ? `<img src="${logoDataUrl}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;margin-right:10px;display:block;" />`
-    : `<div style="width:36px;height:36px;min-width:36px;background:${GOLD};border-radius:6px;display:flex;align-items:center;justify-content:center;margin-right:10px;font-size:16px;font-weight:bold;color:${DARK};">${initial}</div>`
+    ? `<img src="${logoDataUrl}" style="height:52px;width:auto;max-width:64px;object-fit:contain;background:transparent;display:block;flex-shrink:0;" />`
+    : `<div style="width:52px;height:52px;min-width:52px;background:${DARK};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:${GOLD};flex-shrink:0;">${initial}</div>`
 
   const fields: [string, string][] = [
     ['Insured',         biz.name],
     ['Coverage Type',   'General Liability'],
     ['Policy Number',   biz.insurancePolicy || 'On file'],
     ['Coverage Limit',  biz.insuranceLimit  || '$2,000,000'],
-    ['Phone',           biz.phone           || '—'],
-    ['Email',           biz.email           || '—'],
+    ['Phone',           biz.phone           || 'On file'],
+    ['Email',           biz.email           || 'On file'],
     ['Effective Date',  'On file'],
     ['Expiration Date', 'On file'],
   ]
 
-  const content = `
-<div style="background:${DARK};padding:16px 32px;display:flex;align-items:center;">
-  ${logoHtml}
-  <div>
-    <div style="font-size:14px;font-weight:bold;color:#fff;">${e(biz.name)}</div>
-    <div style="font-size:8px;color:#a09070;">Certificate of Insurance</div>
-  </div>
-</div>
-<div style="height:3px;background:${GOLD};"></div>
-<div style="padding:16px 32px 60px;">
-  ${hSectionHeader('Certificate of Insurance')}
-  <div style="border:1.5px solid ${BORDER};border-left:5px solid ${GOLD};border-radius:4px;margin-bottom:16px;">
-    <div style="background:${GOLD_BG};padding:10px 16px;border-bottom:1px solid ${BORDER};">
-      <div style="font-size:9px;font-weight:bold;color:${TEXT};text-transform:uppercase;letter-spacing:0.8px;">Insurance Details</div>
-    </div>
-    <div style="padding:14px 16px;display:flex;flex-wrap:wrap;">
-      ${fields.map(([label, value]) => `
-      <div style="width:50%;margin-bottom:10px;">
-        <div style="font-size:8px;font-weight:bold;color:${TEXT};margin-bottom:1px;">${e(label)}</div>
-        <div style="font-size:9px;color:${TEXT_BODY};">${e(value || '—')}</div>
-      </div>`).join('')}
-    </div>
-  </div>
-  <div style="background:${GOLD_BG};padding:10px 14px;border-radius:3px;">
-    <div style="font-size:8.5px;color:${TEXT_BODY};font-style:italic;line-height:1.6;">
-      A full Certificate of Insurance (COI) is available upon request and can be sent directly to the client,
-      property manager, or HOA. ${e(biz.name)} maintains active coverage on all active project sites.
-    </div>
-  </div>
-</div>`
-
   return `<div class="pdf-page" style="width:816px;height:1056px;background:#fff;position:relative;font-family:Helvetica,Arial,sans-serif;font-size:10px;color:${TEXT};overflow:hidden;box-sizing:border-box;">
-  ${content}
+  <div style="padding:24px 32px 60px;">
+    <div style="background:${HEADER_BG};border:1px solid ${HEADER_BOR};border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:16px;">
+      ${logoHtml}
+      <div>
+        <div style="font-size:18px;font-weight:900;color:${DARK};font-family:Arial,Helvetica,sans-serif;">${e(biz.name)}</div>
+        <div style="font-size:10px;color:${TEXT_MUTED};font-family:Arial,sans-serif;">Certificate of Insurance</div>
+      </div>
+    </div>
+    ${hSectionHeader('Certificate of Insurance')}
+    <div style="border:1.5px solid ${BORDER};border-left:5px solid ${GOLD};border-radius:4px;margin-bottom:16px;">
+      <div style="background:${GOLD_BG};padding:10px 16px;border-bottom:1px solid ${BORDER};">
+        <div style="font-size:9px;font-weight:bold;color:${TEXT};text-transform:uppercase;letter-spacing:0.8px;">Insurance Details</div>
+      </div>
+      <div style="padding:14px 16px;display:flex;flex-wrap:wrap;">
+        ${fields.map(([label, value]) => `
+        <div style="width:50%;margin-bottom:10px;">
+          <div style="font-size:8px;font-weight:bold;color:${TEXT};margin-bottom:1px;">${e(label)}</div>
+          <div style="font-size:9px;color:${TEXT_BODY};">${e(value || 'On file')}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div style="background:${GOLD_BG};padding:10px 14px;border-radius:3px;">
+      <div style="font-size:8.5px;color:${TEXT_BODY};font-style:italic;line-height:1.6;">
+        A full Certificate of Insurance (COI) is available upon request and can be sent directly to the client,
+        property manager, or HOA. ${e(biz.name)} maintains active coverage on all active project sites.
+      </div>
+    </div>
+  </div>
   ${hFooter(biz, totalPages, totalPages)}
 </div>`
 }
