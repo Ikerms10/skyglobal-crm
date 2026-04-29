@@ -26,9 +26,9 @@ export function TodaysFocus() {
   const { data: items = [], isLoading: loading, refetch } = useQuery({
     queryKey: ['focus'],
     queryFn: getTodaysFocusItems,
+    // No refetchInterval or refetchOnWindowFocus — Realtime invalidates ['focus']
+    // on any lead/invoice/project change (see queryKeys.ts getKeysForTable).
     staleTime: 30_000,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true,
   })
 
   const visible = items.slice(0, 4)

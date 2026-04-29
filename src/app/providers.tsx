@@ -8,7 +8,10 @@ import { LanguageProvider } from '@/contexts/LanguageContext'
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
-      queries: { staleTime: 30_000, refetchOnWindowFocus: true, retry: 1 },
+      // refetchOnWindowFocus disabled globally — Supabase Realtime already
+      // invalidates affected keys on any row change, so window-focus refetches
+      // only add redundant round-trips on every tab switch.
+      queries: { staleTime: 30_000, refetchOnWindowFocus: false, retry: 1 },
     },
   }))
   return (
@@ -16,7 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
           {children}
-          <ReactQueryDevtools initialIsOpen={false} />
+          {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
         </QueryClientProvider>
       </LanguageProvider>
     </ThemeProvider>

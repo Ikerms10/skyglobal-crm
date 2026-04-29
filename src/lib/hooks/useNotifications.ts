@@ -81,7 +81,8 @@ export function useNotifications() {
 
       return notifications
     },
-    refetchInterval: 5 * 60 * 1000,
+    // No refetchInterval — Realtime invalidates ['notifications'] whenever leads,
+    // projects, or invoices change (see queryKeys.ts getKeysForTable).
     staleTime: 2 * 60 * 1000,
   })
 }
