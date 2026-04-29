@@ -229,6 +229,12 @@ export default function ProposalNewPage() {
   const template = (searchParams.get('template') ?? 'interior') as ProposalTemplate;
   const customerId = searchParams.get('customer');
   const proposalId = searchParams.get('id');
+  // Lead context — passed by LeadDrawer "Create Proposal" button
+  const leadId = searchParams.get('lead_id');
+  const leadClientName = searchParams.get('client') ?? '';
+  const leadPhone = searchParams.get('phone') ?? '';
+  const leadEmail = searchParams.get('email') ?? '';
+  const leadValue = searchParams.get('value') ? Number(searchParams.get('value')) : null;
 
   const [customer, setCustomer] = useState<any>(null);
   const [data, setData] = useState<EditorData | null>(null);
@@ -238,23 +244,34 @@ export default function ProposalNewPage() {
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
   const { tenant } = useTenant();
 
-  // Load customer if provided
+  // Load customer if provided, or pre-fill from lead URL params
   useEffect(() => {
-    if (!customerId) {
-      setData(buildInitialData(template, null));
+    if (customerId) {
+      const supabase = createClient();
+      supabase
+        .from('customers')
+        .select('*')
+        .eq('id', customerId)
+        .single()
+        .then(({ data: cust }) => {
+          setCustomer(cust);
+          setData(buildInitialData(template, cust));
+        });
       return;
     }
-    const supabase = createClient();
-    supabase
-      .from('customers')
-      .select('*')
-      .eq('id', customerId)
-      .single()
-      .then(({ data: cust }) => {
-        setCustomer(cust);
-        setData(buildInitialData(template, cust));
+    if (leadId && leadClientName) {
+      // Pre-fill from lead context without fetching a customer record
+      const contact = [leadPhone, leadEmail].filter(Boolean).join(' | ');
+      setData({
+        ...buildInitialData(template, null),
+        clientName: leadClientName,
+        clientContact: contact,
+        totalInvestment: leadValue,
       });
-  }, [customerId, template]);
+      return;
+    }
+    setData(buildInitialData(template, null));
+  }, [customerId, leadId, leadClientName, leadPhone, leadEmail, leadValue, template]);
 
   // Load existing proposal if editing
   useEffect(() => {
@@ -331,7 +348,9 @@ export default function ProposalNewPage() {
 
         const payload = {
           user_id: user.id,
+          tenant_id: tenant?.id ?? null,
           customer_id: customerId || null,
+          lead_id: leadId || null,
           template,
           project_name: d.projectName || null,
           client_name: d.clientName || null,
@@ -621,6 +640,16 @@ export default function ProposalNewPage() {
           justifyContent: 'center',
         }}
       >
+        {leadId && !proposalId && (
+          <div style={{
+            width: '100%', maxWidth: 794, marginBottom: 12,
+            background: '#fdf8ed', border: '1px solid #e6ab35',
+            borderRadius: 8, padding: '10px 16px',
+            fontSize: 13, color: '#1d1c17',
+          }}>
+            💡 Creating proposal from lead — client info pre-filled. Linked to lead record.
+          </div>
+        )}
         {!data ? (
           <div
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}

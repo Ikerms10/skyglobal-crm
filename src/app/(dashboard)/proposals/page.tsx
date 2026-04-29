@@ -14,6 +14,7 @@ import { downloadProposalPDF } from '@/components/proposals/ProposalPDF'
 import { format } from 'date-fns'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useTenant } from '@/contexts/TenantContext'
+import { fireWinConfetti } from '@/lib/confetti'
 
 const STATUS_COLORS: Record<ProposalStatus, { bg: string; text: string }> = {
   Draft:    { bg: 'var(--c-nested)', text: 'var(--c-text-4)' },
@@ -137,6 +138,26 @@ export default function ProposalsPage() {
   }
 
   const handleStatusChange = async (id: string, status: ProposalStatus) => {
+    if (status === 'Accepted') {
+      // Approval triggers the full automation: customer + project creation, lead Won
+      if (!confirm('Mark this proposal as Accepted?\n\nThis will automatically:\n• Create a customer record (if new)\n• Create a project for this work\n• Mark the linked lead as Won\n\nContinue?')) return
+      if (!tenant?.id) { toast.error('Could not read tenant — try refreshing'); return }
+      const res = await fetch('/api/proposals/process-approval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposalId: id, tenantId: tenant.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) { toast.error(json.error ?? 'Approval failed'); return }
+      setProposals(prev => prev.map(p => p.id === id ? { ...p, status: 'Accepted', project_id: json.projectId } : p))
+      const p = proposals.find(p => p.id === id)
+      if ((p?.total_investment ?? 0) >= 1000) fireWinConfetti()
+      toast.success('🎉 Proposal accepted! Customer and project created.', { duration: 5000 })
+      if (json.projectId) {
+        setTimeout(() => router.push(`/customers/${json.customerId}/projects/${json.projectId}`), 1500)
+      }
+      return
+    }
     const supabase = createClient()
     await supabase.from('proposals').update({ status }).eq('id', id)
     setProposals(prev => prev.map(p => p.id === id ? { ...p, status } : p))
@@ -254,7 +275,14 @@ export default function ProposalsPage() {
                         {formatDate(p.created_at)}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', gap: 4 }}>
+                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                          {p.project_id && p.customer_id && (
+                            <Link href={`/customers/${p.customer_id}/projects/${p.project_id}`}
+                              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 6, color: 'var(--c-sage)', textDecoration: 'none', fontSize: 11, fontWeight: 600, background: 'rgba(122,158,126,0.10)' }}
+                              title="View project">
+                              <CheckCircle2 size={12} /> Project
+                            </Link>
+                          )}
                           <Link href={`/proposals/new?template=${p.template}&id=${p.id}`}
                             style={{ display: 'flex', alignItems: 'center', padding: 6, borderRadius: 6, color: 'var(--sg-text-3)', textDecoration: 'none' }}
                             className="hover:bg-[var(--sg-elevated)] hover:text-[var(--sg-text-1)] transition-colors"
