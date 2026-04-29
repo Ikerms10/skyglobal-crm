@@ -43,7 +43,8 @@ CREATE TRIGGER trg_invoice_number
 
 -- RLS: allow tenant members to read/write their own invoices
 -- (assumes existing user_id policy; adds tenant_id policy alongside it)
-CREATE POLICY IF NOT EXISTS invoices_tenant_select
+DROP POLICY IF EXISTS invoices_tenant_select ON invoices;
+CREATE POLICY invoices_tenant_select
   ON invoices FOR SELECT
   USING (
     tenant_id IN (
@@ -51,7 +52,8 @@ CREATE POLICY IF NOT EXISTS invoices_tenant_select
     )
   );
 
-CREATE POLICY IF NOT EXISTS invoices_tenant_update
+DROP POLICY IF EXISTS invoices_tenant_update ON invoices;
+CREATE POLICY invoices_tenant_update
   ON invoices FOR UPDATE
   USING (
     tenant_id IN (
