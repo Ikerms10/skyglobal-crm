@@ -67,31 +67,58 @@ export async function POST(req: NextRequest) {
 
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY)
+      const { PLATFORM } = await import('@/lib/constants')
       await resend.emails.send({
-        from: 'SkyGlobal CRM <notifications@skyglobalsvcs.com>',
+        from: `${PLATFORM.fromName} <${PLATFORM.fromEmail}>`,
         to: [email],
-        subject: "You've been invited to SkyGlobal CRM",
+        subject: `You've been invited to ${PLATFORM.shortName}`,
         html: `
-          <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; color: #1a1a1a;">
-            <div style="background: #1d1c17; padding: 24px 32px; border-radius: 8px 8px 0 0;">
-              <span style="font-size: 22px; font-weight: 700; color: #e6ab35;">SkyGlobal CRM</span>
-            </div>
-            <div style="background: #fff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-              <h2 style="margin: 0 0 12px; color: #1a1a1a;">You're invited</h2>
-              <p style="color: #4b5563; margin: 0 0 8px; line-height: 1.6;">
-                You've been invited to set up a SkyGlobal CRM account — the all-in-one platform for managing customers, projects, proposals, and more.
-              </p>
-              <p style="color: #4b5563; margin: 0 0 28px; line-height: 1.6;">
-                Click the button below to create your account. This invite expires in <strong>7 days</strong>.
-              </p>
-              <a href="${inviteUrl}" style="display: inline-block; background: #e6ab35; color: #1d1c17; font-weight: 700; padding: 14px 28px; border-radius: 7px; text-decoration: none; font-size: 15px;">
-                Get started →
-              </a>
-              <p style="color: #9ca3af; font-size: 12px; margin: 24px 0 0;">
-                Or copy this link: <a href="${inviteUrl}" style="color: #e6ab35;">${inviteUrl}</a>
-              </p>
-            </div>
-          </div>
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f5f0e8;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:28px;font-weight:900;color:#1d1c17;letter-spacing:-0.02em;margin-bottom:4px;">
+        Iker's <span style="color:#e6ab35;">CRM</span>
+      </div>
+      <div style="font-size:11px;color:#7a6a5a;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+        &amp; Business Dashboard
+      </div>
+    </div>
+    <div style="background:#fffdf7;border:1px solid #e8dcc0;border-radius:14px;padding:36px 32px;box-shadow:0 4px 12px rgba(0,0,0,0.04);">
+      <h1 style="font-size:22px;font-weight:800;color:#1d1c17;margin:0 0 12px;letter-spacing:-0.01em;">
+        You're invited!
+      </h1>
+      <p style="font-size:15px;color:#4a3f35;line-height:1.65;margin:0 0 20px;">
+        You've been invited to set up an account on <strong>${PLATFORM.fullName}</strong> — the all-in-one platform for managing customers, projects, proposals, invoices, and more.
+      </p>
+      <div style="background:#faf8f4;border-radius:10px;padding:18px 22px;margin-bottom:28px;">
+        <div style="font-size:13px;color:#1d1c17;line-height:2;">
+          ✓ Lead tracking &amp; follow-up reminders<br/>
+          ✓ Professional proposals with digital signature<br/>
+          ✓ Project &amp; expense tracking<br/>
+          ✓ Invoice generation<br/>
+          ✓ Mobile-friendly — works on your phone
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:22px;">
+        <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;background:#e6ab35;color:#1d1c17;text-decoration:none;border-radius:10px;font-weight:800;font-size:15px;letter-spacing:0.02em;">
+          Create My Account →
+        </a>
+      </div>
+      <p style="font-size:12px;color:#7a6a5a;text-align:center;margin:0;">
+        This invitation expires in 7 days. Link: <a href="${inviteUrl}" style="color:#b8891f;">${inviteUrl}</a>
+      </p>
+    </div>
+    <div style="text-align:center;margin-top:28px;padding-top:16px;border-top:1px solid #e0d5c0;">
+      <div style="font-size:11px;color:#7a6a5a;line-height:1.6;">
+        ${PLATFORM.fullName}<br/>
+        <a href="${PLATFORM.url}" style="color:#b8891f;text-decoration:none;">${PLATFORM.url}</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
         `,
       }).catch(() => {})
     }

@@ -61,7 +61,6 @@ export default function InvoicesPage() {
       const { data } = await supabase
         .from('invoices')
         .select('*, project:projects(id, title), customer:customers(id, name)')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
       const rows = (data ?? []) as Invoice[]

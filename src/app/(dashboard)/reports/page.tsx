@@ -75,22 +75,19 @@ export default function ReportsPage() {
         supabase
           .from('projects')
           .select('id, title, contract_value, amount_paid, lead_cost, type, status, customer_id, start_date, created_at, customers(name, id)')
-          .eq('user_id', user.id)
           .is('deleted_at', null),
         supabase
           .from('leads')
           .select('id, stage, source, estimated_value, customer_id, created_at')
-          .eq('user_id', user.id)
           .is('deleted_at', null),
         supabase
           .from('expenses')
           .select('id, amount, category, date')
-          .eq('user_id', user.id)
           .is('deleted_at', null),
         supabase
           .from('project_expenses')
           .select('id, amount, category, date, project_id')
-          .eq('user_id', user.id),
+          ,
       ]);
 
       return {

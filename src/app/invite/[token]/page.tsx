@@ -31,12 +31,15 @@ export default async function InvitePage({ params }: Props) {
       justifyContent: 'center',
       padding: '32px 16px',
     }}>
-      {/* Brand */}
+      {/* Platform brand */}
       <div style={{ marginBottom: 36, textAlign: 'center' }}>
-        <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--c-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.04em', margin: 0 }}>
-          SkyGlobal CRM
+        <p style={{ fontSize: 30, fontWeight: 900, color: 'var(--c-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.04em', margin: 0 }}>
+          Iker's{' '}<span style={{ color: 'var(--c-gold)' }}>CRM</span>
         </p>
-        <p style={{ fontSize: 13, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", margin: '5px 0 0' }}>
+        <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '4px 0 0' }}>
+          &amp; Business Dashboard
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", margin: '10px 0 0' }}>
           {isNewBusiness
             ? "You've been invited — set up your account below"
             : <>You've been invited to join <strong style={{ color: 'var(--c-gold)' }}>{businessName}</strong></>

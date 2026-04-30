@@ -102,12 +102,12 @@ export default function DailyPage() {
       setUserId(user.id)
 
       const [notesRes, todosRes, jobsRes, followRes, overdueRes, leadsRes] = await Promise.all([
-        supabase.from('daily_notes').select('notes').eq('user_id', user.id).eq('date', date).maybeSingle(),
-        supabase.from('daily_todos').select('*').eq('user_id', user.id).eq('date', date).order('created_at'),
-        supabase.from('projects').select('id').eq('user_id', user.id).is('deleted_at', null).eq('status', 'In Progress'),
-        supabase.from('leads').select('id').eq('user_id', user.id).is('deleted_at', null).eq('follow_up_date', date).not('stage', 'in', '("Won","Lost")'),
-        supabase.from('projects').select('contract_value, amount_paid').eq('user_id', user.id).is('deleted_at', null).eq('status', 'Completed').not('payment_status', 'eq', 'Paid'),
-        supabase.from('leads').select('id').eq('user_id', user.id).is('deleted_at', null).gte('created_at', date + 'T00:00:00').lte('created_at', date + 'T23:59:59'),
+        supabase.from('daily_notes').select('notes').eq('date', date).maybeSingle(),
+        supabase.from('daily_todos').select('*').eq('date', date).order('created_at'),
+        supabase.from('projects').select('id').is('deleted_at', null).eq('status', 'In Progress'),
+        supabase.from('leads').select('id').is('deleted_at', null).eq('follow_up_date', date).not('stage', 'in', '("Won","Lost")'),
+        supabase.from('projects').select('contract_value, amount_paid').is('deleted_at', null).eq('status', 'Completed').not('payment_status', 'eq', 'Paid'),
+        supabase.from('leads').select('id').is('deleted_at', null).gte('created_at', date + 'T00:00:00').lte('created_at', date + 'T23:59:59'),
       ])
 
       setNotes(notesRes.data?.notes ?? '')

@@ -107,19 +107,18 @@ export default function AnalyticsPage() {
       const [projRes, leadRes, expRes, projExpRes, actRes] = await Promise.all([
         supabase.from('projects')
           .select('id, title, contract_value, amount_paid, status, lead_cost, start_date, created_at, customer_id, customers(name, id)')
-          .eq('user_id', user.id).is('deleted_at', null),
+          .is('deleted_at', null),
         supabase.from('leads')
           .select('id, stage, source, estimated_value, created_at, customer_id')
-          .eq('user_id', user.id).is('deleted_at', null),
+          .is('deleted_at', null),
         supabase.from('expenses')
           .select('id, amount, category, date')
-          .eq('user_id', user.id).is('deleted_at', null),
+          .is('deleted_at', null),
         supabase.from('project_expenses')
           .select('id, amount, date, project_id')
-          .eq('user_id', user.id),
+          ,
         supabase.from('activities')
           .select('id, type, content, created_at, customer_id')
-          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(12),
       ])

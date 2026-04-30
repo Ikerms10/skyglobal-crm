@@ -272,7 +272,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
                 margin: 0,
               }}
             >
-              CRM
+              CRM Dashboard
             </p>
           </div>
         </div>
@@ -466,6 +466,22 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
             <LogOut size={12} aria-hidden="true" />
             <span>{t('nav.signOut')}</span>
           </button>
+        </div>
+
+        {/* Platform attribution */}
+        <div
+          style={{
+            textAlign: 'center',
+            paddingTop: 8,
+            fontSize: 9,
+            color: 'var(--c-text-4)',
+            fontFamily: "'DM Mono', monospace",
+            letterSpacing: '0.06em',
+            opacity: 0.6,
+          }}
+        >
+          Powered by{' '}
+          <span style={{ color: 'var(--c-gold)', fontWeight: 700 }}>Iker's CRM</span>
         </div>
       </div>
     </aside>

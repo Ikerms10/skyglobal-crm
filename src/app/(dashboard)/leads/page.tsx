@@ -282,7 +282,6 @@ export default function LeadsPage() {
       const { data } = await supabase
         .from('leads')
         .select('*, customer:customers(id, name, phone, email, type, address, city, state, zip)')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
       return (data ?? []) as Lead[]
@@ -299,7 +298,6 @@ export default function LeadsPage() {
       const { data } = await supabase
         .from('proposals')
         .select('customer_id, total_investment')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
       const map: Record<string, number> = {}
@@ -321,7 +319,6 @@ export default function LeadsPage() {
       const { data } = await supabase
         .from('activities')
         .select('lead_id, type')
-        .eq('user_id', user.id)
         .not('lead_id', 'is', null)
         .order('created_at', { ascending: false })
       const map: Record<string, string> = {}
