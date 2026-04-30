@@ -273,14 +273,27 @@ export default function LeadsPage() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
-  const { data: leads = [], isLoading } = useQuery({
+  const { data: leads = [], isLoading, error: leadsError } = useQuery({
     queryKey: ['leads'],
     queryFn: async () => {
-      // Use server-side API route (service role) to bypass RLS issues in production
-      const res = await fetch('/api/leads')
-      if (!res.ok) return []
-      const json = await res.json()
-      return (json.leads ?? []) as Lead[]
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error('[Leads] No authenticated user found')
+        return []
+      }
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*, customer:customers(id, name, phone, email, type, address, city, state, zip)')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+      if (error) {
+        console.error('[Leads] Supabase query error:', error.message, error.details, error.hint)
+        toast.error(`Failed to load leads: ${error.message}`)
+        return []
+      }
+      console.log(`[Leads] Loaded ${data?.length ?? 0} leads`)
+      return (data ?? []) as Lead[]
     },
     staleTime: 30_000,
   })
