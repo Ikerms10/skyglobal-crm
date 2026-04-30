@@ -44,7 +44,6 @@ export default function CustomersPage() {
       if (!user) return []
       const { data } = await supabase.from('customers')
         .select('*')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('name', { ascending: true })
       return (data ?? []) as Customer[]
@@ -59,7 +58,6 @@ export default function CustomersPage() {
       if (!user) return {}
       const { data } = await supabase.from('projects')
         .select('customer_id, contract_value')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .not('contract_value', 'is', null)
       const map: Record<string, number> = {}
@@ -78,7 +76,6 @@ export default function CustomersPage() {
       if (!user) return {}
       const { data } = await supabase.from('projects')
         .select('customer_id, created_at')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
       const map: Record<string, string> = {}

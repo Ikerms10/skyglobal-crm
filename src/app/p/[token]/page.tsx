@@ -295,11 +295,14 @@ export default function ProposalPortalPage({ params }: { params: { token: string
         {/* Footer */}
         <div style={{ marginTop: 32, textAlign: 'center', color: '#9ca3af', fontFamily: 'sans-serif', fontSize: 13 }}>
           <p style={{ margin: '0 0 4px' }}>SkyGlobal Renovations LLC</p>
-          <p style={{ margin: 0 }}>
+          <p style={{ margin: '0 0 16px' }}>
             <a href="tel:3527822460" style={{ color: '#e6ab35' }}>352-782-2460</a>
             {' · '}
             <a href="tel:4704699961" style={{ color: '#e6ab35' }}>470-469-9961</a>
             {' · skyglobalsvcs@gmail.com'}
+          </p>
+          <p style={{ margin: 0, fontSize: 10, color: '#b8891f', fontWeight: 600, letterSpacing: '0.04em' }}>
+            Powered by Iker's CRM &amp; Business Dashboard
           </p>
         </div>
       </div>

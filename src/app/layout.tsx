@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PLATFORM } from '@/lib/constants';
 import '@fontsource/plus-jakarta-sans/400.css';
 import '@fontsource/plus-jakarta-sans/500.css';
 import '@fontsource/plus-jakarta-sans/600.css';
@@ -12,8 +13,25 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 export const metadata: Metadata = {
-  title: 'SkyGlobal CRM',
-  description: 'Business management platform for contractors and service businesses.',
+  title: {
+    default: PLATFORM.fullName,
+    template: `%s — ${PLATFORM.shortName}`,
+  },
+  description: PLATFORM.tagline,
+  applicationName: PLATFORM.fullName,
+  authors: [{ name: 'Iker Alberto Matanza' }],
+  openGraph: {
+    title: PLATFORM.fullName,
+    description: PLATFORM.tagline,
+    siteName: PLATFORM.fullName,
+    type: 'website',
+    url: PLATFORM.url,
+  },
+  twitter: {
+    card: 'summary',
+    title: PLATFORM.fullName,
+    description: PLATFORM.tagline,
+  },
 };
 
 // Injected before React hydrates to prevent flash of wrong theme on load.
@@ -25,6 +43,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Must be first in head — prevents theme flash before hydration */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* PWA manifest */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#e6ab35" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Iker's CRM" />
       </head>
       <body className="min-h-screen">
         <div aria-hidden="true" className="paper-texture" />

@@ -291,12 +291,10 @@ export default function SchedulePage() {
       const [assignRes, projRes] = await Promise.all([
         supabase.from('crew_assignments')
           .select('*, project:projects(id, title, status, contract_value, customers(name, address))')
-          .eq('user_id', user.id)
           .lte('start_date', windowEnd)
           .gte('end_date', windowStart),
         supabase.from('projects')
           .select('id, title, status, contract_value')
-          .eq('user_id', user.id)
           .is('deleted_at', null)
           .in('status', ['Scheduled', 'In Progress'])
           .order('title'),
@@ -324,7 +322,6 @@ export default function SchedulePage() {
       const { data } = await supabase
         .from('events')
         .select('*, project:projects(id, title), lead:leads(id, title)')
-        .eq('user_id', user.id)
         .gte('start_at', mStart)
         .lte('start_at', mEnd + 'T23:59:59')
         .order('start_at')

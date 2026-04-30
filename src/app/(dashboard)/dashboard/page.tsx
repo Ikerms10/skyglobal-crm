@@ -357,13 +357,13 @@ export default function DashboardPage() {
         supabase.from('expenses').select('id,amount,category,date')
           .is('deleted_at', null)
           .gte(startDate ? 'date' : 'id', startDate ? startDate.split('T')[0] : fallbackId),
-        supabase.from('project_expenses').select('id,amount,date').eq('user_id', user.id),
+        supabase.from('project_expenses').select('id,amount,date'),
         supabase.from('activities').select('id,type,content,created_at,customer_id')
-          .eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
+          .order('created_at', { ascending: false }).limit(8),
         supabase.from('projects').select('contract_value,created_at,status').is('deleted_at', null),
         supabase.from('expenses').select('amount,date').is('deleted_at', null),
-        supabase.from('project_expenses').select('amount,date').eq('user_id', user.id),
-        supabase.from('leads').select('id,title,follow_up_date,customers(name)')
+        supabase.from('project_expenses').select('amount,date'),
+        supabase.from('leads').select('id,title,follow_up_date,customers!leads_customer_id_fkey(name)')
           .is('deleted_at', null)
           .lte('follow_up_date', subMonths(new Date(), -1).toISOString().split('T')[0])
           .gte('follow_up_date', today).not('stage', 'in', '("Won","Lost")')

@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'SkyGlobal CRM <noreply@skyglobalsvcs.com>',
+          from: "Iker's CRM <noreply@skyglobalsvcs.com>",
           to: ADMIN_EMAIL,
           subject: `Daily Backup Complete — ${successCount}/${results.length} tenants · ${date}`,
           html: `

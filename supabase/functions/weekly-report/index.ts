@@ -23,7 +23,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'SkyGlobal CRM <reports@skyglobalsvcs.com>',
+      from: "Iker's CRM <reports@skyglobalsvcs.com>",
       to: [to],
       subject,
       html,
@@ -124,7 +124,7 @@ function buildTenantEmail(
       Net this week: <strong style="color:${stats.revenue - stats.expenses >= 0 ? '#4A6741' : '#B94A3A'};">${fmt(stats.revenue - stats.expenses)}</strong>
     </p>
   </div>
-  <div class="footer">SkyGlobal CRM &middot; Automated Weekly Report &middot; Powered by skyglobalsvcs.com</div>
+  <div class="footer">Iker's CRM &middot; Automated Weekly Report &middot; crm.skyglobalsvcs.com</div>
 </div>
 </body>
 </html>`
@@ -264,7 +264,7 @@ function buildMasterEmail(
     ${expiringSection}
 
   </div>
-  <div class="footer">SkyGlobal CRM &middot; Master Admin Report &middot; skyglobalsvcs.com</div>
+  <div class="footer">Iker's CRM &middot; Master Admin Report &middot; crm.skyglobalsvcs.com</div>
 </div>
 </body>
 </html>`

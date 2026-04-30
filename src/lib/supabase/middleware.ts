@@ -29,7 +29,10 @@ export async function updateSession(request: NextRequest) {
   const isPublicSignup = pathname.startsWith('/signup')
   const isPublicInvite = pathname.startsWith('/invite/')
 
-  if (!user && !isAuthRoute && !isWebhook && !isPublicProposalView && !isPublicSignup && !isPublicInvite) {
+  // Debug/fix API routes — protected by ADMIN_SECRET_KEY, not session cookie
+  const isDebugApi = pathname.startsWith('/api/debug/')
+
+  if (!user && !isAuthRoute && !isWebhook && !isPublicProposalView && !isPublicSignup && !isPublicInvite && !isDebugApi) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     // Preserve the original destination so login can redirect back

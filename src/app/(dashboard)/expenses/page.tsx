@@ -511,7 +511,6 @@ export default function ExpensesPage() {
       const { data } = await supabase
         .from('expenses')
         .select('*')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('date', { ascending: false })
       return (data ?? []) as ExpenseRow[]
@@ -527,7 +526,6 @@ export default function ExpensesPage() {
       const { data } = await supabase
         .from('projects')
         .select('id, title')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .in('status', ['Scheduled', 'In Progress'])
         .order('title')
@@ -544,7 +542,6 @@ export default function ExpensesPage() {
       const { data } = await supabase
         .from('business_settings')
         .select('budget_monthly,budget_labor,budget_materials,budget_advertising,budget_fuel,budget_tools,budget_subcontractors,budget_overhead,budget_insurance,budget_software,budget_other')
-        .eq('user_id', user.id)
         .single()
       return (data as BudgetSettings) ?? EMPTY_BUDGETS
     },

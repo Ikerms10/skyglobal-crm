@@ -279,15 +279,19 @@ export default function LeadsPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return []
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('leads')
-        .select('*, customer:customers(id, name, phone, email, type, address, city, state, zip)')
-        .eq('user_id', user.id)
+        .select('*, customer:customers!leads_customer_id_fkey(id, name, phone, email, type, address, city, state, zip)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
+      if (error) {
+        toast.error(`Failed to load leads: ${error.message}`)
+        return []
+      }
       return (data ?? []) as Lead[]
     },
     staleTime: 30_000,
+    retry: false,
   })
 
   const { data: proposalMap = {} } = useQuery({
@@ -299,7 +303,6 @@ export default function LeadsPage() {
       const { data } = await supabase
         .from('proposals')
         .select('customer_id, total_investment')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
       const map: Record<string, number> = {}
@@ -321,7 +324,6 @@ export default function LeadsPage() {
       const { data } = await supabase
         .from('activities')
         .select('lead_id, type')
-        .eq('user_id', user.id)
         .not('lead_id', 'is', null)
         .order('created_at', { ascending: false })
       const map: Record<string, string> = {}

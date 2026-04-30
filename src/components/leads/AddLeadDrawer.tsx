@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { LeadStage, LeadSource, Customer, CustomerType } from '@/types'
+import { Customer } from '@/types'
 import { Drawer } from '@/components/ui/Drawer'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -31,8 +31,10 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-const STAGES: LeadStage[] = ['New Lead', 'Estimate Sent', 'Follow-up', 'Won', 'Lost', 'On Hold']
-const SOURCES: LeadSource[] = ['Thumbtack', 'Referral', 'Google', 'Instagram', 'Door Knock', 'Facebook', 'Yelp', 'Other']
+const STAGES = ['New Lead', 'Estimate Sent', 'Follow-up', 'Won', 'Lost', 'On Hold'] as const
+const SOURCES = ['Thumbtack', 'Referral', 'Google', 'Instagram', 'Door Knock', 'Facebook', 'Yelp', 'Other'] as const
+type LeadStage = typeof STAGES[number]
+type LeadSource = typeof SOURCES[number]
 
 const DEFAULT_VALUES: FormData = {
   customer_search: '',
@@ -78,7 +80,6 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
       const { data } = await supabase
         .from('customers')
         .select('*')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .ilike('name', `%${debouncedSearch}%`)
         .limit(6)
@@ -89,50 +90,34 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      let customerId = selectedCustomer?.id ?? null
-
       if (customerMode === 'new' && !data.new_customer_name?.trim()) {
         throw new Error('Customer name is required')
       }
 
-      if (customerMode === 'new' && data.new_customer_name) {
-        const { data: newCustomer, error } = await supabase
-          .from('customers')
-          .insert({
-            user_id: user.id,
-            name: data.new_customer_name,
-            phone: data.new_customer_phone || null,
-            type: (data.new_customer_type as CustomerType) || 'Residential',
-          })
-          .select('id')
-          .single()
-        if (error) throw new Error(error.message)
-        customerId = newCustomer.id
-      }
-
-      const { error } = await supabase.from('leads').insert({
-        user_id: user.id,
-        customer_id: customerId,
+      const payload: Record<string, any> = {
         title: data.title,
-        source: data.source as LeadSource,
-        stage: (data.stage as LeadStage) || 'New Lead',
+        source: data.source,
+        stage: data.stage ?? 'New Lead',
         estimated_value: data.estimated_value ? Number(data.estimated_value) : null,
         notes: data.notes || null,
         follow_up_date: data.follow_up_date || null,
-      })
-      if (error) throw new Error(error.message)
+        customer_id: selectedCustomer?.id ?? null,
+      }
 
-      if (customerId) {
-        await supabase.from('activities').insert({
-          user_id: user.id,
-          customer_id: customerId,
-          type: 'Stage Change',
-          content: `New lead created: ${data.title}`,
-        })
+      if (customerMode === 'new' && data.new_customer_name) {
+        payload.new_customer_name = data.new_customer_name
+        payload.new_customer_phone = data.new_customer_phone || null
+        payload.new_customer_type = data.new_customer_type || 'Residential'
+      }
+
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const json = await res.json()
+        throw new Error(json.error ?? 'Failed to create lead')
       }
     },
     onSuccess: () => {

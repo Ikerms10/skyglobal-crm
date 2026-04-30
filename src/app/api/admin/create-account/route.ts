@@ -68,38 +68,59 @@ export async function POST(req: NextRequest) {
     // 4. Send welcome email with credentials
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY)
+      const { PLATFORM } = await import('@/lib/constants')
       await resend.emails.send({
-        from: 'SkyGlobal CRM <notifications@skyglobalsvcs.com>',
+        from: `${PLATFORM.fromName} <${PLATFORM.fromEmail}>`,
         to: [email],
-        subject: `Your SkyGlobal CRM account is ready — ${business_name}`,
+        subject: `Your ${PLATFORM.shortName} account is ready — ${business_name}`,
         html: `
-          <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; color: #1a1a1a;">
-            <div style="background: #1d1c17; padding: 24px 32px; border-radius: 8px 8px 0 0;">
-              <span style="font-size: 22px; font-weight: 700; color: #e6ab35;">SkyGlobal CRM</span>
-            </div>
-            <div style="background: #fff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-              <h2 style="margin: 0 0 12px; color: #1a1a1a;">Welcome to SkyGlobal CRM</h2>
-              <p style="color: #4b5563; margin: 0 0 24px; line-height: 1.6;">
-                Your account for <strong>${business_name}</strong> has been created. Here are your login credentials:
-              </p>
-              <table style="width: 100%; border-collapse: collapse; margin-bottom: 28px; background: #f9fafb; border-radius: 8px; overflow: hidden;">
-                <tr>
-                  <td style="padding: 12px 16px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #e5e7eb;">Email</td>
-                  <td style="padding: 12px 16px; font-weight: 600; font-size: 13px; border-bottom: 1px solid #e5e7eb;">${email}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 12px 16px; color: #6b7280; font-size: 13px;">Temp password</td>
-                  <td style="padding: 12px 16px; font-family: monospace; font-size: 14px; font-weight: 700; color: #e6ab35;">${password}</td>
-                </tr>
-              </table>
-              <a href="${APP_URL}/login" style="display: inline-block; background: #e6ab35; color: #1d1c17; font-weight: 700; padding: 14px 28px; border-radius: 7px; text-decoration: none; font-size: 15px;">
-                Sign in now →
-              </a>
-              <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0;">
-                We recommend changing your password after your first login.
-              </p>
-            </div>
-          </div>
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f5f0e8;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:28px;font-weight:900;color:#1d1c17;letter-spacing:-0.02em;margin-bottom:4px;">
+        Iker's <span style="color:#e6ab35;">CRM</span>
+      </div>
+      <div style="font-size:11px;color:#7a6a5a;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+        &amp; Business Dashboard
+      </div>
+    </div>
+    <div style="background:#fffdf7;border:1px solid #e8dcc0;border-radius:14px;padding:36px 32px;box-shadow:0 4px 12px rgba(0,0,0,0.04);">
+      <h1 style="font-size:22px;font-weight:800;color:#1d1c17;margin:0 0 12px;">
+        Welcome to Iker's CRM, ${business_name}! 🎉
+      </h1>
+      <p style="font-size:15px;color:#4a3f35;line-height:1.65;margin:0 0 24px;">
+        Your account has been set up. Here are your login credentials:
+      </p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:28px;background:#faf8f4;border-radius:10px;overflow:hidden;border:1px solid #e8dcc0;">
+        <tr>
+          <td style="padding:12px 16px;color:#7a6a5a;font-size:13px;border-bottom:1px solid #e8dcc0;">Email</td>
+          <td style="padding:12px 16px;font-weight:600;font-size:13px;border-bottom:1px solid #e8dcc0;">${email}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 16px;color:#7a6a5a;font-size:13px;">Temp password</td>
+          <td style="padding:12px 16px;font-family:monospace;font-size:14px;font-weight:700;color:#b8891f;">${password}</td>
+        </tr>
+      </table>
+      <div style="text-align:center;margin-bottom:20px;">
+        <a href="${APP_URL}/login" style="display:inline-block;padding:14px 32px;background:#e6ab35;color:#1d1c17;text-decoration:none;border-radius:10px;font-weight:800;font-size:15px;">
+          Sign In Now →
+        </a>
+      </div>
+      <p style="font-size:12px;color:#7a6a5a;text-align:center;margin:0;">
+        We recommend changing your password after your first login.
+      </p>
+    </div>
+    <div style="text-align:center;margin-top:28px;padding-top:16px;border-top:1px solid #e0d5c0;">
+      <div style="font-size:11px;color:#7a6a5a;line-height:1.6;">
+        ${PLATFORM.fullName}<br/>
+        <a href="${PLATFORM.url}" style="color:#b8891f;text-decoration:none;">${PLATFORM.url}</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
         `,
       }).catch(() => {})
     }

@@ -73,7 +73,6 @@ export default function ProjectsPage() {
       if (!user) return []
       const { data } = await supabase.from('projects')
         .select('*, customers(id, name)')
-        .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
       return (data ?? []) as ProjectWithCustomer[]

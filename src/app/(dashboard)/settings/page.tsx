@@ -464,7 +464,7 @@ export default function SettingsPage() {
 
     appearance: (
       <>
-        <SectionHead title="Appearance" description="Choose how SkyGlobal CRM looks. System follows your OS setting." />
+        <SectionHead title="Appearance" description="Choose how Iker's CRM looks. System follows your OS setting." />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           <ThemeCard label="Light" icon={Sun} active={preference === 'light'} onClick={() => setTheme('light')}
             preview={
