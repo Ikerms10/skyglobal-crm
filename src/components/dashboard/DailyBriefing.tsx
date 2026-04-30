@@ -60,7 +60,7 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
           .eq('status', 'In Progress')
           .lte('start_date', today),
         supabase.from('leads')
-          .select('id, title, customers(name)')
+          .select('id, title, customers!leads_customer_id_fkey(name)')
           .is('deleted_at', null)
           .lte('follow_up_date', today)
           .not('stage', 'in', '("Won","Lost")'),

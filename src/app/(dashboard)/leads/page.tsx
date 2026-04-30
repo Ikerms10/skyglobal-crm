@@ -273,40 +273,21 @@ export default function LeadsPage() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
-  const [debugInfo, setDebugInfo] = useState<string>('initializing...')
-
-  const { data: leads = [], isLoading, error: leadsError } = useQuery({
+  const { data: leads = [], isLoading } = useQuery({
     queryKey: ['leads'],
     queryFn: async () => {
       const supabase = createClient()
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError) {
-        const msg = `AUTH ERROR: ${authError.message}`
-        setDebugInfo(msg)
-        console.error('[Leads]', msg)
-        return []
-      }
-      if (!user) {
-        setDebugInfo('NO USER — auth.getUser() returned null')
-        console.error('[Leads] No authenticated user found')
-        return []
-      }
-      setDebugInfo(`User: ${user.email} (${user.id.substring(0,8)}...) — querying leads...`)
-      const { data, error, status, statusText } = await supabase
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return []
+      const { data, error } = await supabase
         .from('leads')
-        .select('*, customer:customers(id, name, phone, email, type, address, city, state, zip)')
+        .select('*, customer:customers!leads_customer_id_fkey(id, name, phone, email, type, address, city, state, zip)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
       if (error) {
-        const msg = `QUERY ERROR: ${error.message} | code=${error.code} | details=${error.details} | hint=${error.hint} | status=${status}`
-        setDebugInfo(msg)
-        console.error('[Leads]', msg)
         toast.error(`Failed to load leads: ${error.message}`)
         return []
       }
-      const msg = `✅ Loaded ${data?.length ?? 0} leads (HTTP ${status})`
-      setDebugInfo(msg)
-      console.log('[Leads]', msg)
       return (data ?? []) as Lead[]
     },
     staleTime: 30_000,
@@ -479,11 +460,6 @@ export default function LeadsPage() {
 
   return (
     <div style={{ padding: 'clamp(12px, 4vw, 24px)', minHeight: '100%' }}>
-
-      {/* TEMPORARY DEBUG BANNER — REMOVE AFTER FIXING */}
-      <div style={{ background: '#1a1a2e', border: '2px solid #e94560', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontFamily: 'monospace', fontSize: 13, color: '#e94560' }}>
-        <strong>🔍 DEBUG:</strong> {debugInfo} | leads.length={leads.length} | isLoading={String(isLoading)} | error={leadsError ? String(leadsError) : 'none'}
-      </div>
 
       {/* Header bar */}
       <div

@@ -91,7 +91,7 @@ export function NotificationBell() {
 
       const [fu, pay, pd] = await Promise.all([
         supabase.from('leads')
-          .select('id, title, follow_up_date, customers(name)')
+          .select('id, title, follow_up_date, customers!leads_customer_id_fkey(name)')
           
           .lt('follow_up_date', today)
           .not('stage', 'in', '("Won","Lost")')

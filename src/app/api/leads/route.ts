@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     // 3. Fetch leads for this tenant (service role — bypasses all RLS)
     let query = db
       .from('leads')
-      .select('*, customer:customers(id, name, phone, email, type, address, city, state, zip)')
+      .select('*, customer:customers!leads_customer_id_fkey(id, name, phone, email, type, address, city, state, zip)')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
         notes: body.notes ?? null,
         follow_up_date: body.follow_up_date ?? null,
       })
-      .select('*, customer:customers(id, name, phone, email, type)')
+      .select('*, customer:customers!leads_customer_id_fkey(id, name, phone, email, type)')
       .single()
 
     if (leadErr) return NextResponse.json({ error: leadErr.message }, { status: 500 })

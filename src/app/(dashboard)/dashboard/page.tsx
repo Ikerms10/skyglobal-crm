@@ -363,7 +363,7 @@ export default function DashboardPage() {
         supabase.from('projects').select('contract_value,created_at,status').is('deleted_at', null),
         supabase.from('expenses').select('amount,date').is('deleted_at', null),
         supabase.from('project_expenses').select('amount,date'),
-        supabase.from('leads').select('id,title,follow_up_date,customers(name)')
+        supabase.from('leads').select('id,title,follow_up_date,customers!leads_customer_id_fkey(name)')
           .is('deleted_at', null)
           .lte('follow_up_date', subMonths(new Date(), -1).toISOString().split('T')[0])
           .gte('follow_up_date', today).not('stage', 'in', '("Won","Lost")')

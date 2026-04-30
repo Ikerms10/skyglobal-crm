@@ -76,7 +76,7 @@ export function GlobalSearch() {
       const q = `%${debouncedQuery}%`
       const [customers, leads, projects] = await Promise.all([
         supabase.from('customers').select('id, name, email, phone, type').is('deleted_at', null).or(`name.ilike.${q},email.ilike.${q},phone.ilike.${q}`).limit(5),
-        supabase.from('leads').select('id, title, stage, estimated_value, customers(name)').is('deleted_at', null).ilike('title', q).limit(5),
+        supabase.from('leads').select('id, title, stage, estimated_value, customers!leads_customer_id_fkey(name)').is('deleted_at', null).ilike('title', q).limit(5),
         supabase.from('projects').select('id, title, customer_id, status, contract_value, customers(name)').is('deleted_at', null).ilike('title', q).limit(5),
       ])
       return {
