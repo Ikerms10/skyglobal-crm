@@ -34,10 +34,10 @@ export default async function InvitePage({ params }: Props) {
       {/* Platform brand */}
       <div style={{ marginBottom: 36, textAlign: 'center' }}>
         <p style={{ fontSize: 30, fontWeight: 900, color: 'var(--c-text-1)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.04em', margin: 0 }}>
-          Iker's{' '}<span style={{ color: 'var(--c-gold)' }}>CRM</span>
+          Iker's
         </p>
         <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--c-text-4)', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase', margin: '4px 0 0' }}>
-          &amp; Business Dashboard
+          Professional CRM
         </p>
         <p style={{ fontSize: 13, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", margin: '10px 0 0' }}>
           {isNewBusiness

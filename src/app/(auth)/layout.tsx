@@ -5,7 +5,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--c-canvas)' }}>
       <div className="w-full max-w-md">
 
-        {/* Platform header — "Iker's CRM & Business Dashboard" */}
+        {/* Platform header */}
         <div className="text-center mb-8">
           {/* Icon mark */}
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4" style={{ background: '#1C1209' }}>
@@ -14,7 +14,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </svg>
           </div>
 
-          {/* Platform name: "Iker's CRM" */}
           <h1
             style={{
               fontSize: 28,
@@ -26,11 +25,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
-            Iker's{' '}
-            <span style={{ color: 'var(--c-gold)' }}>CRM</span>
+            Iker's
           </h1>
 
-          {/* Subtitle: "& Business Dashboard" */}
           <p
             style={{
               fontSize: 11,
@@ -42,7 +39,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               fontFamily: "'DM Mono', monospace",
             }}
           >
-            &amp; Business Dashboard
+            Professional CRM
           </p>
         </div>
 

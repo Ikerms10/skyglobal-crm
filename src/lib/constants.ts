@@ -6,13 +6,13 @@
 
 export const PLATFORM = {
   // Full platform name
-  fullName: "Iker's CRM & Business Dashboard",
+  fullName: "Iker's",
 
   // Short name (headers, email subjects, compact UI)
-  shortName: "Iker's CRM",
+  shortName: "Iker's",
 
   // Tagline
-  tagline: 'Professional business management for contractors',
+  tagline: 'Professional CRM for contractors',
 
   // URLs
   url: 'https://crm.skyglobalsvcs.com',
@@ -20,7 +20,7 @@ export const PLATFORM = {
 
   // Email
   fromEmail: 'noreply@skyglobalsvcs.com',
-  fromName: "Iker's CRM",
+  fromName: "Iker's",
   supportEmail: 'ikerms10@gmail.com',
 
   // Brand colors
@@ -29,8 +29,9 @@ export const PLATFORM = {
   textColor: '#1d1c17',      // near-black
 
   // Footer copy
-  footer: "Powered by Iker's CRM & Business Dashboard",
-  footerShort: "Powered by Iker's CRM",
+  poweredBy: "Powered by Iker's",
+  footer: "Powered by Iker's",
+  footerShort: "Powered by Iker's",
 } as const;
 
 // Convenience helper

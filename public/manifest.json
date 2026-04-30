@@ -1,7 +1,7 @@
 {
-  "name": "Iker's CRM & Business Dashboard",
-  "short_name": "Iker's CRM",
-  "description": "Professional business management for contractors",
+  "name": "Iker's",
+  "short_name": "Iker's",
+  "description": "Professional CRM for contractors",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#1d1c17",

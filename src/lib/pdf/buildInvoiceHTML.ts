@@ -164,7 +164,7 @@ export function buildInvoiceHTML(
   <!-- Footer -->
   <div style="position:absolute;bottom:20px;left:36px;right:36px;border-top:1px solid ${BORDER};padding-top:8px;display:flex;justify-content:space-between;font-size:9px;color:${TEXT_MUTED};">
     <span>${footerBiz || business.name}</span>
-    <span>Thank you for your business!</span>
+    <span style="color:#b8891f;font-weight:600;">Powered by Iker's</span>
   </div>
 </div>`
 }
