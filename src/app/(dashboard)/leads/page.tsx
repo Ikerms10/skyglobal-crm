@@ -276,15 +276,11 @@ export default function LeadsPage() {
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ['leads'],
     queryFn: async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return []
-      const { data } = await supabase
-        .from('leads')
-        .select('*, customer:customers(id, name, phone, email, type, address, city, state, zip)')
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false })
-      return (data ?? []) as Lead[]
+      // Use server-side API route (service role) to bypass RLS issues in production
+      const res = await fetch('/api/leads')
+      if (!res.ok) return []
+      const json = await res.json()
+      return (json.leads ?? []) as Lead[]
     },
     staleTime: 30_000,
   })

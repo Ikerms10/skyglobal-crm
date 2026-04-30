@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const log: string[] = []
 
     // 1. Find Iker's auth user
-    const { data: users } = await db.auth.admin.listUsers({ perPage: 1000 })
+    const { data: users } = await db.auth.admin.listUsers({ perPage: 1000, page: 1 })
     const ikerUser = users?.users?.find(u => u.email === 'ikerms10@gmail.com')
     if (!ikerUser) {
       return NextResponse.json({ ok: false, error: 'ikerms10@gmail.com not found in auth.users' }, { status: 400 })
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
           .from(table as any)
           .update({ tenant_id: tenantId })
           .is('tenant_id', null)
-          .select('id', { count: 'exact', head: true })
+          .select('id')
         if (error) log.push(`${table}: update error — ${error.message}`)
         else log.push(`✓ ${table}: backfilled (matched rows with null tenant_id)`)
       } catch (e: any) {
