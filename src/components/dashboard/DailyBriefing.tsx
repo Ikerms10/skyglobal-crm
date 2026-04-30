@@ -56,21 +56,21 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
       const [jobsRes, followRes, overdueRes, leadsRes] = await Promise.all([
         supabase.from('projects')
           .select('id, title, customers(name)')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .eq('status', 'In Progress')
           .lte('start_date', today),
         supabase.from('leads')
           .select('id, title, customers(name)')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .lte('follow_up_date', today)
           .not('stage', 'in', '("Won","Lost")'),
         supabase.from('projects')
           .select('id, title, contract_value, amount_paid, customer_id')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .in('payment_status', ['Unpaid', 'Partial', 'Overdue']),
         supabase.from('leads')
           .select('id, estimated_value')
-          .eq('user_id', user.id).is('deleted_at', null)
+          .is('deleted_at', null)
           .gte('created_at', today + 'T00:00:00'),
       ])
 

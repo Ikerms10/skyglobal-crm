@@ -52,7 +52,7 @@ export function NotificationBell() {
       const { data } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
+        
         .order('created_at', { ascending: false })
         .limit(20)
       setDbNotifs((data ?? []) as AppNotification[])
@@ -92,7 +92,7 @@ export function NotificationBell() {
       const [fu, pay, pd] = await Promise.all([
         supabase.from('leads')
           .select('id, title, follow_up_date, customers(name)')
-          .eq('user_id', user.id)
+          
           .lt('follow_up_date', today)
           .not('stage', 'in', '("Won","Lost")')
           .is('deleted_at', null)
@@ -100,13 +100,13 @@ export function NotificationBell() {
           .limit(10),
         supabase.from('projects')
           .select('id, title, contract_value, amount_paid, payment_status, customer_id, customers(name)')
-          .eq('user_id', user.id)
+          
           .or('payment_status.eq.Overdue')
           .is('deleted_at', null)
           .limit(10),
         supabase.from('projects')
           .select('id, title, end_date, customer_id, customers(name)')
-          .eq('user_id', user.id)
+          
           .lt('end_date', today)
           .not('status', 'in', '("Completed","Cancelled")')
           .is('deleted_at', null)

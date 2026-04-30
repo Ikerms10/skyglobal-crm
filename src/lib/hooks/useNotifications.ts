@@ -18,7 +18,7 @@ export function useNotifications() {
       const { data: leads } = await supabase
         .from('leads')
         .select('id, title, follow_up_date, customer_id')
-        .eq('user_id', user.id)
+        
         .is('deleted_at', null)
         .lte('follow_up_date', today)
         .not('stage', 'in', '("Won","Lost")')
@@ -39,7 +39,7 @@ export function useNotifications() {
       const { data: projects } = await supabase
         .from('projects')
         .select('id, title, customer_id, payment_status, end_date')
-        .eq('user_id', user.id)
+        
         .is('deleted_at', null)
         .in('payment_status', ['Unpaid', 'Partial', 'Overdue'])
         .not('status', 'eq', 'Cancelled')
@@ -61,7 +61,7 @@ export function useNotifications() {
       const { data: lateProjects } = await supabase
         .from('projects')
         .select('id, title, customer_id, end_date, status')
-        .eq('user_id', user.id)
+        
         .is('deleted_at', null)
         .lt('end_date', today)
         .not('status', 'in', '("Completed","Cancelled")')

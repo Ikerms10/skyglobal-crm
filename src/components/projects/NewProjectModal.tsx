@@ -74,7 +74,7 @@ export function NewProjectModal({ open, onClose, preselectedCustomerId }: NewPro
       const { data } = await supabase
         .from('customers')
         .select('*')
-        .eq('user_id', user.id)
+        
         .is('deleted_at', null)
         .ilike('name', `%${debouncedSearch}%`)
         .limit(6)

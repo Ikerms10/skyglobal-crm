@@ -64,8 +64,8 @@ export function InvoiceModal({ onClose, onSaved, projectId, invoice }: Props) {
       if (!user) return
 
       const [custRes, projRes] = await Promise.all([
-        supabase.from('customers').select('id, name').eq('user_id', user.id).is('deleted_at', null).order('name'),
-        supabase.from('projects').select('id, title, customer_id, contract_value').eq('user_id', user.id).is('deleted_at', null).order('title'),
+        supabase.from('customers').select('id, name').is('deleted_at', null).order('name'),
+        supabase.from('projects').select('id, title, customer_id, contract_value').is('deleted_at', null).order('title'),
       ])
       setCustomers(custRes.data ?? [])
       setProjects(projRes.data ?? [])
