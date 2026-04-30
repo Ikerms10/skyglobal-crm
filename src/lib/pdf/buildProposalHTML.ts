@@ -251,7 +251,7 @@ function hSignatureBlock() {
 function hFooter(biz: BusinessInfo, pageNum: number, totalPages: number) {
   return `<div style="position:absolute;bottom:16px;left:32px;right:32px;border-top:1px solid ${BORDER};padding-top:6px;display:flex;justify-content:space-between;font-size:7.5px;color:${TEXT_MUTED};">
   <div>${e(biz.name)} · Confidential</div>
-  <div style="color:${GOLD_DARK};font-weight:bold;">Powered by Iker's CRM</div>
+  <div style="color:${GOLD_DARK};font-weight:bold;">Powered by Iker's</div>
   <div>Page ${pageNum} of ${totalPages}</div>
 </div>`
 }

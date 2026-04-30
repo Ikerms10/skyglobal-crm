@@ -267,12 +267,12 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
                 color: 'var(--c-text-4)',
                 lineHeight: 1,
                 fontFamily: "'DM Mono', monospace",
-                letterSpacing: '0.14em',
+                letterSpacing: '0.10em',
                 textTransform: 'uppercase',
                 margin: 0,
               }}
             >
-              CRM Dashboard
+              Powered by <span style={{ color: 'var(--c-gold)' }}>Iker's</span>
             </p>
           </div>
         </div>
@@ -481,7 +481,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
           }}
         >
           Powered by{' '}
-          <span style={{ color: 'var(--c-gold)', fontWeight: 700 }}>Iker's CRM</span>
+          <span style={{ color: 'var(--c-gold)', fontWeight: 700 }}>Iker's</span>
         </div>
       </div>
     </aside>

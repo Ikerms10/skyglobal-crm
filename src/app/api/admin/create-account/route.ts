@@ -80,15 +80,15 @@ export async function POST(req: NextRequest) {
   <div style="max-width:520px;margin:0 auto;padding:40px 20px;">
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:28px;font-weight:900;color:#1d1c17;letter-spacing:-0.02em;margin-bottom:4px;">
-        Iker's <span style="color:#e6ab35;">CRM</span>
+        Iker's
       </div>
       <div style="font-size:11px;color:#7a6a5a;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
-        &amp; Business Dashboard
+        Professional CRM
       </div>
     </div>
     <div style="background:#fffdf7;border:1px solid #e8dcc0;border-radius:14px;padding:36px 32px;box-shadow:0 4px 12px rgba(0,0,0,0.04);">
       <h1 style="font-size:22px;font-weight:800;color:#1d1c17;margin:0 0 12px;">
-        Welcome to Iker's CRM, ${business_name}! 🎉
+        Welcome to Iker's, ${business_name}! 🎉
       </h1>
       <p style="font-size:15px;color:#4a3f35;line-height:1.65;margin:0 0 24px;">
         Your account has been set up. Here are your login credentials:

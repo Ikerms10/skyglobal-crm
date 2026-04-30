@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#e6ab35" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Iker's CRM" />
+        <meta name="apple-mobile-web-app-title" content="Iker's" />
       </head>
       <body className="min-h-screen">
         <div aria-hidden="true" className="paper-texture" />

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   <div style="max-width:480px;margin:0 auto;padding:32px 20px;">
     <div style="text-align:center;margin-bottom:24px;">
       <div style="font-size:22px;font-weight:900;color:#1d1c17;letter-spacing:-0.02em;">
-        Iker's <span style="color:#e6ab35;">CRM</span>
+        Iker's
       </div>
       <div style="font-size:10px;color:#7a6a5a;letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;">
         Admin Alert

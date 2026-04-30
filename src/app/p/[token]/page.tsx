@@ -302,7 +302,7 @@ export default function ProposalPortalPage({ params }: { params: { token: string
             {' · skyglobalsvcs@gmail.com'}
           </p>
           <p style={{ margin: 0, fontSize: 10, color: '#b8891f', fontWeight: 600, letterSpacing: '0.04em' }}>
-            Powered by Iker's CRM &amp; Business Dashboard
+            Powered by Iker's
           </p>
         </div>
       </div>
