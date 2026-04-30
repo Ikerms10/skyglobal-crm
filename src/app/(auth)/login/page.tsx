@@ -45,11 +45,22 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
+      const { data: authData, error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
       if (error) throw new Error(error.message)
       localStorage.removeItem('draft:login')
       toast.success('Welcome back!')
-      router.push('/dashboard')
+      const { data: adminRow } = await supabase
+        .from('master_admins')
+        .select('user_id')
+        .eq('user_id', authData.user.id)
+        .maybeSingle()
+      const { data: tuRow } = await supabase
+        .from('tenant_users')
+        .select('tenant_id')
+        .eq('user_id', authData.user.id)
+        .maybeSingle()
+      const destination = (adminRow && !tuRow) ? '/admin' : '/dashboard'
+      router.push(destination)
       router.refresh()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed'

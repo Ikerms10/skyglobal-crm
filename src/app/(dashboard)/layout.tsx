@@ -11,6 +11,7 @@ import { MobileBusinessName } from '@/components/layout/MobileBusinessName'
 import { ImpersonationBanner } from '@/components/layout/ImpersonationBanner'
 import { TrialBanner } from '@/components/layout/TrialBanner'
 import { SuspendedGuard } from '@/components/layout/SuspendedGuard'
+import { AdminGuard } from '@/components/layout/AdminGuard'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -87,6 +88,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
           }}
         >
+          <AdminGuard />
           <RealtimeSync />
           <SuspendedGuard>{children}</SuspendedGuard>
         </main>

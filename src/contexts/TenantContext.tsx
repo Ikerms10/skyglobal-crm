@@ -23,6 +23,8 @@ interface TenantContextValue {
   tenantId: string | null
   isLoading: boolean
   isMasterAdmin: boolean
+  /** True when user is a master admin with no tenant of their own (pure platform admin) */
+  isAdminOnly: boolean
   updateTenant: (patch: Partial<Tenant>) => void
   refetchTenant: () => Promise<void>
 }
@@ -32,6 +34,7 @@ const TenantContext = createContext<TenantContextValue>({
   tenantId: null,
   isLoading: true,
   isMasterAdmin: false,
+  isAdminOnly: false,
   updateTenant: () => {},
   refetchTenant: async () => {},
 })
@@ -40,6 +43,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isMasterAdmin, setIsMasterAdmin] = useState(false)
+  const [isAdminOnly, setIsAdminOnly] = useState(false)
 
   const fetchTenant = useCallback(async () => {
     const supabase = createClient()
@@ -91,6 +95,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     if (!tuRow?.tenant_id) {
       setTenant(null)
       setIsMasterAdmin(adminRow !== null)
+      setIsAdminOnly(adminRow !== null)
       setIsLoading(false)
       return
     }
@@ -118,6 +123,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       tenantId: tenant?.id ?? null,
       isLoading,
       isMasterAdmin,
+      isAdminOnly,
       updateTenant,
       refetchTenant: fetchTenant,
     }}>

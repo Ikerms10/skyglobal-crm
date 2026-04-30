@@ -41,7 +41,12 @@ export async function updateSession(request: NextRequest) {
   }
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    // Check if admin-only (no tenant) so we skip the /dashboard detour
+    const [adminRes, tuRes] = await Promise.all([
+      supabase.from('master_admins').select('user_id').eq('user_id', user.id).maybeSingle(),
+      supabase.from('tenant_users').select('tenant_id').eq('user_id', user.id).maybeSingle(),
+    ])
+    url.pathname = (adminRes.data && !tuRes.data) ? '/admin' : '/dashboard'
     return NextResponse.redirect(url)
   }
   return supabaseResponse
