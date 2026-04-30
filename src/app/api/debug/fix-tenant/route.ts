@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 
-// POST /api/debug/fix-tenant
+// POST /api/debug/fix-tenant?secret=ADMIN_SECRET_KEY
 // One-time fix: ensures SkyGlobal tenant exists, Iker is linked, and all data is backfilled.
-// Protected: only callable by master admin.
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const secret = req.nextUrl.searchParams.get('secret')
+  const adminSecret = process.env.ADMIN_SECRET_KEY ?? 'iker-crm-fix-2026'
+  if (secret !== adminSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const db = createServiceClient()
 
