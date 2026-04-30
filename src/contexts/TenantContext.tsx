@@ -43,7 +43,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   const fetchTenant = useCallback(async () => {
     const supabase = createClient()
-
     const { data: { user } } = await supabase.auth.getUser()
 
     // Check for admin impersonation
@@ -51,14 +50,56 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       ? sessionStorage.getItem('admin_viewing_tenant')
       : null
 
-    const [{ data: tenantData }, { data: adminRow }] = await Promise.all([
-      impersonatingId
-        ? supabase.from('tenants').select('*').eq('id', impersonatingId).single()
-        : supabase.from('tenants').select('*').single(),
-      user
-        ? supabase.from('master_admins').select('user_id').eq('user_id', user.id).single()
-        : Promise.resolve({ data: null }),
+    if (impersonatingId) {
+      // Admin is viewing a specific tenant — fetch directly by id
+      const [{ data: tenantData }, { data: adminRow }] = await Promise.all([
+        supabase.from('tenants').select('*').eq('id', impersonatingId).single(),
+        user
+          ? supabase.from('master_admins').select('user_id').eq('user_id', user.id).single()
+          : Promise.resolve({ data: null }),
+      ])
+      setTenant(tenantData ?? null)
+      setIsMasterAdmin(adminRow !== null)
+      setIsLoading(false)
+      return
+    }
+
+    if (!user) {
+      setTenant(null)
+      setIsLoading(false)
+      return
+    }
+
+    // Resolve tenant via tenant_users (same logic as get_my_tenant_id()).
+    // Using .maybeSingle() on the oldest membership row so multiple tenant_users
+    // rows (e.g. from duplicate tenant migrations) never cause a .single() throw.
+    const [{ data: tuRow }, { data: adminRow }] = await Promise.all([
+      supabase
+        .from('tenant_users')
+        .select('tenant_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('master_admins')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single(),
     ])
+
+    if (!tuRow?.tenant_id) {
+      setTenant(null)
+      setIsMasterAdmin(adminRow !== null)
+      setIsLoading(false)
+      return
+    }
+
+    const { data: tenantData } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('id', tuRow.tenant_id)
+      .single()
 
     setTenant(tenantData ?? null)
     setIsMasterAdmin(adminRow !== null)
