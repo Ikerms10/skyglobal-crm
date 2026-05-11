@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/service'
 import { z } from 'zod'
 
@@ -17,10 +19,29 @@ const bodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // Authenticate caller — user_id in body must match the session user
+    const cookieStore = await cookies()
+    const sessionClient = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll(s) { s.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) },
+        },
+      }
+    )
+    const { data: { user } } = await sessionClient.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const body = await req.json()
     const parsed = bodySchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    if (parsed.data.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { invite_id, user_id, tenant_id, role, business_name, business_phone, industry, business_logo_url, business_logo_path } = parsed.data

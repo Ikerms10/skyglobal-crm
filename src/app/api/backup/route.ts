@@ -24,30 +24,48 @@ function createSupabaseClient(cookieStore: Awaited<ReturnType<typeof cookies>>) 
 }
 
 async function runBackup(supabase: ReturnType<typeof createSupabaseClient>, userId: string) {
-  const [
-    customersRes,
-    leadsRes,
-    projectsRes,
-    projectExpensesRes,
-    expensesRes,
-    activitiesRes,
-    lineItemsRes,
-  ] = await Promise.all([
-    supabase.from('customers').select('*').eq('user_id', userId).is('deleted_at', null),
-    supabase.from('leads').select('*').eq('user_id', userId).is('deleted_at', null),
-    supabase.from('projects').select('*').eq('user_id', userId).is('deleted_at', null),
-    supabase.from('project_expenses').select('*').eq('user_id', userId),
-    supabase.from('expenses').select('*').eq('user_id', userId).is('deleted_at', null),
-    supabase.from('activities').select('*').eq('user_id', userId),
-    supabase
-      .from('project_line_items')
-      .select('*, project:projects!inner(user_id)')
-      .eq('project.user_id', userId),
+  // Resolve tenant — backup must capture all team members' records, not just this user's
+  const { data: tuRow } = await supabase
+    .from('tenant_users')
+    .select('tenant_id')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  const tenantId = tuRow?.tenant_id
+  if (!tenantId) {
+    return {
+      exported_at: new Date().toISOString(),
+      user_id: userId,
+      tenant_id: null,
+      version: '1.0',
+      data: { customers: [], leads: [], projects: [], project_expenses: [], expenses: [], activities: [], project_line_items: [] },
+    }
+  }
+
+  const [customersRes, leadsRes, projectsRes, expensesRes, activitiesRes] = await Promise.all([
+    supabase.from('customers').select('*').eq('tenant_id', tenantId).is('deleted_at', null),
+    supabase.from('leads').select('*').eq('tenant_id', tenantId).is('deleted_at', null),
+    supabase.from('projects').select('*').eq('tenant_id', tenantId).is('deleted_at', null),
+    supabase.from('expenses').select('*').eq('tenant_id', tenantId).is('deleted_at', null),
+    supabase.from('activities').select('*').eq('tenant_id', tenantId),
+  ])
+
+  const projectIds = (projectsRes.data ?? []).map((p: { id: string }) => p.id)
+  const [projectExpensesRes, lineItemsRes] = await Promise.all([
+    projectIds.length
+      ? supabase.from('project_expenses').select('*').in('project_id', projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase.from('project_line_items').select('*').in('project_id', projectIds)
+      : Promise.resolve({ data: [] }),
   ])
 
   return {
     exported_at: new Date().toISOString(),
     user_id: userId,
+    tenant_id: tenantId,
     version: '1.0',
     data: {
       customers: customersRes.data ?? [],
