@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileNav } from '@/components/layout/MobileNav'
@@ -12,6 +13,7 @@ import { ImpersonationBanner } from '@/components/layout/ImpersonationBanner'
 import { TrialBanner } from '@/components/layout/TrialBanner'
 import { SuspendedGuard } from '@/components/layout/SuspendedGuard'
 import { AdminGuard } from '@/components/layout/AdminGuard'
+import { AdminViewHandler } from '@/components/layout/AdminViewHandler'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -89,6 +91,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           }}
         >
           <AdminGuard />
+          <Suspense fallback={null}><AdminViewHandler /></Suspense>
           <RealtimeSync />
           <SuspendedGuard>{children}</SuspendedGuard>
         </main>

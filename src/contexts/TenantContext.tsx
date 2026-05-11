@@ -55,17 +55,22 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       : null
 
     if (impersonatingId) {
-      // Admin is viewing a specific tenant — fetch directly by id
+      // Verify admin status FIRST — a non-admin setting this key must not get another tenant's context.
       const [{ data: tenantData }, { data: adminRow }] = await Promise.all([
         supabase.from('tenants').select('*').eq('id', impersonatingId).single(),
         user
           ? supabase.from('master_admins').select('user_id').eq('user_id', user.id).single()
           : Promise.resolve({ data: null }),
       ])
-      setTenant(tenantData ?? null)
-      setIsMasterAdmin(adminRow !== null)
-      setIsLoading(false)
-      return
+      if (!adminRow) {
+        // Not a real admin — clear the key and fall through to normal tenant resolution.
+        if (typeof window !== 'undefined') sessionStorage.removeItem('admin_viewing_tenant')
+      } else {
+        setTenant(tenantData ?? null)
+        setIsMasterAdmin(true)
+        setIsLoading(false)
+        return
+      }
     }
 
     if (!user) {

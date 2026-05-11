@@ -485,8 +485,7 @@ export function AdminPanel({ tenants: initialTenants }: { tenants: Tenant[] }) {
   }, [router])
 
   const handleView = (tenantId: string) => {
-    sessionStorage.setItem('admin_viewing_tenant', tenantId)
-    router.push('/dashboard')
+    window.open(`/dashboard?admin_view=${tenantId}`, '_blank')
   }
 
   const handlePlanSaved = (id: string, plan: string) => {
