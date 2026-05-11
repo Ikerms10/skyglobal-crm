@@ -138,6 +138,14 @@ export default function ReportsPage() {
     return projExpenses.filter((x) => x.date >= s && x.date <= e);
   }, [projExpenses, dateStart, dateEnd]);
 
+  // Project expenses attributed to the period by project membership, not expense date.
+  // A project expense should travel with its project — if a project started in April,
+  // all its costs belong to April even if an expense was logged later.
+  const periodProjExpenses = useMemo(() => {
+    const ids = new Set(filteredProjects.map((p) => p.id));
+    return projExpenses.filter((e) => ids.has(e.project_id));
+  }, [filteredProjects, projExpenses]);
+
   const filteredLeads = useMemo(() => {
     const s = dateStart.toISOString();
     const e = dateEnd.toISOString();
@@ -146,16 +154,19 @@ export default function ReportsPage() {
 
   // KPI calculations
   const kpi = useMemo(() => {
+    // Cancelled projects are excluded — all others (Planning, Scheduled, In Progress, Completed) count.
     const revenue = filteredProjects
-      .filter((p) => p.status === 'In Progress' || p.status === 'Completed')
+      .filter((p) => p.status !== 'Cancelled')
       .reduce((s, p) => s + (p.contract_value ?? 0), 0);
+    // Project expenses follow their project's period, not the expense date, so revenue and
+    // costs are always paired to the same period. General expenses remain date-filtered.
     const totalExp =
       filteredExpenses.reduce((s, e) => s + e.amount, 0) +
-      filteredProjExp.reduce((s, e) => s + e.amount, 0);
+      periodProjExpenses.reduce((s, e) => s + e.amount, 0);
     const profit = revenue - totalExp;
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
     return { revenue, totalExp, profit, margin };
-  }, [filteredProjects, filteredExpenses, filteredProjExp]);
+  }, [filteredProjects, filteredExpenses, periodProjExpenses]);
 
   // Monthly chart data
   const monthlyData = useMemo(() => {
@@ -163,21 +174,22 @@ export default function ReportsPage() {
     return months.map((m) => {
       const ms = format(startOfMonth(m), 'yyyy-MM-dd');
       const me = format(endOfMonth(m), 'yyyy-MM-dd');
-      const msi = startOfMonth(m).toISOString();
-      const mei = endOfMonth(m).toISOString();
 
-      const rev = filteredProjects
-        .filter((p) => {
-          const d = (p.start_date ?? p.created_at ?? '').substring(0, 10);
-          return d >= ms && d <= me;
-        })
-        .reduce((s, p) => s + (p.contract_value ?? 0), 0);
+      // Projects starting this month, excluding Cancelled — consistent with KPI revenue logic
+      const monthProjects = filteredProjects.filter((p) => {
+        const d = (p.start_date ?? p.created_at ?? '').substring(0, 10);
+        return d >= ms && d <= me && p.status !== 'Cancelled';
+      });
+      const monthProjectIds = new Set(monthProjects.map((p) => p.id));
+
+      const rev = monthProjects.reduce((s, p) => s + (p.contract_value ?? 0), 0);
 
       const genExp = filteredExpenses
         .filter((e) => e.date >= ms && e.date <= me)
         .reduce((s, e) => s + e.amount, 0);
-      const prjExp = filteredProjExp
-        .filter((e) => e.date >= ms && e.date <= me)
+      // Project expenses attributed to the month their project started, not the expense date
+      const prjExp = projExpenses
+        .filter((e) => monthProjectIds.has(e.project_id))
         .reduce((s, e) => s + e.amount, 0);
       const exp = genExp + prjExp;
 
@@ -188,7 +200,7 @@ export default function ReportsPage() {
         profit: Math.round(rev - exp),
       };
     });
-  }, [filteredProjects, filteredExpenses, filteredProjExp, dateStart, dateEnd]);
+  }, [filteredProjects, filteredExpenses, projExpenses, dateStart, dateEnd]);
 
   // Lead source donut
   const sourceData = useMemo(() => {
