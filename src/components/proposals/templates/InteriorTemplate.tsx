@@ -109,7 +109,7 @@ interface Props {
 export function InteriorTemplate({ data, onChange }: Props) {
   const f =
     (field: keyof Props['data']) => (val: string | number | LineItem[] | boolean | ScopeStep[]) =>
-      onChange({ [field]: val } as any);
+      onChange({ [field]: val } as Partial<Props['data']>);
 
   return (
     <div style={S.page}>

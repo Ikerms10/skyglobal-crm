@@ -132,7 +132,7 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
     setLoadingItems(true)
     const supabase = createClient()
     const { data } = await supabase.from('work_order_items').select('*').eq('work_order_id', wo.id).order('created_at')
-    setWOItems(data ?? [])
+    setWOItems((data ?? []) as unknown as WorkOrderItem[])
     setLoadingItems(false)
   }
 
@@ -161,7 +161,7 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
       if (error) throw new Error(error.message)
 
       // Auto-create expense
-      await syncWorkOrderExpense({ ...wo, project_id: projectId }, userId)
+      await syncWorkOrderExpense({ ...wo, project_id: projectId } as unknown as WorkOrder & { project_id: string }, userId)
 
       toast.success('Work order created')
       setShowCreate(false)
@@ -183,12 +183,12 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
         .eq('id', woId).select().single()
       if (error) throw new Error(error.message)
       if (status === 'Completed') {
-        await syncWorkOrderExpense({ ...updated, project_id: projectId }, userId)
+        await syncWorkOrderExpense({ ...updated, project_id: projectId } as unknown as WorkOrder & { project_id: string }, userId)
         toast.success(`Work order completed! ${formatCurrency(updated.actual_cost || updated.budget)} logged as project expense`)
       } else {
         toast.success(`Status updated to ${status}`)
       }
-      setSelectedWO(updated)
+      setSelectedWO(updated as unknown as WorkOrder)
       onRefresh()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update status')
@@ -208,9 +208,9 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
         .update({ actual_cost: val, updated_at: new Date().toISOString() })
         .eq('id', selectedWO.id).select().single()
       if (error) throw new Error(error.message)
-      await syncWorkOrderExpense({ ...updated, project_id: projectId }, userId)
+      await syncWorkOrderExpense({ ...updated, project_id: projectId } as unknown as WorkOrder & { project_id: string }, userId)
       toast.success('Actual cost updated and synced to project expenses')
-      setSelectedWO(updated)
+      setSelectedWO(updated as unknown as WorkOrder)
       onRefresh()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update')
@@ -233,7 +233,7 @@ export function WorkOrdersTab({ projectId, projectTitle, projectAddress, userId,
         unit_price: price, total,
       }).select().single()
       if (error) throw new Error(error.message)
-      setWOItems(prev => [...prev, data])
+      setWOItems(prev => [...prev, data as unknown as WorkOrderItem])
       setLiDesc(''); setLiQty(''); setLiUnit(''); setLiPrice('')
       toast.success('Line item added')
     } catch (err) {

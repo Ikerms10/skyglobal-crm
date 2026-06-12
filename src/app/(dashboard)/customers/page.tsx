@@ -80,7 +80,7 @@ export default function CustomersPage() {
         .order('created_at', { ascending: false })
       const map: Record<string, string> = {}
       for (const p of data ?? []) {
-        if (p.customer_id && !map[p.customer_id]) map[p.customer_id] = p.created_at
+        if (p.customer_id && p.created_at && !map[p.customer_id]) map[p.customer_id] = p.created_at
       }
       return map
     },

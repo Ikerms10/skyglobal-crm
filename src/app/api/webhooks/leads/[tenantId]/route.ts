@@ -26,6 +26,19 @@ export async function POST(req: NextRequest, { params }: { params: { tenantId: s
       return NextResponse.json({ error: 'Tenant inactive' }, { status: 403 })
     }
 
+    // customers/leads.user_id is NOT NULL — attribute webhook rows to the
+    // tenant owner (oldest membership). Without this every insert failed.
+    const { data: owner } = await db
+      .from('tenant_users')
+      .select('user_id')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (!owner?.user_id) {
+      return NextResponse.json({ error: 'Tenant has no users' }, { status: 422 })
+    }
+
     // Extract lead fields from webhook payload — handles Thumbtack and generic shapes
     const customerName =
       body.customer?.name ||
@@ -52,6 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: { tenantId: s
     if (customerName !== 'Webhook Lead' || phone || email) {
       const { data: customer } = await db.from('customers').insert({
         tenant_id: tenantId,
+        user_id: owner.user_id,
         name: customerName,
         phone: phone ?? null,
         email: email ?? null,
@@ -63,6 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: { tenantId: s
     // Insert lead
     const { error: leadError } = await db.from('leads').insert({
       tenant_id: tenantId,
+      user_id: owner.user_id,
       title: `${customerName} — Thumbtack`,
       source: 'Thumbtack',
       stage: 'New Lead',

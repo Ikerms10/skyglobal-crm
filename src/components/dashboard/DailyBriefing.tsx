@@ -90,7 +90,7 @@ export function DailyBriefing({ onAddLead }: { onAddLead?: () => void }) {
           title: p.title,
           // Clamp to 0 — outstanding receivables are always positive
           owed: Math.max(0, (p.contract_value ?? 0) - (p.amount_paid ?? 0)),
-          customer_id: p.customer_id,
+          customer_id: p.customer_id ?? '',
         })),
         todayLeads: leadsRes.data ?? [],
       }

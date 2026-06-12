@@ -1,3 +1,22 @@
+import type { Database } from './supabase'
+
+export type { Database } from './supabase'
+
+// Generated row/write types (supabase gen types) — the source of truth for
+// exact DB shapes. The hand-written interfaces below are the app's domain
+// types: stricter nullability that DB-side defaults guarantee in practice.
+export type LeadRow = Database['public']['Tables']['leads']['Row']
+export type LeadInsert = Database['public']['Tables']['leads']['Insert']
+export type LeadUpdate = Database['public']['Tables']['leads']['Update']
+export type ProjectRow = Database['public']['Tables']['projects']['Row']
+export type ProjectInsert = Database['public']['Tables']['projects']['Insert']
+export type ProjectUpdate = Database['public']['Tables']['projects']['Update']
+export type CustomerRow = Database['public']['Tables']['customers']['Row']
+export type CustomerInsert = Database['public']['Tables']['customers']['Insert']
+export type ExpenseRowDb = Database['public']['Tables']['expenses']['Row']
+export type ExpenseInsertDb = Database['public']['Tables']['expenses']['Insert']
+export type ActivityInsert = Database['public']['Tables']['activities']['Insert']
+
 export type CustomerType = 'Residential' | 'Commercial'
 export type LeadStage = 'New Lead' | 'Estimate Sent' | 'Follow-up' | 'Won' | 'Lost' | 'On Hold'
 export type LeadSource = 'Thumbtack' | 'Referral' | 'Google' | 'Instagram' | 'Door Knock' | 'Facebook' | 'Yelp' | 'Other'

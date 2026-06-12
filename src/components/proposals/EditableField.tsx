@@ -96,7 +96,7 @@ export function EditableField({
     if (multiline) {
       return (
         <textarea
-          ref={inputRef as any}
+          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
           value={localVal}
           rows={2}
           onChange={(e) => {

@@ -49,7 +49,8 @@ async function runBackup(supabase: ReturnType<typeof createSupabaseClient>, user
     supabase.from('leads').select('*').eq('tenant_id', tenantId).is('deleted_at', null),
     supabase.from('projects').select('*').eq('tenant_id', tenantId).is('deleted_at', null),
     supabase.from('expenses').select('*').eq('tenant_id', tenantId).is('deleted_at', null),
-    supabase.from('activities').select('*').eq('tenant_id', tenantId),
+    // activities has no tenant_id column — scope by the requesting user
+    supabase.from('activities').select('*').eq('user_id', userId),
   ])
 
   const projectIds = (projectsRes.data ?? []).map((p: { id: string }) => p.id)

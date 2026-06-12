@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 
 import { createClient } from '@/lib/supabase/client'
+import type { Database } from '@/types/supabase'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -526,7 +527,7 @@ export function ContactModal({
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const payload: Record<string, unknown> = {
+    const payload: Database['public']['Tables']['activities']['Insert'] = {
       user_id: user.id,
       type,
       content,

@@ -59,7 +59,7 @@ export async function getTodaysFocusItems(): Promise<FocusItem[]> {
   ])
 
   stuckLeads.data?.forEach(lead => {
-    const days = Math.floor((now.getTime() - new Date(lead.updated_at).getTime()) / 86400000)
+    const days = Math.floor((now.getTime() - new Date(lead.updated_at ?? now).getTime()) / 86400000)
     items.push({
       id: `lead-${lead.id}`,
       type: 'follow_up',
@@ -73,7 +73,7 @@ export async function getTodaysFocusItems(): Promise<FocusItem[]> {
   })
 
   unrespondedProposals.data?.forEach(proposal => {
-    const days = Math.floor((now.getTime() - new Date(proposal.created_at).getTime()) / 86400000)
+    const days = Math.floor((now.getTime() - new Date(proposal.created_at ?? now).getTime()) / 86400000)
     items.push({
       id: `proposal-${proposal.id}`,
       type: 'proposal_check',
@@ -101,16 +101,16 @@ export async function getTodaysFocusItems(): Promise<FocusItem[]> {
   })
 
   overdueInvoices.data?.forEach(invoice => {
-    const daysOverdue = Math.floor((now.getTime() - new Date(invoice.due_date).getTime()) / 86400000)
+    const daysOverdue = Math.floor((now.getTime() - new Date(invoice.due_date ?? now).getTime()) / 86400000)
     items.push({
       id: `invoice-${invoice.id}`,
       type: 'collect_payment',
       priority: daysOverdue > 14 ? 'high' : 'medium',
-      title: `Collect payment — ${invoice.total.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}`,
+      title: `Collect payment — ${(invoice.total ?? 0).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}`,
       subtitle: `Invoice ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue`,
       actionLabel: 'View Invoice',
       actionRoute: `/invoices`,
-      amount: invoice.total,
+      amount: invoice.total ?? undefined,
       daysOverdue,
     })
   })

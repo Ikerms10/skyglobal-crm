@@ -459,9 +459,12 @@ function NewProjectModal({ open, onClose }: { open: boolean; onClose: () => void
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      // type is NOT NULL with no DB default — omitting it made this quick-create
+      // insert fail every time. Residential matches the other project forms.
       const { error } = await supabase.from('projects').insert({
         user_id: user.id,
         title: name,
+        type: 'Residential',
         start_date: startDate || null,
         contract_value: estimatedTotal ? parseFloat(estimatedTotal) : null,
         status: 'Scheduled',

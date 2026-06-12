@@ -132,11 +132,11 @@ export default function AnalyticsPage() {
       ])
 
       return {
-        projects:     (projRes.data    ?? []) as any[],
-        leads:        (leadRes.data    ?? []) as any[],
-        expenses:     (expRes.data     ?? []) as any[],
-        projExpenses: (projExpRes.data ?? []) as any[],
-        activities:   (actRes.data     ?? []) as any[],
+        projects:     projRes.data    ?? [],
+        leads:        leadRes.data    ?? [],
+        expenses:     expRes.data     ?? [],
+        projExpenses: projExpRes.data ?? [],
+        activities:   actRes.data     ?? [],
       }
     },
   })
