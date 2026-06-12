@@ -38,7 +38,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // Codebase reached zero type errors (2026-06 audit) — keep it that way.
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [
