@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { createDriveFolder, getDriveFolderUrl } from '@/lib/google-drive'
+import {
+  createDriveFolder,
+  getCategoryFolderId,
+  getDriveFolderUrl,
+  toLeadCategory,
+} from '@/lib/google-drive'
 
 // POST /api/drive/create-lead-folder
-// Creates "{Customer Name} {Zip}" in the Drive root folder and stores the
-// folder ID on the lead. Idempotent — returns the existing folder if set.
+// Creates "{Customer Name} {Zip}" inside the RESIDENTIAL or COMMERCIAL Drive
+// category folder (by customer type) and stores the folder ID on the lead.
+// Idempotent — returns the existing folder if set.
 export async function POST(req: NextRequest) {
   try {
     const authClient = await createClient()
@@ -20,11 +26,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'leadId is required' }, { status: 400 })
     }
 
-    const rootFolderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID
-    if (!rootFolderId) {
-      return NextResponse.json({ error: 'GOOGLE_DRIVE_ROOT_FOLDER_ID not set' }, { status: 500 })
-    }
-
     const db = createServiceClient()
 
     const { data: tuRow } = await db
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const { data: lead, error: leadErr } = await db
       .from('leads')
-      .select('id, user_id, tenant_id, title, drive_folder_id, customer:customers!leads_customer_id_fkey(name, zip)')
+      .select('id, user_id, tenant_id, title, drive_folder_id, customer:customers!leads_customer_id_fkey(name, zip, type)')
       .eq('id', leadId)
       .is('deleted_at', null)
       .single()
@@ -59,14 +60,15 @@ export async function POST(req: NextRequest) {
     }
 
     const customer = (Array.isArray(lead.customer) ? lead.customer[0] : lead.customer) as
-      | { name: string; zip: string | null }
+      | { name: string; zip: string | null; type: string | null }
       | null
     const folderName = [customer?.name ?? lead.title, customer?.zip]
       .filter(Boolean)
       .join(' ')
       .trim()
 
-    const folderId = await createDriveFolder(folderName, rootFolderId)
+    const category = toLeadCategory(customer?.type)
+    const folderId = await createDriveFolder(folderName, getCategoryFolderId(category))
 
     const { error: updateErr } = await db
       .from('leads')
@@ -76,7 +78,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 })
     }
 
-    return NextResponse.json({ folderId, folderUrl: getDriveFolderUrl(folderId) })
+    return NextResponse.json({
+      folderId,
+      folderUrl: getDriveFolderUrl(folderId),
+      category: category.toUpperCase(),
+    })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     console.error('[create-lead-folder]', message)

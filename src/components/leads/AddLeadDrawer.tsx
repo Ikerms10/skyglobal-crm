@@ -174,7 +174,9 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
               <div className="flex items-center justify-between bg-[var(--sg-base)] border border-[var(--sg-border)] rounded-lg p-3">
                 <div>
                   <p className="text-sm font-medium text-[var(--sg-text-1)]">{selectedCustomer.name}</p>
-                  <p className="text-xs text-[var(--sg-text-2)]">{selectedCustomer.phone || selectedCustomer.email}</p>
+                  <p className="text-xs text-[var(--sg-text-2)]">
+                    {[selectedCustomer.type, selectedCustomer.phone || selectedCustomer.email].filter(Boolean).join(' · ')}
+                  </p>
                 </div>
                 <Button
                   type="button"
