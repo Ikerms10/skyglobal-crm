@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { createDriveFolder, getDriveFolderUrl } from '@/lib/google-drive'
+import {
+  createDriveFolder,
+  getCategoryFolderId,
+  getDriveFolderUrl,
+  toLeadCategory,
+} from '@/lib/google-drive'
 
 // POST /api/drive/create-project-folder
-// Creates "{Project Title} - {Address}" inside the parent lead's Drive folder
-// (falls back to the root folder for projects created without a lead) and
-// stores the folder ID on the project. Idempotent.
+// Creates "{Project Title} - {Address}" inside the parent lead's Drive folder.
+// Projects created without a lead fall back to the RESIDENTIAL/COMMERCIAL
+// category folder matching the project type. Idempotent.
 export async function POST(req: NextRequest) {
   try {
     const authClient = await createClient()
@@ -21,11 +26,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
     }
 
-    const rootFolderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID
-    if (!rootFolderId) {
-      return NextResponse.json({ error: 'GOOGLE_DRIVE_ROOT_FOLDER_ID not set' }, { status: 500 })
-    }
-
     const db = createServiceClient()
 
     const { data: tuRow } = await db
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const { data: project, error: projErr } = await db
       .from('projects')
-      .select('id, user_id, tenant_id, title, address, lead_id, drive_folder_id')
+      .select('id, user_id, tenant_id, title, address, type, lead_id, drive_folder_id')
       .eq('id', projectId)
       .is('deleted_at', null)
       .single()
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    let parentFolderId = rootFolderId
+    let parentFolderId: string | null = null
     if (project.lead_id) {
       const { data: lead } = await db
         .from('leads')
@@ -67,6 +67,9 @@ export async function POST(req: NextRequest) {
         .eq('id', project.lead_id)
         .maybeSingle()
       if (lead?.drive_folder_id) parentFolderId = lead.drive_folder_id
+    }
+    if (!parentFolderId) {
+      parentFolderId = getCategoryFolderId(toLeadCategory(project.type))
     }
 
     const folderName = [project.title, project.address].filter(Boolean).join(' - ').trim()

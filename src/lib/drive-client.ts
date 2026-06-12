@@ -15,20 +15,19 @@ export function createDriveFolderInBackground(request: DriveFolderRequest) {
     request.kind === 'lead'
       ? { leadId: request.leadId }
       : { projectId: request.projectId }
-  const successMessage =
-    request.kind === 'lead'
-      ? 'Drive folder created for this lead'
-      : 'Project folder created on Drive'
-
   fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
     .then(res => res.json())
-    .then((data: { folderId?: string; error?: string }) => {
+    .then((data: { folderId?: string; category?: string; error?: string }) => {
       if (data.folderId) {
-        toast.success(successMessage)
+        toast.success(
+          request.kind === 'lead'
+            ? `Folder created in ${data.category ?? 'Drive'} → Drive`
+            : 'Project folder created on Drive'
+        )
         return
       }
       // Stay silent while the integration is unconfigured — otherwise every

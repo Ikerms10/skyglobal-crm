@@ -7,6 +7,24 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files'
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
 
+export type LeadCategory = 'residential' | 'commercial'
+
+// Lead/project folders live under SKYGLOBAL 2026/RESIDENTIAL or /COMMERCIAL.
+export function getCategoryFolderId(category: LeadCategory): string {
+  const id =
+    category === 'residential'
+      ? process.env.GOOGLE_DRIVE_RESIDENTIAL_FOLDER_ID
+      : process.env.GOOGLE_DRIVE_COMMERCIAL_FOLDER_ID
+  if (!id) throw new Error(`GOOGLE_DRIVE_${category.toUpperCase()}_FOLDER_ID is not set`)
+  return id
+}
+
+// Customer/project `type` is the source of truth for the category — leads
+// don't carry their own type column. Unknown types default to residential.
+export function toLeadCategory(customerType: string | null | undefined): LeadCategory {
+  return customerType === 'Commercial' ? 'commercial' : 'residential'
+}
+
 async function getAccessToken(): Promise<string> {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
