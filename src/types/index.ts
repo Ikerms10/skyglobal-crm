@@ -39,6 +39,7 @@ export interface Lead {
   estimated_value: number | null
   notes: string | null
   follow_up_date: string | null
+  drive_folder_id: string | null
   deleted_at: string | null
   created_at: string
   updated_at: string
@@ -62,6 +63,7 @@ export interface Project {
   description: string | null
   lead_cost: number | null
   notes: string | null
+  drive_folder_id: string | null
   deleted_at: string | null
   created_at: string
   updated_at: string

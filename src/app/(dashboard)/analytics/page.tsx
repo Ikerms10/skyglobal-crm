@@ -8,9 +8,16 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
 import {
-  subDays, subMonths, subYears, format, parseISO, differenceInDays,
+  subMonths, format, parseISO, differenceInDays,
   formatDistanceToNow,
 } from 'date-fns'
+
+import { getDateRange } from '@/lib/date-utils'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { useTimeFilter, PERIODS, Period } from '@/contexts/TimeFilterContext'
+
+// Charts bucket by month, so sub-month periods collapse to the current month.
+const CHART_MONTH_COUNT: Record<Period, number> = { week: 1, month: 1, year: 12, all: 12 }
 
 // ── Local sub-components ─────────────────────────────────────────────────────
 
@@ -94,7 +101,8 @@ function MetricTile({ label, value, format: fmt, color }: {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const [range, setRange] = useState<'30d' | '90d' | '6mo' | '1yr'>('6mo')
+  const { period, setPeriod } = useTimeFilter()
+  const { t } = useLanguage()
 
   const { data: rawData, isLoading } = useQuery({
     queryKey: ['analytics'],
@@ -133,18 +141,12 @@ export default function AnalyticsPage() {
     },
   })
 
-  const rangeStart = useMemo(() => {
-    const now = new Date()
-    if (range === '30d') return subDays(now, 30)
-    if (range === '90d') return subDays(now, 90)
-    if (range === '6mo') return subMonths(now, 6)
-    return subYears(now, 1)
-  }, [range])
+  const rangeStart = useMemo(() => getDateRange(period).start, [period])
 
   // Revenue chart — respects selected range
   const revenueChartData = useMemo(() => {
     if (!rawData) return []
-    const monthCount = range === '30d' ? 1 : range === '90d' ? 3 : range === '6mo' ? 6 : 12
+    const monthCount = CHART_MONTH_COUNT[period]
     return Array.from({ length: monthCount }, (_, i) => {
       const d = subMonths(new Date(), monthCount - 1 - i)
       const monthStr = format(d, 'yyyy-MM')
@@ -156,7 +158,7 @@ export default function AnalyticsPage() {
       const outstanding = monthProjects.reduce((s: number, p: any) => s + Math.max(0, (p.contract_value ?? 0) - (p.amount_paid ?? 0)), 0)
       return { month: format(d, 'MMM'), collected: Math.round(collected), outstanding: Math.round(outstanding) }
     })
-  }, [rawData, range])
+  }, [rawData, period])
 
   // Funnel data
   const funnelData = useMemo(() => {
@@ -196,14 +198,14 @@ export default function AnalyticsPage() {
   // Monthly job count — respects selected range
   const jobCountData = useMemo(() => {
     if (!rawData) return []
-    const monthCount = range === '30d' ? 1 : range === '90d' ? 3 : range === '6mo' ? 6 : 12
+    const monthCount = CHART_MONTH_COUNT[period]
     return Array.from({ length: monthCount }, (_, i) => {
       const d = subMonths(new Date(), monthCount - 1 - i)
       const monthStr = format(d, 'yyyy-MM')
       const count = rawData.projects.filter((p: any) => (p.created_at ?? '').slice(0, 7) === monthStr).length
       return { month: format(d, 'MMM'), count }
     })
-  }, [rawData, range])
+  }, [rawData, period])
 
   // Top customers
   const topCustomers = useMemo(() => {
@@ -284,20 +286,20 @@ export default function AnalyticsPage() {
             background: 'var(--sg-bg-surface)', borderRadius: 10,
             border: '1px solid var(--sg-border)',
           }}>
-            {(['30d', '90d', '6mo', '1yr'] as const).map(r => (
+            {PERIODS.map(p => (
               <button
-                key={r}
-                onClick={() => setRange(r)}
-                aria-pressed={range === r}
+                key={p}
+                onClick={() => setPeriod(p)}
+                aria-pressed={period === p}
                 style={{
                   padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
                   fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.05em',
-                  background: range === r ? 'var(--sg-accent)' : 'transparent',
-                  color: range === r ? '#fff' : 'var(--sg-text-secondary)',
+                  background: period === p ? 'var(--sg-accent)' : 'transparent',
+                  color: period === p ? '#fff' : 'var(--sg-text-secondary)',
                   transition: 'background 150ms, color 150ms',
                 }}
               >
-                {r}
+                {t(`dashboard.timeframe.${p}`)}
               </button>
             ))}
           </div>
@@ -336,7 +338,7 @@ export default function AnalyticsPage() {
               Revenue Pipeline
             </h3>
             <p style={{ fontSize: 11, color: 'var(--sg-text-muted)', fontFamily: 'var(--font-ui)', margin: '0 0 16px' }}>
-              {range === '30d' ? 'Last 30 days' : range === '90d' ? 'Last 90 days' : range === '6mo' ? 'Last 6 months' : 'Last 12 months'} — Collected vs Outstanding
+              {t(`dashboard.timeframe.${period}`)} — Collected vs Outstanding
             </p>
             <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
               {[['Collected', '#8B6914'], ['Outstanding', '#7A9E7E']].map(([l, c]) => (

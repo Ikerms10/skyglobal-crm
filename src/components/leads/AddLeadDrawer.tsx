@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { toast } from 'sonner'
 import { useLocalStorageDraft } from '@/lib/hooks/useLocalStorageDraft'
 import { useDebounce } from '@/lib/hooks/useDebounce'
+import { createDriveFolderInBackground } from '@/lib/drive-client'
 import { Search, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -115,12 +116,14 @@ export function AddLeadDrawer({ open, onClose }: { open: boolean; onClose: () =>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+      const json = await res.json()
       if (!res.ok) {
-        const json = await res.json()
         throw new Error(json.error ?? 'Failed to create lead')
       }
+      return json.lead as { id: string }
     },
-    onSuccess: () => {
+    onSuccess: (lead) => {
+      if (lead?.id) createDriveFolderInBackground({ kind: 'lead', leadId: lead.id })
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       toast.success('Lead created!')

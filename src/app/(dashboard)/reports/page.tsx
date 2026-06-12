@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -23,19 +23,12 @@ import {
 import {
   startOfMonth,
   endOfMonth,
-  startOfYear,
-  endOfYear,
-  subMonths,
   format,
-  parseISO,
   eachMonthOfInterval,
-  startOfDay,
-  endOfDay,
-  subMonths as subM,
 } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
-
-type Timeframe = 'this_month' | 'last_month' | 'this_year' | 'all_time';
+import { useTimeFilter, PERIODS } from '@/contexts/TimeFilterContext';
+import { getDateRange } from '@/lib/date-utils';
 
 const SOURCE_COLORS: Record<string, string> = {
   Thumbtack: '#3583b3',
@@ -62,7 +55,7 @@ const EXPENSE_COLORS = [
 export default function ReportsPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [timeframe, setTimeframe] = useState<Timeframe>('this_year');
+  const { period, setPeriod } = useTimeFilter();
 
   const { data: reportData, isLoading: loading } = useQuery({
     queryKey: ['reports'],
@@ -106,16 +99,9 @@ export default function ReportsPage() {
   const projExpByProject = projExpenses;
 
   const { dateStart, dateEnd } = useMemo(() => {
-    const now = new Date();
-    if (timeframe === 'this_month')
-      return { dateStart: startOfMonth(now), dateEnd: endOfMonth(now) };
-    if (timeframe === 'last_month') {
-      const lm = subMonths(now, 1);
-      return { dateStart: startOfMonth(lm), dateEnd: endOfMonth(lm) };
-    }
-    if (timeframe === 'this_year') return { dateStart: startOfYear(now), dateEnd: endOfYear(now) };
-    return { dateStart: new Date(2000, 0, 1), dateEnd: now };
-  }, [timeframe]);
+    const { start, end } = getDateRange(period);
+    return { dateStart: start, dateEnd: end };
+  }, [period]);
 
   const filteredProjects = useMemo(() => {
     const s = dateStart.toISOString();
@@ -170,7 +156,18 @@ export default function ReportsPage() {
 
   // Monthly chart data
   const monthlyData = useMemo(() => {
-    const months = eachMonthOfInterval({ start: dateStart, end: dateEnd });
+    // 'all' starts at the epoch — clamp the month axis to the earliest record
+    // so the table doesn't render decades of empty rows.
+    const dataDates = [
+      ...projects.map((p: { start_date: string | null; created_at: string }) => p.start_date ?? p.created_at),
+      ...expenses.map((e: { date: string }) => e.date),
+      ...projExpenses.map((e: { date: string }) => e.date),
+    ].filter(Boolean) as string[];
+    const earliest = dataDates.length > 0
+      ? new Date(dataDates.reduce((min, d) => (d < min ? d : min)))
+      : startOfMonth(dateEnd);
+    const chartStart = dateStart > earliest ? dateStart : earliest;
+    const months = eachMonthOfInterval({ start: chartStart, end: dateEnd });
     return months.map((m) => {
       const ms = format(startOfMonth(m), 'yyyy-MM-dd');
       const me = format(endOfMonth(m), 'yyyy-MM-dd');
@@ -200,7 +197,7 @@ export default function ReportsPage() {
         profit: Math.round(rev - exp),
       };
     });
-  }, [filteredProjects, filteredExpenses, projExpenses, dateStart, dateEnd]);
+  }, [projects, expenses, filteredProjects, filteredExpenses, projExpenses, dateStart, dateEnd]);
 
   // Lead source donut
   const sourceData = useMemo(() => {
@@ -340,20 +337,13 @@ export default function ReportsPage() {
           <p className="text-[var(--sg-text-2)] text-sm">{t('reports.insights')}</p>
         </div>
         <div className="flex items-center gap-1 bg-[var(--sg-surface)] border border-[var(--sg-border)] rounded-lg p-1">
-          {(
-            [
-              ['this_month', t('expenses.thisMonth')],
-              ['last_month', t('period.lastMonth')],
-              ['this_year', t('reports.thisYear')],
-              ['all_time', t('period.allTime')],
-            ] as [Timeframe, string][]
-          ).map(([val, label]) => (
+          {PERIODS.map((val) => (
             <button
               key={val}
-              onClick={() => setTimeframe(val)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${timeframe === val ? 'bg-[var(--sg-sky)] text-[var(--sg-base)]' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]'}`}
+              onClick={() => setPeriod(val)}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${period === val ? 'bg-[var(--sg-sky)] text-[var(--sg-base)]' : 'text-[var(--sg-text-2)] hover:text-[var(--sg-text-1)]'}`}
             >
-              {label}
+              {t(`dashboard.timeframe.${val}`)}
             </button>
           ))}
         </div>
