@@ -2,6 +2,10 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+// Single-tenant since 2026-06: the app serves only SkyGlobal Renovations.
+// This context resolves the signed-in user's business row automatically
+// (branding for sidebar, settings, proposals) — there is no tenant
+// selection, switching, or impersonation.
 export interface Tenant {
   id: string
   business_name: string
@@ -22,9 +26,6 @@ interface TenantContextValue {
   tenant: Tenant | null
   tenantId: string | null
   isLoading: boolean
-  isMasterAdmin: boolean
-  /** True when user is a master admin with no tenant of their own (pure platform admin) */
-  isAdminOnly: boolean
   updateTenant: (patch: Partial<Tenant>) => void
   refetchTenant: () => Promise<void>
 }
@@ -33,8 +34,6 @@ const TenantContext = createContext<TenantContextValue>({
   tenant: null,
   tenantId: null,
   isLoading: true,
-  isMasterAdmin: false,
-  isAdminOnly: false,
   updateTenant: () => {},
   refetchTenant: async () => {},
 })
@@ -42,36 +41,10 @@ const TenantContext = createContext<TenantContextValue>({
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isMasterAdmin, setIsMasterAdmin] = useState(false)
-  const [isAdminOnly, setIsAdminOnly] = useState(false)
 
   const fetchTenant = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-
-    // Check for admin impersonation
-    const impersonatingId = typeof window !== 'undefined'
-      ? sessionStorage.getItem('admin_viewing_tenant')
-      : null
-
-    if (impersonatingId) {
-      // Verify admin status FIRST — a non-admin setting this key must not get another tenant's context.
-      const [{ data: tenantData }, { data: adminRow }] = await Promise.all([
-        supabase.from('tenants').select('*').eq('id', impersonatingId).single(),
-        user
-          ? supabase.from('master_admins').select('user_id').eq('user_id', user.id).single()
-          : Promise.resolve({ data: null }),
-      ])
-      if (!adminRow) {
-        // Not a real admin — clear the key and fall through to normal tenant resolution.
-        if (typeof window !== 'undefined') sessionStorage.removeItem('admin_viewing_tenant')
-      } else {
-        setTenant(tenantData ?? null)
-        setIsMasterAdmin(true)
-        setIsLoading(false)
-        return
-      }
-    }
 
     if (!user) {
       setTenant(null)
@@ -79,28 +52,19 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // Resolve tenant via tenant_users (same logic as get_my_tenant_id()).
+    // Resolve the business via tenant_users (same logic as get_my_tenant_id()).
     // Using .maybeSingle() on the oldest membership row so multiple tenant_users
     // rows (e.g. from duplicate tenant migrations) never cause a .single() throw.
-    const [{ data: tuRow }, { data: adminRow }] = await Promise.all([
-      supabase
-        .from('tenant_users')
-        .select('tenant_id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from('master_admins')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .single(),
-    ])
+    const { data: tuRow } = await supabase
+      .from('tenant_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
 
     if (!tuRow?.tenant_id) {
       setTenant(null)
-      setIsMasterAdmin(adminRow !== null)
-      setIsAdminOnly(adminRow !== null)
       setIsLoading(false)
       return
     }
@@ -112,7 +76,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       .single()
 
     setTenant(tenantData ?? null)
-    setIsMasterAdmin(adminRow !== null)
     setIsLoading(false)
   }, [])
 
@@ -127,8 +90,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       tenant,
       tenantId: tenant?.id ?? null,
       isLoading,
-      isMasterAdmin,
-      isAdminOnly,
       updateTenant,
       refetchTenant: fetchTenant,
     }}>

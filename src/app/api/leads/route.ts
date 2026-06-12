@@ -24,34 +24,19 @@ export async function GET(req: NextRequest) {
       .limit(1)
       .maybeSingle()
 
-    // Also check master_admin
-    const { data: adminRow } = await db
-      .from('master_admins')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    const isMasterAdmin = !!adminRow
-
-    if (!tuRow?.tenant_id && !isMasterAdmin) {
+    if (!tuRow?.tenant_id) {
       return NextResponse.json({ leads: [], tenant_id: null })
     }
 
-    const tenantId = tuRow?.tenant_id
+    const tenantId = tuRow.tenant_id
 
     // 3. Fetch leads for this tenant (service role — bypasses all RLS)
-    let query = db
+    const { data: leads, error: leadsErr } = await db
       .from('leads')
       .select('*, customer:customers!leads_customer_id_fkey(id, name, phone, email, type, address, city, state, zip)')
       .is('deleted_at', null)
+      .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
-
-    // Master admins see all leads; tenants see only their own
-    if (tenantId) {
-      query = query.eq('tenant_id', tenantId)
-    }
-
-    const { data: leads, error: leadsErr } = await query
 
     if (leadsErr) {
       console.error('[api/leads] query error:', leadsErr)
@@ -61,7 +46,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       leads: leads ?? [],
       tenant_id: tenantId,
-      is_master_admin: isMasterAdmin,
       count: leads?.length ?? 0,
     })
   } catch (err: any) {
