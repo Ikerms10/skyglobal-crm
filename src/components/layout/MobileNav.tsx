@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart2, Receipt, Settings, LogOut, X, ClipboardList, FileText } from 'lucide-react'
+import { LayoutDashboard, Target, Users, Briefcase, MoreHorizontal, BarChart2, Receipt, Settings, LogOut, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -16,8 +16,6 @@ const primaryNavDefs = [
 ] as const
 
 const moreNavDefs = [
-  { href: '/proposals', key: 'nav.proposals', icon: FileText },
-  { href: '/invoices',  key: 'nav.invoices',  icon: ClipboardList },
   { href: '/expenses',  key: 'nav.expenses',  icon: Receipt },
   { href: '/reports',   key: 'nav.reports',   icon: BarChart2 },
   { href: '/settings',  key: 'nav.settings',  icon: Settings },
@@ -32,7 +30,7 @@ export function MobileNav() {
   const primaryItems = primaryNavDefs.map(d => ({ ...d, label: t(d.key) }))
   const moreItems = moreNavDefs.map(d => ({ ...d, label: t(d.key) }))
 
-  const isMoreActive = ['/proposals', '/invoices', '/expenses', '/reports', '/settings'].some(p => pathname.startsWith(p))
+  const isMoreActive = ['/expenses', '/reports', '/settings'].some(p => pathname.startsWith(p))
 
   const handleSignOut = async () => {
     const supabase = createClient()

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { toast } from 'sonner'
+import { createDriveFolderInBackground } from '@/lib/drive-client'
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -87,6 +88,7 @@ export function CreateProjectModal({ lead, open, onClose, onCreated }: CreatePro
       return project
     },
     onSuccess: (project) => {
+      createDriveFolderInBackground({ kind: 'project', projectId: project.id })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       toast.success('Project created!')

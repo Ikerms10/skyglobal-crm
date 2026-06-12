@@ -34,6 +34,7 @@ import {
   ChevronRight,
   Image as ImageIcon,
   FileText,
+  FolderOpen,
   MessageSquare,
 } from 'lucide-react';
 import { TemplateSelector } from '@/components/proposals/TemplateSelector';
@@ -882,6 +883,17 @@ export default function ProjectDetailPage({
                 <MapsLink address={project.address} showIcon={false} />
                 <DirectionsButton address={project.address} />
               </div>
+            )}
+            {project.drive_folder_id && (
+              <a
+                href={`https://drive.google.com/drive/folders/${project.drive_folder_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm font-medium text-[var(--c-gold)] hover:underline w-fit"
+              >
+                <FolderOpen className="h-4 w-4" />
+                Open in Drive
+              </a>
             )}
             <div className="flex flex-wrap gap-4 text-sm text-[var(--sg-text-2)]">
               {project.start_date && (

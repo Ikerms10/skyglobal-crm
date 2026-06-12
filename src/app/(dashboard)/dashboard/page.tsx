@@ -4,11 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { motion, useReducedMotion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency } from '@/lib/utils';
-import { formatDistanceToNow, subMonths, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
+import { getDateRange, toDateOnly } from '@/lib/date-utils';
+import { formatDistanceToNow, subMonths } from 'date-fns';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import {
   DollarSign, Briefcase, Target, TrendingUp, ArrowRight,
-  Clock, AlertTriangle, Activity, FileText, Calendar,
+  Clock, AlertTriangle, Activity, Calendar,
   BarChart2, ChevronRight, Receipt, Users, CheckCircle2, Award,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -17,16 +18,7 @@ import { AgendaWidget } from '@/components/dashboard/AgendaWidget';
 import { BibleVerse } from '@/components/dashboard/BibleVerse';
 import { WeatherWidget } from '@/components/dashboard/WeatherWidget';
 import { useLanguage } from '@/contexts/LanguageContext';
-
-type Timeframe = 'Week' | 'Month' | 'Year' | 'All';
-
-function getStartDate(tf: Timeframe): string | null {
-  const now = new Date();
-  if (tf === 'Week')  return startOfWeek(now).toISOString();
-  if (tf === 'Month') return startOfMonth(now).toISOString();
-  if (tf === 'Year')  return startOfYear(now).toISOString();
-  return null;
-}
+import { useTimeFilter, Period } from '@/contexts/TimeFilterContext';
 
 function todayLabel(lang: string) {
   const locale = lang === 'es' ? 'es-PR' : 'en-US';
@@ -45,8 +37,7 @@ const STAGE_COLORS: Record<string, { bg: string; text: string; bar: string }> = 
 const QUICK_ACTION_DEFS = [
   { key: 'dashboard.newLead',     href: '/leads',     icon: Target,   bg: 'rgba(74,103,65,0.14)',  color: '#4A6741' },
   { key: 'dashboard.newProject',  href: '/projects',  icon: Briefcase,bg: 'rgba(91,140,187,0.14)', color: '#5B8CBB' },
-  { key: 'dashboard.newProposal', href: '/proposals', icon: FileText, bg: 'rgba(139,105,20,0.14)', color: '#8B6914' },
-  { key: 'nav.invoices',          href: '/invoices',  icon: Receipt,  bg: 'rgba(160,120,80,0.14)', color: '#A07850' },
+  { key: 'nav.expenses',          href: '/expenses',  icon: Receipt,  bg: 'rgba(160,120,80,0.14)', color: '#A07850' },
   { key: 'nav.schedule',          href: '/schedule',  icon: Calendar, bg: 'rgba(122,158,126,0.14)',color: '#7A9E7E' },
   { key: 'nav.reports',           href: '/reports',   icon: BarChart2,bg: 'rgba(167,139,250,0.14)',color: '#A78BFA' },
   { key: 'nav.customers',         href: '/customers', icon: Users,    bg: 'rgba(185,74,58,0.10)',  color: '#B94A3A' },
@@ -263,18 +254,18 @@ function LeadStatCard({ stat }: { stat: LeadStatKind }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const [timeframe, setTimeframe] = useState<Timeframe>('Month');
+  const { period, setPeriod }     = useTimeFilter();
   const [time, setTime]           = useState('');
   const [displayName, setDisplayName] = useState('');
   const [locationCity, setLocationCity] = useState('');
   const shouldReduceMotion        = useReducedMotion();
   const { language, t }           = useLanguage();
 
-  const TIMEFRAMES: { label: string; value: Timeframe }[] = [
-    { label: t('dashboard.timeframe.week'),  value: 'Week' },
-    { label: t('dashboard.timeframe.month'), value: 'Month' },
-    { label: t('dashboard.timeframe.year'),  value: 'Year' },
-    { label: t('dashboard.timeframe.all'),   value: 'All' },
+  const TIMEFRAMES: { label: string; value: Period }[] = [
+    { label: t('dashboard.timeframe.week'),  value: 'week' },
+    { label: t('dashboard.timeframe.month'), value: 'month' },
+    { label: t('dashboard.timeframe.year'),  value: 'year' },
+    { label: t('dashboard.timeframe.all'),   value: 'all' },
   ];
 
   const QUICK_ACTIONS = QUICK_ACTION_DEFS.map(d => ({ ...d, label: t(d.key) }));
@@ -333,15 +324,16 @@ export default function DashboardPage() {
   }, []);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard', timeframe],
+    queryKey: ['dashboard', period],
     queryFn: async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const startDate = getStartDate(timeframe);
-      const fallbackId = '00000000-0000-0000-0000-000000000000';
-      const today = new Date().toISOString().split('T')[0];
+      const { start } = getDateRange(period);
+      const startIso = start.toISOString();
+      const startDateOnly = toDateOnly(start);
+      const today = toDateOnly(new Date());
 
       const [
         projectsRes, leadsRes, expensesRes, projectExpensesRes,
@@ -350,14 +342,14 @@ export default function DashboardPage() {
       ] = await Promise.all([
         supabase.from('projects').select('id,contract_value,amount_paid,payment_status,status,created_at,customer_id,title,customers(name)')
           .is('deleted_at', null)
-          .gte(startDate ? 'created_at' : 'id', startDate ?? fallbackId),
+          .gte('created_at', startIso),
         supabase.from('leads').select('id,stage,source,estimated_value,follow_up_date,title,customer_id,created_at')
           .is('deleted_at', null)
-          .gte(startDate ? 'created_at' : 'id', startDate ?? fallbackId),
+          .gte('created_at', startIso),
         supabase.from('expenses').select('id,amount,category,date')
           .is('deleted_at', null)
-          .gte(startDate ? 'date' : 'id', startDate ? startDate.split('T')[0] : fallbackId),
-        supabase.from('project_expenses').select('id,amount,date'),
+          .gte('date', startDateOnly),
+        supabase.from('project_expenses').select('id,amount,date,project_id'),
         supabase.from('activities').select('id,type,content,created_at,customer_id')
           .order('created_at', { ascending: false }).limit(8),
         supabase.from('projects').select('contract_value,created_at,status').is('deleted_at', null),
@@ -380,7 +372,11 @@ export default function DashboardPage() {
 
       const revenue       = projects.filter(p => p.status === 'In Progress' || p.status === 'Completed')
         .reduce((s, p) => s + (p.contract_value ?? 0), 0);
-      const totalExpenses = [...expenses.map(e => e.amount), ...projExp.map(e => e.amount)].reduce((s, a) => s + a, 0);
+      // Project expenses travel with their project's period (same attribution as
+      // Reports, PR #59) so revenue and costs are always paired to the same range.
+      const periodProjectIds = new Set(projects.map((p: { id: string }) => p.id));
+      const periodProjExp    = projExp.filter((e: { project_id: string }) => periodProjectIds.has(e.project_id));
+      const totalExpenses = [...expenses.map(e => e.amount), ...periodProjExp.map((e: { amount: number }) => e.amount)].reduce((s, a) => s + a, 0);
       const profit        = revenue - totalExpenses;
       const margin        = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
 
@@ -438,7 +434,9 @@ export default function DashboardPage() {
         pipelineValue,
         conversionRate,
         totalLeads:     leads.length,
-        activeProjects: projects.filter(p => p.status === 'In Progress' || p.status === 'Scheduled').length,
+        // Currently-active work, independent of the period filter — a project
+        // started last month and still in progress is still active this week.
+        activeProjects: (allProjRes.data ?? []).filter(p => p.status === 'In Progress' || p.status === 'Scheduled').length,
         chartData, stageCounts,
         activities: activitiesRes.data ?? [],
         followUps:  followUpsRes.data  ?? [],
@@ -510,14 +508,14 @@ export default function DashboardPage() {
               {/* Timeframe selector */}
               <div style={{ display: 'flex', gap: 3, padding: 4, background: 'var(--c-nested)', borderRadius: 12, border: '1px solid var(--c-border)' }}>
                 {TIMEFRAMES.map(tf => (
-                  <button key={tf.value} onClick={() => setTimeframe(tf.value)} style={{
+                  <button key={tf.value} onClick={() => setPeriod(tf.value)} style={{
                     padding: '6px 14px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                    fontSize: 12, fontWeight: timeframe === tf.value ? 700 : 500,
+                    fontSize: 12, fontWeight: period === tf.value ? 700 : 500,
                     fontFamily: "'DM Mono', monospace", letterSpacing: '0.05em',
-                    background: timeframe === tf.value ? 'var(--c-gold-bg)' : 'transparent',
-                    color: timeframe === tf.value ? 'var(--c-gold)' : 'var(--c-text-3)',
+                    background: period === tf.value ? 'var(--c-gold-bg)' : 'transparent',
+                    color: period === tf.value ? 'var(--c-gold)' : 'var(--c-text-3)',
                     transition: 'all 180ms ease',
-                    boxShadow: timeframe === tf.value ? 'var(--c-gold-shadow) 0 2px 8px' : 'none',
+                    boxShadow: period === tf.value ? 'var(--c-gold-shadow) 0 2px 8px' : 'none',
                   }}>
                     {tf.label}
                   </button>
@@ -730,7 +728,6 @@ export default function DashboardPage() {
               : <div style={{ textAlign: 'center', padding: '16px 0' }}>
                   <p style={{ fontSize: 22, margin: '0 0 4px' }} className="float-anim">✅</p>
                   <p style={{ fontSize: 12, color: 'var(--c-sage)', fontFamily: "'DM Mono', monospace", margin: 0, fontWeight: 600 }}>All paid up</p>
-                  <Link href="/invoices" style={{ fontSize: 11, color: 'var(--c-text-3)', fontFamily: "'DM Mono', monospace", textDecoration: 'none', display: 'block', marginTop: 4 }}>{t('dashboard.openInvoices')} →</Link>
                 </div>
             }
           </div>

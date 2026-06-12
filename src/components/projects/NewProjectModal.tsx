@@ -13,6 +13,7 @@ import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { createDriveFolderInBackground } from '@/lib/drive-client'
 import { Search } from 'lucide-react'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 
@@ -148,6 +149,7 @@ export function NewProjectModal({ open, onClose, preselectedCustomerId }: NewPro
       return { projectId: newProject.id, customerId: data.customer_id }
     },
     onSuccess: ({ projectId, customerId }) => {
+      createDriveFolderInBackground({ kind: 'project', projectId })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       queryClient.invalidateQueries({ queryKey: ['customer-projects', customerId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })

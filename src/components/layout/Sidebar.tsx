@@ -11,13 +11,11 @@ import {
   LogOut,
   Target,
   CalendarCheck,
-  FileText,
   Receipt,
   Calendar,
   TrendingUp,
   Sun,
   Moon,
-  ClipboardList,
   ShieldCheck,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -31,11 +29,9 @@ const mainNavDefs = [
   { href: '/leads',     key: 'nav.leads',     icon: Target },
   { href: '/customers', key: 'nav.customers', icon: Users },
   { href: '/projects',  key: 'nav.projects',  icon: Briefcase },
-  { href: '/proposals', key: 'nav.proposals', icon: FileText },
   { href: '/daily',     key: 'nav.daily',     icon: CalendarCheck },
 ] as const;
 const businessNavDefs = [
-  { href: '/invoices',  key: 'nav.invoices',  icon: ClipboardList },
   { href: '/expenses',  key: 'nav.expenses',  icon: Receipt },
   { href: '/reports',   key: 'nav.reports',   icon: BarChart2 },
   { href: '/schedule',  key: 'nav.schedule',  icon: Calendar },

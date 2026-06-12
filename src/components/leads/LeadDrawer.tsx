@@ -17,7 +17,7 @@ import { useLocalStorageDraft } from '@/lib/hooks/useLocalStorageDraft'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Phone, Mail, FileText, MessageSquare } from 'lucide-react'
+import { Phone, Mail, FileText, MessageSquare, FolderOpen } from 'lucide-react'
 import { ContactModal } from '@/components/ui/ContactModal'
 
 const schema = z.object({
@@ -174,6 +174,18 @@ export function LeadDrawer({ lead, open, onClose }: LeadDrawerProps) {
               )}
             </div>
           </div>
+        )}
+
+        {lead.drive_folder_id && (
+          <a
+            href={`https://drive.google.com/drive/folders/${lead.drive_folder_id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm font-medium text-[var(--c-gold)] hover:underline"
+          >
+            <FolderOpen className="h-4 w-4" />
+            Open in Drive
+          </a>
         )}
 
         <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-4">
