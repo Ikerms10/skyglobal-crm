@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Token expires after 30 days from creation
-  const createdAt = new Date(proposal.created_at)
+  const createdAt = proposal.created_at ? new Date(proposal.created_at) : new Date()
   const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
   if (Date.now() - createdAt.getTime() > thirtyDaysMs) {
     return NextResponse.json({ error: 'This proposal link has expired' }, { status: 410 })

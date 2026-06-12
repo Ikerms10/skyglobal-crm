@@ -16,6 +16,18 @@ interface Todo {
   created_at: string
 }
 
+// daily_todos columns are nullable with DB-side defaults — normalize at the
+// fetch boundary so the rest of the page works with the strict Todo shape.
+function toTodo(row: { id: string; text: string; completed: boolean | null; priority: string | null; created_at: string | null }): Todo {
+  return {
+    id: row.id,
+    text: row.text,
+    completed: row.completed ?? false,
+    priority: (row.priority ?? 'medium') as Priority,
+    created_at: row.created_at ?? '',
+  }
+}
+
 const PRIORITY_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 }
 const PRIORITY_COLOR: Record<Priority, string> = {
   high: 'var(--error)',
@@ -111,7 +123,7 @@ export default function DailyPage() {
       ])
 
       setNotes(notesRes.data?.notes ?? '')
-      setTodos(todosRes.data ?? [])
+      setTodos((todosRes.data ?? []).map(toTodo))
 
       const owed = (overdueRes.data ?? []).reduce((s, p) => s + ((p.contract_value ?? 0) - (p.amount_paid ?? 0)), 0)
       setBriefing({
@@ -150,7 +162,7 @@ export default function DailyPage() {
     const { data } = await supabase.from('daily_todos').insert({
       user_id: userId, date, text, priority: newPriority, completed: false,
     }).select().single()
-    if (data) setTodos(prev => [...prev, data])
+    if (data) setTodos(prev => [...prev, toTodo(data)])
     setNewTodoText('')
   }
 

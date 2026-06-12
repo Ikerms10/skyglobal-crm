@@ -28,16 +28,32 @@ export async function POST(req: NextRequest) {
   if (proposalErr || !proposal) {
     return NextResponse.json({ error: 'Proposal not found' }, { status: 404 })
   }
+  if (!proposal.user_id) {
+    return NextResponse.json({ error: 'Proposal has no owner' }, { status: 422 })
+  }
 
-  // Idempotent — if project already created, just return it
-  if (proposal.project_id) {
-    return NextResponse.json({ success: true, projectId: proposal.project_id, customerId: proposal.customer_id, alreadyProcessed: true })
+  // Idempotent — the proposal→project link lives on projects.proposal_id
+  // (proposals has no project_id column; the old check here never fired,
+  // so repeat approvals created duplicate projects).
+  const { data: existingProject } = await supabase
+    .from('projects')
+    .select('id, customer_id')
+    .eq('proposal_id', proposalId)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (existingProject) {
+    return NextResponse.json({
+      success: true,
+      projectId: existingProject.id,
+      customerId: existingProject.customer_id,
+      alreadyProcessed: true,
+    })
   }
 
   const now = new Date().toISOString()
 
   // ── STEP 1: Find or create customer ──────────────────────────────────────
-  let customerId: string = proposal.customer_id ?? null
+  let customerId: string | null = proposal.customer_id
 
   if (!customerId) {
     const clientName = proposal.client_name ?? ''
@@ -107,14 +123,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Failed to create project: ${projErr?.message}` }, { status: 500 })
   }
 
-  // ── STEP 3: Update proposal — mark Accepted, link customer + project ──────
+  // ── STEP 3: Update proposal — mark Accepted, link customer ────────────────
+  // (The project link is projects.proposal_id, set at insert above. Writing a
+  // nonexistent proposals.project_id made PostgREST reject this whole update,
+  // so approved proposals were never marked Accepted.)
   await supabase
     .from('proposals')
     .update({
       status: 'Accepted',
       approved_at: now,
       customer_id: customerId,
-      project_id: project.id,
     })
     .eq('id', proposalId)
 
@@ -133,9 +151,11 @@ export async function POST(req: NextRequest) {
   }
 
   // ── STEP 5: Activity log ──────────────────────────────────────────────────
+  // NOTE: activities has no tenant_id column — rows scope by user_id. The old
+  // insert passed tenant_id, which PostgREST rejected, so these activity logs
+  // were silently never written.
   const activityRows = [
     {
-      tenant_id: tenantId,
       user_id: proposal.user_id,
       customer_id: customerId,
       lead_id: proposal.lead_id ?? null,
@@ -147,7 +167,6 @@ export async function POST(req: NextRequest) {
 
   if (proposal.lead_id) {
     activityRows.push({
-      tenant_id: tenantId,
       user_id: proposal.user_id,
       customer_id: customerId,
       lead_id: proposal.lead_id,

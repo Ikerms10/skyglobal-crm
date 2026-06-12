@@ -108,7 +108,7 @@ export default function ReportsPage() {
     const e = dateEnd.toISOString();
     return projects.filter((p) => {
       const d = p.start_date ?? p.created_at;
-      return d >= s && d <= e;
+      return d != null && d >= s && d <= e;
     });
   }, [projects, dateStart, dateEnd]);
 
@@ -129,13 +129,13 @@ export default function ReportsPage() {
   // all its costs belong to April even if an expense was logged later.
   const periodProjExpenses = useMemo(() => {
     const ids = new Set(filteredProjects.map((p) => p.id));
-    return projExpenses.filter((e) => ids.has(e.project_id));
+    return projExpenses.filter((e) => e.project_id != null && ids.has(e.project_id));
   }, [filteredProjects, projExpenses]);
 
   const filteredLeads = useMemo(() => {
     const s = dateStart.toISOString();
     const e = dateEnd.toISOString();
-    return leads.filter((l) => l.created_at >= s && l.created_at <= e);
+    return leads.filter((l) => l.created_at != null && l.created_at >= s && l.created_at <= e);
   }, [leads, dateStart, dateEnd]);
 
   // KPI calculations
@@ -159,10 +159,10 @@ export default function ReportsPage() {
     // 'all' starts at the epoch — clamp the month axis to the earliest record
     // so the table doesn't render decades of empty rows.
     const dataDates = [
-      ...projects.map((p: { start_date: string | null; created_at: string }) => p.start_date ?? p.created_at),
-      ...expenses.map((e: { date: string }) => e.date),
-      ...projExpenses.map((e: { date: string }) => e.date),
-    ].filter(Boolean) as string[];
+      ...projects.map((p) => p.start_date ?? p.created_at),
+      ...expenses.map((e) => e.date),
+      ...projExpenses.map((e) => e.date),
+    ].filter((d): d is string => d != null);
     const earliest = dataDates.length > 0
       ? new Date(dataDates.reduce((min, d) => (d < min ? d : min)))
       : startOfMonth(dateEnd);
@@ -186,7 +186,7 @@ export default function ReportsPage() {
         .reduce((s, e) => s + e.amount, 0);
       // Project expenses attributed to the month their project started, not the expense date
       const prjExp = projExpenses
-        .filter((e) => monthProjectIds.has(e.project_id))
+        .filter((e) => e.project_id != null && monthProjectIds.has(e.project_id))
         .reduce((s, e) => s + e.amount, 0);
       const exp = genExp + prjExp;
 
@@ -278,6 +278,7 @@ export default function ReportsPage() {
     // Pre-aggregate expenses by project_id to avoid O(n×m) .filter() in .map()
     const expByProject = new Map<string, number>()
     for (const e of projExpByProject) {
+      if (e.project_id == null) continue
       expByProject.set(e.project_id, (expByProject.get(e.project_id) ?? 0) + e.amount)
     }
     return filteredProjects
@@ -285,7 +286,7 @@ export default function ReportsPage() {
         const costs = expByProject.get(p.id) ?? 0;
         const profit = (p.contract_value ?? 0) - (p.lead_cost ?? 0) - costs;
         const margin =
-          (p.contract_value ?? 0) > 0 ? Math.round((profit / p.contract_value) * 100) : 0;
+          p.contract_value != null && p.contract_value > 0 ? Math.round((profit / p.contract_value) * 100) : 0;
         const cust = (Array.isArray(p.customers) ? p.customers[0] : p.customers) as {
           name: string;
           id: string;

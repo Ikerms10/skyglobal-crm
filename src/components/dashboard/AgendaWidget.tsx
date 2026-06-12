@@ -61,7 +61,7 @@ export function AgendaWidget() {
         id: `event-${e.id}`,
         title: e.title,
         start_at: e.start_at,
-        all_day: e.all_day,
+        all_day: e.all_day ?? false,
         type: e.type as EventType,
         href: '/schedule',
       }))

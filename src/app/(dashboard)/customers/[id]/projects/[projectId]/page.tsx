@@ -669,7 +669,7 @@ export default function ProjectDetailPage({
           parking_notes: mgmt.parking_notes || null,
           client_communication: mgmt.client_communication || null,
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', projectId);
       if (error) throw new Error(error.message);
       setProject((p: any) => ({

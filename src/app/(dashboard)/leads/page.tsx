@@ -288,7 +288,9 @@ export default function LeadsPage() {
         toast.error(`Failed to load leads: ${error.message}`)
         return []
       }
-      return (data ?? []) as Lead[]
+      // Boundary cast: generated rows have nullable created_at/stage (DB-side
+      // defaults guarantee values); the domain Lead type assumes them present.
+      return (data ?? []) as unknown as Lead[]
     },
     staleTime: 30_000,
     retry: false,

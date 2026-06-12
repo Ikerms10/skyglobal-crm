@@ -374,9 +374,9 @@ export default function DashboardPage() {
         .reduce((s, p) => s + (p.contract_value ?? 0), 0);
       // Project expenses travel with their project's period (same attribution as
       // Reports, PR #59) so revenue and costs are always paired to the same range.
-      const periodProjectIds = new Set(projects.map((p: { id: string }) => p.id));
-      const periodProjExp    = projExp.filter((e: { project_id: string }) => periodProjectIds.has(e.project_id));
-      const totalExpenses = [...expenses.map(e => e.amount), ...periodProjExp.map((e: { amount: number }) => e.amount)].reduce((s, a) => s + a, 0);
+      const periodProjectIds = new Set(projects.map(p => p.id));
+      const periodProjExp    = projExp.filter(e => e.project_id != null && periodProjectIds.has(e.project_id));
+      const totalExpenses = [...expenses.map(e => e.amount), ...periodProjExp.map(e => e.amount)].reduce((s, a) => s + a, 0);
       const profit        = revenue - totalExpenses;
       const margin        = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
 
@@ -386,6 +386,7 @@ export default function DashboardPage() {
         const mon = d.toLocaleDateString('en-US', { month: 'short' });
         const yr  = d.getFullYear();
         const rev = (allProjRes.data ?? []).filter(p => {
+          if (!p.created_at) return false;
           const pd = new Date(p.created_at);
           return pd.toLocaleDateString('en-US', { month: 'short' }) === mon
             && pd.getFullYear() === yr
@@ -418,9 +419,9 @@ export default function DashboardPage() {
 
       const wonLeads   = leads.filter(l => l.stage === 'Won').length;
       const lostLeads  = leads.filter(l => l.stage === 'Lost').length;
-      const openLeads  = leads.filter(l => !['Won', 'Lost', 'On Hold'].includes(l.stage)).length;
+      const openLeads  = leads.filter(l => !['Won', 'Lost', 'On Hold'].includes(l.stage ?? '')).length;
       const pipelineValue = leads
-        .filter(l => !['Won', 'Lost', 'On Hold'].includes(l.stage))
+        .filter(l => !['Won', 'Lost', 'On Hold'].includes(l.stage ?? ''))
         .reduce((s, l) => s + (l.estimated_value ?? 0), 0);
       const conversionRate = (wonLeads + lostLeads) > 0
         ? Math.round((wonLeads / (wonLeads + lostLeads)) * 100)
@@ -693,7 +694,7 @@ export default function DashboardPage() {
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateX(0)'}>
                       <div style={{ minWidth: 0 }}>
                         <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{f.title}</p>
-                        <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0 }}>{(f.customers as any)?.name}</p>
+                        <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0 }}>{f.customers?.name}</p>
                       </div>
                       <span style={{ fontSize: 11, color: isToday ? '#8B6914' : 'var(--c-text-3)', fontWeight: isToday ? 700 : 400, flexShrink: 0, marginLeft: 8, fontFamily: "'DM Mono', monospace" }}>
                         {isToday ? t('focus.today') : f.follow_up_date}
@@ -718,7 +719,7 @@ export default function DashboardPage() {
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateX(0)'}>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{p.title}</p>
-                      <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0 }}>{(p.customers as any)?.name}</p>
+                      <p style={{ fontSize: 11, color: 'var(--c-text-3)', margin: 0 }}>{p.customers?.name}</p>
                     </div>
                     <span style={{ fontSize: 12, color: '#B94A3A', fontWeight: 700, flexShrink: 0, marginLeft: 8, fontFamily: "'DM Mono', monospace" }}>
                       {formatCurrency(Math.max(0, (p.contract_value ?? 0) - (p.amount_paid ?? 0)))}

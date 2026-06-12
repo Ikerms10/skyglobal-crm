@@ -8,6 +8,9 @@ import { differenceInDays, formatDistanceToNow, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 import { AppNotification } from '@/types'
 
+// Realtime-inserted rows get a transient _new flag for the entry animation.
+type BellNotification = AppNotification & { _new?: boolean }
+
 const SEEN_KEY = 'sg_seen_notifications'
 
 function getSeenIds(): Set<string> {
@@ -40,7 +43,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [data, setData] = useState<NotifData>({ followUps: [], payments: [], pastDue: [] })
   const [seen, setSeen] = useState<Set<string>>(new Set())
-  const [dbNotifs, setDbNotifs] = useState<AppNotification[]>([])
+  const [dbNotifs, setDbNotifs] = useState<BellNotification[]>([])
   const router = useRouter()
   const ref = useRef<HTMLDivElement>(null)
 
@@ -55,7 +58,7 @@ export function NotificationBell() {
         
         .order('created_at', { ascending: false })
         .limit(20)
-      setDbNotifs((data ?? []) as AppNotification[])
+      setDbNotifs((data ?? []) as unknown as BellNotification[])
     } catch {}
   }
 
@@ -142,7 +145,7 @@ export function NotificationBell() {
     const channel = supabase
       .channel('notifications-bell')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
-        const notif = { ...payload.new as AppNotification, _new: true }
+        const notif: BellNotification = { ...payload.new as AppNotification, _new: true }
         setDbNotifs(prev => [notif, ...prev])
         toast(notif.title, { description: notif.body ?? undefined })
       })
@@ -351,7 +354,7 @@ export function NotificationBell() {
                             markDbRead(notif.id)
                             if (notif.action_url) { router.push(notif.action_url); setOpen(false) }
                           }}
-                          className={(notif as any)._new ? 'notif-enter' : ''}
+                          className={notif._new ? 'notif-enter' : ''}
                           style={{
                             width: '100%',
                             display: 'flex',

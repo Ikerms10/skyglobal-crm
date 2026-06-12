@@ -288,7 +288,13 @@ export default function ProposalNewPage() {
       if (!p) return;
       setCustomer(p.customer);
       setProposalDbId(p.id);
-      const td = p.template_data ?? {};
+      // template_data is a JSONB column — narrow the Json type to the
+      // template fields this editor stores (see CLAUDE.md: template_data).
+      const td = (p.template_data ?? {}) as {
+        coatingTier?: string;
+        sheen?: string;
+        scopeOfWork?: ScopeStep[] | string;
+      };
       setData({
         projectName: p.project_name ?? '',
         issueDate: p.issue_date ?? format(new Date(), 'yyyy-MM-dd'),
@@ -298,10 +304,10 @@ export default function ProposalNewPage() {
         clientContact: p.client_contact ?? '',
         clientAddress: p.client_address ?? '',
         projectScope: p.project_scope ?? '',
-        totalInvestment: p.total_investment,
-        depositPct: p.deposit_pct,
-        progressPct: p.progress_pct,
-        finalPct: p.final_pct,
+        totalInvestment: p.total_investment ?? 0,
+        depositPct: p.deposit_pct ?? 30,
+        progressPct: p.progress_pct ?? 45,
+        finalPct: p.final_pct ?? 25,
         lineItems: (items ?? []).map((i: any) => ({
           id: i.id,
           description: i.description,
@@ -309,7 +315,7 @@ export default function ProposalNewPage() {
           unit_price: i.unit_price,
           total: i.total,
         })),
-        showInsurancePage: p.show_insurance_page,
+        showInsurancePage: p.show_insurance_page ?? true,
         coatingTier: td.coatingTier ?? '',
         sheen: td.sheen ?? 'Satin',
         scopeOfWork: Array.isArray(td.scopeOfWork)
@@ -453,7 +459,7 @@ export default function ProposalNewPage() {
 
   const renderTemplate = () => {
     if (!data) return null;
-    const commonProps = { data: data as any, onChange: handleChange };
+    const commonProps = { data, onChange: handleChange };
     switch (template) {
       case 'interior':
         return <InteriorTemplate {...commonProps} />;

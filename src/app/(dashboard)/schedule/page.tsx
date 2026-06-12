@@ -104,7 +104,7 @@ function AssignForm({
 }: {
   initial: CrewAssignment | null
   prefillDate: string | null
-  projects: { id: string; title: string; status: string; contract_value: number | null }[]
+  projects: { id: string; title: string; status: string | null; contract_value: number | null }[]
   existingMembers: string[]
   onSave: (form: AssignFormData) => void
   onCancel: () => void
@@ -518,7 +518,7 @@ export default function SchedulePage() {
           </div>
 
           {/* Month grid */}
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <div style={{ background: 'var(--sg-bg-surface)', border: '1px solid var(--sg-border)', borderRadius: 12, overflow: 'hidden', minWidth: 560 }}>
             {/* Day headers */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
