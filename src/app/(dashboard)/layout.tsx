@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileNav } from '@/components/layout/MobileNav'
@@ -9,11 +8,6 @@ import { FloatingActionButton } from '@/components/ui/FloatingActionButton'
 import { RealtimeSync } from '@/components/layout/RealtimeSync'
 import { TenantProvider } from '@/contexts/TenantContext'
 import { MobileBusinessName } from '@/components/layout/MobileBusinessName'
-import { ImpersonationBanner } from '@/components/layout/ImpersonationBanner'
-import { TrialBanner } from '@/components/layout/TrialBanner'
-import { SuspendedGuard } from '@/components/layout/SuspendedGuard'
-import { AdminGuard } from '@/components/layout/AdminGuard'
-import { AdminViewHandler } from '@/components/layout/AdminViewHandler'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -33,8 +27,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0" style={{ position: 'relative', zIndex: 10 }}>
-        <ImpersonationBanner />
-        <TrialBanner />
         {/* Top header */}
         <header
           style={{
@@ -90,10 +82,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
           }}
         >
-          <AdminGuard />
-          <Suspense fallback={null}><AdminViewHandler /></Suspense>
           <RealtimeSync />
-          <SuspendedGuard>{children}</SuspendedGuard>
+          {children}
         </main>
       </div>
 
