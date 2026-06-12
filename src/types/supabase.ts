@@ -149,6 +149,17 @@ export type Database = {
       }
       business_settings: {
         Row: {
+          budget_advertising: number | null
+          budget_fuel: number | null
+          budget_insurance: number | null
+          budget_labor: number | null
+          budget_materials: number | null
+          budget_monthly: number | null
+          budget_other: number | null
+          budget_overhead: number | null
+          budget_software: number | null
+          budget_subcontractors: number | null
+          budget_tools: number | null
           id: string
           key: string
           tenant_id: string | null
@@ -157,6 +168,17 @@ export type Database = {
           value: string
         }
         Insert: {
+          budget_advertising?: number | null
+          budget_fuel?: number | null
+          budget_insurance?: number | null
+          budget_labor?: number | null
+          budget_materials?: number | null
+          budget_monthly?: number | null
+          budget_other?: number | null
+          budget_overhead?: number | null
+          budget_software?: number | null
+          budget_subcontractors?: number | null
+          budget_tools?: number | null
           id?: string
           key: string
           tenant_id?: string | null
@@ -165,6 +187,17 @@ export type Database = {
           value?: string
         }
         Update: {
+          budget_advertising?: number | null
+          budget_fuel?: number | null
+          budget_insurance?: number | null
+          budget_labor?: number | null
+          budget_materials?: number | null
+          budget_monthly?: number | null
+          budget_other?: number | null
+          budget_overhead?: number | null
+          budget_software?: number | null
+          budget_subcontractors?: number | null
+          budget_tools?: number | null
           id?: string
           key?: string
           tenant_id?: string | null
@@ -462,7 +495,9 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           id: string
+          project_id: string | null
           recurring: boolean | null
+          tax_deductible: boolean | null
           tenant_id: string | null
           user_id: string
         }
@@ -474,7 +509,9 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          project_id?: string | null
           recurring?: boolean | null
+          tax_deductible?: boolean | null
           tenant_id?: string | null
           user_id: string
         }
@@ -486,11 +523,20 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          project_id?: string | null
           recurring?: boolean | null
+          tax_deductible?: boolean | null
           tenant_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expenses_tenant_id_fkey"
             columns: ["tenant_id"]

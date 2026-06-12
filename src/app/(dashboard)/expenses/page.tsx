@@ -24,20 +24,10 @@ import {
   Settings2, BarChart2,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
-import type { Database } from '@/types/supabase'
-
-type ExpenseInsert = Database['public']['Tables']['expenses']['Insert']
-type ExpenseUpdate = Database['public']['Tables']['expenses']['Update']
-type BusinessSettingsInsert = Database['public']['Tables']['business_settings']['Insert']
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────────
 
-// NOTE: tax_deductible/project_id (expenses) and budget_* (business_settings)
-// come from supabase/migrations/20260426_expenses_upgrade.sql, which has NOT
-// been run in the Supabase dashboard — the generated Database types prove the
-// live schema lacks them, so inserts/updates touching them currently fail at
-// runtime. The `as unknown as` casts below keep the feature wired up; run the
-// migration to make it functional, then `supabase gen types` to drop the casts.
+const EXPENSE_BUDGETS_KEY = 'expense_budgets'
 
 type ExpenseRow = {
   id: string
@@ -525,6 +515,7 @@ export default function ExpensesPage() {
         .select('*')
         .is('deleted_at', null)
         .order('date', { ascending: false })
+      // Boundary cast: nullable DB-defaulted columns vs strict domain type
       return (data ?? []) as unknown as ExpenseRow[]
     },
   })
@@ -551,11 +542,14 @@ export default function ExpensesPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return EMPTY_BUDGETS
+      // business_settings is a kv table (unique user_id+key) — budgets live on
+      // their own row; a bare .single() errors once other settings rows exist.
       const { data } = await supabase
         .from('business_settings')
         .select('budget_monthly,budget_labor,budget_materials,budget_advertising,budget_fuel,budget_tools,budget_subcontractors,budget_overhead,budget_insurance,budget_software,budget_other')
-        .single()
-      return (data as unknown as BudgetSettings | null) ?? EMPTY_BUDGETS
+        .eq('key', EXPENSE_BUDGETS_KEY)
+        .maybeSingle()
+      return (data as BudgetSettings | null) ?? EMPTY_BUDGETS
     },
   })
 
@@ -575,7 +569,7 @@ export default function ExpensesPage() {
         tax_deductible: form.taxDeductible,
         project_id: form.projectId || null,
       }
-      const { error } = await supabase.from('expenses').insert(payload as unknown as ExpenseInsert)
+      const { error } = await supabase.from('expenses').insert(payload)
       if (error) throw new Error(error.message)
     },
     onSuccess: (_, form) => {
@@ -601,7 +595,7 @@ export default function ExpensesPage() {
         recurring: form.recurring,
         tax_deductible: form.taxDeductible,
         project_id: form.projectId || null,
-      } as unknown as ExpenseUpdate).eq('id', editExpense.id)
+      }).eq('id', editExpense.id)
       if (error) throw new Error(error.message)
     },
     onSuccess: () => {
@@ -638,8 +632,8 @@ export default function ExpensesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
       const { error } = await supabase.from('business_settings').upsert(
-        { user_id: user.id, ...data, updated_at: new Date().toISOString() } as unknown as BusinessSettingsInsert,
-        { onConflict: 'user_id' }
+        { user_id: user.id, key: EXPENSE_BUDGETS_KEY, value: '', ...data },
+        { onConflict: 'user_id,key' }
       )
       if (error) throw new Error(error.message)
     },
